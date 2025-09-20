@@ -1,0 +1,2354 @@
+// 📝 Transação Form Page - iPoupei Mobile
+// 
+// Página de formulário para criar/editar transações
+// Suporte a receitas, despesas e parcelas
+// 
+// Baseado em: Form Pattern + Material Design
+
+import 'dart:developer';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
+import '../models/transacao_model.dart';
+import '../services/transacao_service.dart';
+import '../../contas/models/conta_model.dart';
+import '../../contas/services/conta_service.dart';
+import '../../categorias/models/categoria_model.dart';
+import '../../categorias/services/categoria_service.dart';
+import '../../auth/components/loading_overlay.dart';
+import '../components/smart_field.dart';
+import '../../transacoes/components/smart_field.dart' as TransacaoSmartField;
+// import '../../../shared/utils/money_input_formatter.dart'; // TODO: Criar formatter
+import '../components/conditional_transaction_fields.dart';
+// import '../components/smart_money_field.dart'; // Não usado
+import '../components/status_switch.dart';
+import '../components/tipo_selector.dart';
+import '../../../shared/components/ui/app_button.dart';
+import '../../shared/theme/app_colors.dart';
+
+class TransacaoFormPage extends StatefulWidget {
+  final String modo; // 'criar' ou 'editar'
+  final String? tipo; // 'receita', 'despesa' para criação
+  final TransacaoModel? transacao;
+
+  const TransacaoFormPage({
+    super.key,
+    required this.modo,
+    this.tipo,
+    this.transacao,
+  });
+
+  @override
+  State<TransacaoFormPage> createState() => _TransacaoFormPageState();
+}
+
+/// MoneyInputFormatter - idêntico ao projeto device
+class MoneyInputFormatter extends TextInputFormatter {
+  final bool allowNegative;
+
+  MoneyInputFormatter({this.allowNegative = true});
+  
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    if (newValue.text.isEmpty) {
+      return newValue;
+    }
+
+    try {
+      final numbersOnly = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
+      
+      if (numbersOnly.isEmpty) {
+        return const TextEditingValue(text: '', selection: TextSelection.collapsed(offset: 0));
+      }
+
+      final value = int.parse(numbersOnly);
+      final formatted = (value / 100).toStringAsFixed(2).replaceAll('.', ',');
+      
+      final newText = 'R\$ $formatted';
+      
+      return TextEditingValue(
+        text: newText,
+        selection: TextSelection.collapsed(offset: newText.length),
+      );
+    } catch (e) {
+      return oldValue;
+    }
+  }
+}
+
+class _TransacaoFormPageState extends State<TransacaoFormPage> {
+  final _formKey = GlobalKey<FormState>();
+  final _transacaoService = TransacaoService.instance;
+  final _contaService = ContaService.instance;
+  final _categoriaService = CategoriaService.instance;
+  
+  // Controllers
+  final _descricaoController = TextEditingController();
+  final _valorController = TextEditingController();
+  final _observacoesController = TextEditingController();
+  final _parcelasController = TextEditingController();
+  final _dataController = TextEditingController();
+  final _categoriaController = TextEditingController();
+  final _subcategoriaController = TextEditingController();
+  
+  // 🎯 CONTROLADORES DE NAVEGAÇÃO (IGUAL CARTÃO)
+  final _scrollController = ScrollController();
+  
+  // Focus Nodes para navegação automática
+  final _descricaoFocusNode = FocusNode();
+  final _valorFocusNode = FocusNode();
+  final _observacoesFocusNode = FocusNode();
+  final _salvarButtonFocusNode = FocusNode();
+  final _dataFocusNode = FocusNode();
+  final _categoriaFocusNode = FocusNode();
+  final _subcategoriaFocusNode = FocusNode();
+  
+  // Estados principais
+  String _tipoSelecionado = 'despesa';
+  String _tipoTransacao = 'extra'; // 'extra', 'parcelada', 'previsivel'
+  bool _loading = false;
+  
+  // Estados de seleção
+  String? _contaSelecionada;
+  String? _categoriaSelecionada;
+  String? _subcategoriaSelecionada;
+  DateTime _dataSelecionada = DateTime.now();
+  bool _efetivado = true;
+  bool _temParcelas = false; // Compatibilidade com código antigo
+  
+  // Estados de recorrência/parcelamento
+  int _numeroParcelas = 12;
+  String _frequenciaParcelada = 'mensal';
+  String _frequenciaPrevisivel = 'mensal';
+  int _totalRecorrencias = 12;
+  bool _primeiroEfetivado = true;
+  
+  // 🎨 ESTADOS DE UI E PREVIEW (IGUAL CARTÃO)
+  Map<String, dynamic>? _preview;
+  bool _salvarEContinuar = false;
+  ContaModel? _contaEscolhida;
+  CategoriaModel? _categoriaEscolhida;
+  SubcategoriaModel? _subcategoriaEscolhida;
+  
+  // Dados carregados
+  List<ContaModel> _contas = [];
+  List<CategoriaModel> _categorias = [];
+  List<SubcategoriaModel> _subcategorias = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _inicializarFormulario();
+    _setupNavigationListeners(); // 🎯 NOVA FUNCIONALIDADE
+    _carregarContas();
+    _carregarCategorias();
+    _carregarSubcategorias();
+  }
+  
+  void _inicializarFormulario() {
+    // Inicializar data controller com data atual
+    _dataController.text = _formatarDataBr(_dataSelecionada);
+    
+    if (widget.modo == 'criar' && widget.tipo != null) {
+      _tipoSelecionado = widget.tipo!;
+    } else if (widget.modo == 'editar' && widget.transacao != null) {
+      final transacao = widget.transacao!;
+      _descricaoController.text = transacao.descricao;
+      _valorController.text = _formatarValorParaInput(transacao.valor);
+      _observacoesController.text = transacao.observacoes ?? '';
+      _tipoSelecionado = transacao.tipo;
+      _contaSelecionada = transacao.contaId;
+      _dataSelecionada = transacao.data;
+      _efetivado = transacao.efetivado;
+      
+      if (transacao.numeroTotalParcelas != null && transacao.numeroTotalParcelas! > 1) {
+        _temParcelas = true;
+        _parcelasController.text = transacao.numeroTotalParcelas.toString();
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    // Controllers originais
+    _descricaoController.dispose();
+    _valorController.dispose();
+    _observacoesController.dispose();
+    _parcelasController.dispose();
+    
+    // 🎯 NOVOS CONTROLADORES (IGUAL CARTÃO)
+    _scrollController.dispose();
+    _descricaoFocusNode.dispose();
+    _valorFocusNode.dispose();
+    _observacoesFocusNode.dispose();
+    _salvarButtonFocusNode.dispose();
+    
+    super.dispose();
+  }
+
+  /// 🔄 CARREGAR CONTAS
+  Future<void> _carregarContas() async {
+    try {
+      final contas = await _contaService.fetchContas();
+      setState(() {
+        _contas = contas.where((c) => c.ativo).toList();
+        
+        // Selecionar primeira conta se nenhuma selecionada
+        if (_contaSelecionada == null && _contas.isNotEmpty) {
+          _contaSelecionada = _contas.first.id;
+          _contaEscolhida = _contas.first; // ✅ Para preview
+        } else if (_contaSelecionada != null) {
+          // Atualizar objeto escolhido se ID já estava definido
+          _contaEscolhida = _contas.firstWhere(
+            (c) => c.id == _contaSelecionada,
+            orElse: () => _contas.first,
+          );
+        }
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao carregar contas: $e')),
+        );
+      }
+    }
+  }
+
+  /// 🎯 SETUP NAVEGAÇÃO AUTOMÁTICA (IGUAL CARTÃO)
+  void _setupNavigationListeners() {
+    // Listeners de navegação automática
+    _valorFocusNode.addListener(() {
+      if (!_valorFocusNode.hasFocus && _valorController.text.isNotEmpty) {
+        final valorParsed = _parseMoneyValue(_valorController.text);
+        if (valorParsed > 0) {
+          debugPrint('🔔 Valor válido, preparando navegação...');
+        }
+      }
+    });
+  }
+
+  /// 💰 PARSE VALOR MONETÁRIO (IGUAL CARTÃO) 
+  double _parseMoneyValue(String value) {
+    if (value.isEmpty) return 0.0;
+    
+    // Remove R$, espaços e pontos de milhar
+    String cleanValue = value
+        .replaceAll('R\$', '')
+        .replaceAll(' ', '')
+        .replaceAll('.', '');
+    
+    // Substitui vírgula por ponto para decimal
+    cleanValue = cleanValue.replaceAll(',', '.');
+    
+    return double.tryParse(cleanValue) ?? 0.0;
+  }
+
+  /// 🎨 OBTER COR DA CATEGORIA SELECIONADA
+  Color _getCategoriaCorSelecionada() {
+    if (_categoriaSelecionada == null || _categorias.isEmpty) {
+      return _tipoSelecionado == 'receita' ? AppColors.tealPrimary : AppColors.vermelhoHeader;
+    }
+    
+    final categoria = _categorias.firstWhere(
+      (c) => c.id == _categoriaSelecionada, 
+      orElse: () => CategoriaModel(
+        id: '', 
+        nome: '', 
+        ativo: true, 
+        tipo: '', 
+        usuarioId: '', 
+        createdAt: DateTime.now(), 
+        updatedAt: DateTime.now()
+      )
+    );
+    
+    if (categoria.cor != null && categoria.cor!.isNotEmpty) {
+      return Color(int.parse(categoria.cor!.replaceAll('#', '0xFF')));
+    }
+    
+    return _tipoSelecionado == 'receita' ? AppColors.tealPrimary : AppColors.vermelhoHeader;
+  }
+
+  /// 📅 SELECIONAR DATA (IGUAL CARTÃO)
+  Future<void> _selecionarData() async {
+    final data = await showDatePicker(
+      context: context,
+      initialDate: _dataSelecionada,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+      locale: const Locale('pt', 'BR'),
+    );
+    
+    if (data != null) {
+      debugPrint('🔔 Nova data selecionada: ${_formatarDataBr(data)}');
+      setState(() {
+        _dataSelecionada = data;
+        _dataController.text = _formatarDataBr(data);
+      });
+      _atualizarPreview();
+      
+      // Após selecionar a data, ir automaticamente para a categoria
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (mounted) {
+          debugPrint('🔔 Navegando para categoria após selecionar data...');
+          _selecionarCategoria();
+        }
+      });
+    }
+  }
+
+  /// 📅 FORMATAR DATA BRASILEIRA
+  String _formatarDataBr(DateTime data) {
+    return '${data.day.toString().padLeft(2, '0')}/${data.month.toString().padLeft(2, '0')}/${data.year}';
+  }
+
+  /// 🎨 ATUALIZAR PREVIEW (IGUAL CARTÃO)
+  void _atualizarPreview() {
+    if (!_temDadosMinimos()) {
+      setState(() => _preview = null);
+      return;
+    }
+
+    final valor = _parseMoneyValue(_valorController.text);
+    
+    setState(() {
+      _preview = {
+        'tipo': _tipoSelecionado,
+        'descricao': _descricaoController.text.trim(),
+        'valor': valor,
+        'conta': _contaEscolhida?.nome ?? 'Não selecionada',
+        'categoria': _categoriaEscolhida?.nome ?? 'Não selecionada',
+        'subcategoria': _subcategoriaEscolhida?.nome,
+        'data': _dataSelecionada,
+        'efetivado': _efetivado,
+        'observacoes': _observacoesController.text.trim(),
+      };
+    });
+  }
+
+  /// ✅ VERIFICAR DADOS MÍNIMOS (IGUAL CARTÃO)
+  bool _temDadosMinimos() {
+    return _descricaoController.text.trim().isNotEmpty && 
+           _valorController.text.isNotEmpty &&
+           _parseMoneyValue(_valorController.text) > 0 &&
+           _contaEscolhida != null &&
+           _categoriaEscolhida != null;
+  }
+
+  /// ✅ PODE HABILITAR BOTÃO SALVAR (IGUAL CARTÃO)
+  bool get _podeHabilitar {
+    return !_loading &&
+          _contaSelecionada != null &&
+          _valorController.text.isNotEmpty &&
+          _descricaoController.text.trim().isNotEmpty &&
+          _parseMoneyValue(_valorController.text) > 0;
+  }
+
+  /// 📂 CARREGAR CATEGORIAS
+  Future<void> _carregarCategorias() async {
+    try {
+      final categorias = await _categoriaService.fetchCategorias();
+      setState(() {
+        _categorias = categorias.where((c) => c.ativo).toList();
+        
+        // Selecionar primeira categoria se nenhuma selecionada
+        if (_categoriaSelecionada == null && _categorias.isNotEmpty) {
+          final categoriasPorTipo = _categorias.where((c) => c.tipo == _tipoSelecionado).toList();
+          if (categoriasPorTipo.isNotEmpty) {
+            _categoriaSelecionada = categoriasPorTipo.first.id;
+            _categoriaEscolhida = categoriasPorTipo.first; // ✅ Para preview
+            _carregarSubcategoriasPorCategoria(categoriasPorTipo.first.id);
+          }
+        }
+      });
+    } catch (e) {
+      // Se não conseguir carregar categorias, deixar null para criar automaticamente
+      log('⚠️ Não foi possível carregar categorias: $e');
+      setState(() {
+        _categorias = [];
+        _categoriaSelecionada = null;
+      });
+    }
+  }
+
+  /// 🏷️ CARREGAR SUBCATEGORIAS
+  Future<void> _carregarSubcategorias() async {
+    try {
+      final subcategorias = await _categoriaService.fetchCategorias();
+      // As subcategorias vêm misturadas com as categorias no mesmo serviço
+      // Filtrar apenas as que tem categoria_id (são subcategorias)
+      setState(() {
+        _subcategorias = [];  // Será populado quando selecionar categoria
+      });
+    } catch (e) {
+      log('⚠️ Não foi possível carregar subcategorias: $e');
+      setState(() {
+        _subcategorias = [];
+      });
+    }
+  }
+
+  /// 🔗 CARREGAR SUBCATEGORIAS POR CATEGORIA
+  Future<void> _carregarSubcategoriasPorCategoria(String categoriaId) async {
+    try {
+      log('🔄 Carregando subcategorias para categoria: $categoriaId');
+      
+      // Buscar subcategorias específicas da categoria selecionada
+      final subcategorias = await _categoriaService.fetchSubcategorias(
+        categoriaId: categoriaId
+      );
+      
+      log('✅ Carregadas ${subcategorias.length} subcategorias para categoria $categoriaId');
+      
+      setState(() {
+        _subcategorias = subcategorias.where((s) => s.ativo).toList();
+        
+        // Reset da seleção de subcategoria ao trocar categoria
+        _subcategoriaSelecionada = null;
+        
+        // Auto-selecionar primeira subcategoria se disponível
+        if (_subcategorias.isNotEmpty && widget.modo == 'criar') {
+          _subcategoriaSelecionada = _subcategorias.first.id;
+          log('🎯 Auto-selecionada subcategoria: ${_subcategorias.first.nome}');
+        }
+      });
+      
+    } catch (e) {
+      log('⚠️ Erro ao carregar subcategorias para categoria $categoriaId: $e');
+      setState(() {
+        _subcategorias = [];
+        _subcategoriaSelecionada = null;
+      });
+    }
+  }
+
+  /// 💰 FORMATAR VALOR PARA INPUT
+  String _formatarValorParaInput(double valor) {
+    return valor.toStringAsFixed(2).replaceAll('.', ',');
+  }
+
+  /// 💰 CONVERTER INPUT PARA DOUBLE
+  double _converterInputParaDouble(String input) {
+    if (input.isEmpty) return 0.0;
+    
+    String cleaned = input.replaceAll(RegExp(r'[^0-9,.]'), '');
+    cleaned = cleaned.replaceAll(',', '.');
+    
+    return double.tryParse(cleaned) ?? 0.0;
+  }
+
+
+  /// 🏦 SELECIONAR CONTA (IGUAL CARTÃO - SCROLLÁVEL)
+  Future<void> _selecionarConta() async {
+    if (_contas.isEmpty) return;
+    
+    final conta = await showModalBottomSheet<ContaModel>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.7,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          children: [
+            // Handle do modal
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(top: 12, bottom: 8),
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            
+            // Título
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                'Selecionar Conta',
+                style: const TextStyle(
+                  fontSize: 18, 
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            
+            // Lista scrollável de contas
+            Expanded(
+              child: ListView.builder(
+                itemCount: _contas.length,
+                itemBuilder: (context, index) {
+                  final conta = _contas[index];
+                  final isSelected = _contaSelecionada == conta.id;
+                  
+                  return Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      color: isSelected ? AppColors.cinzaClaro : null,
+                      border: isSelected 
+                          ? Border.all(color: _tipoSelecionado == 'receita' ? AppColors.tealPrimary : AppColors.vermelhoHeader, width: 2)
+                          : null,
+                    ),
+                    child: ListTile(
+                      leading: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: _tipoSelecionado == 'receita' ? AppColors.tealPrimary : AppColors.vermelhoHeader,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Icon(
+                          Icons.account_balance,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                      title: Text(
+                        conta.nome,
+                        style: TextStyle(
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        ),
+                      ),
+                      subtitle: Text(
+                        conta.tipo,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                      trailing: isSelected 
+                          ? Icon(
+                              Icons.check_circle,
+                              color: _tipoSelecionado == 'receita' ? AppColors.tealPrimary : AppColors.vermelhoHeader,
+                            )
+                          : null,
+                      onTap: () => Navigator.pop(context, conta),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    
+    if (conta != null) {
+      setState(() {
+        _contaSelecionada = conta.id;
+      });
+      _atualizarPreview(); // Atualizar preview
+    }
+  }
+
+  /// 📂 SELECIONAR CATEGORIA (IGUAL CARTÃO - SCROLLÁVEL) 
+  Future<void> _selecionarCategoria() async {
+    if (_categorias.isEmpty) return;
+    
+    final categoria = await showModalBottomSheet<CategoriaModel>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.7,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          children: [
+            // Handle do modal
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(top: 12, bottom: 8),
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            
+            // Título
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                'Selecionar Categoria',
+                style: const TextStyle(
+                  fontSize: 18, 
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            
+            // Lista scrollável de categorias
+            Expanded(
+              child: ListView.builder(
+                itemCount: _categorias.where((c) => c.tipo == _tipoSelecionado).length,
+                itemBuilder: (context, index) {
+                  final categoriasFiltradas = _categorias.where((c) => c.tipo == _tipoSelecionado).toList();
+                  final categoria = categoriasFiltradas[index];
+                  final isSelected = _categoriaSelecionada == categoria.id;
+                  
+                  return Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      color: isSelected ? AppColors.cinzaClaro : null,
+                      border: isSelected 
+                          ? Border.all(color: _tipoSelecionado == 'receita' ? AppColors.tealPrimary : AppColors.vermelhoHeader, width: 2)
+                          : null,
+                    ),
+                    child: ListTile(
+                      leading: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: categoria.cor != null && categoria.cor!.isNotEmpty
+                              ? Color(int.parse(categoria.cor!.replaceAll('#', '0xFF')))
+                              : (_tipoSelecionado == 'receita' ? AppColors.tealPrimary : AppColors.vermelhoHeader),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Icon(
+                          Icons.local_offer_outlined,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                      title: Text(
+                        categoria.nome,
+                        style: TextStyle(
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        ),
+                      ),
+                      trailing: isSelected 
+                          ? Icon(
+                              Icons.check_circle,
+                              color: _tipoSelecionado == 'receita' ? AppColors.tealPrimary : AppColors.vermelhoHeader,
+                            )
+                          : null,
+                      onTap: () => Navigator.pop(context, categoria),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    
+    if (categoria != null) {
+      setState(() {
+        _categoriaSelecionada = categoria.id;
+        _categoriaController.text = categoria.nome;
+        _subcategoriaSelecionada = null; // Reset subcategoria
+        _subcategoriaController.text = '';
+        _carregarSubcategoriasPorCategoria(categoria.id); // Carregar subcategorias
+      });
+      _atualizarPreview();
+      
+      // Após selecionar categoria, ir automaticamente para subcategoria
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (mounted && _subcategorias.isNotEmpty) {
+          _selecionarSubcategoria();
+        }
+      });
+    }
+  }
+
+  /// 🏷️ SELECIONAR SUBCATEGORIA (IGUAL CARTÃO - SCROLLÁVEL)
+  Future<void> _selecionarSubcategoria() async {
+    if (_subcategorias.isEmpty) return;
+    
+    final subcategoria = await showModalBottomSheet<SubcategoriaModel>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.6,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          children: [
+            // Handle do modal
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(top: 12, bottom: 8),
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            
+            // Título
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                'Selecionar Subcategoria',
+                style: const TextStyle(
+                  fontSize: 18, 
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            
+            // Lista scrollável de subcategorias
+            Expanded(
+              child: ListView.builder(
+                itemCount: _subcategorias.length,
+                itemBuilder: (context, index) {
+                  final subcategoria = _subcategorias[index];
+                  final isSelected = _subcategoriaSelecionada == subcategoria.id;
+                  
+                  return Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      color: isSelected ? AppColors.cinzaClaro : null,
+                      border: isSelected 
+                          ? Border.all(color: _tipoSelecionado == 'receita' ? AppColors.tealPrimary : AppColors.vermelhoHeader, width: 2)
+                          : null,
+                    ),
+                    child: ListTile(
+                      leading: const Icon(
+                        Icons.subdirectory_arrow_right,
+                        size: 16,
+                        color: Colors.grey,
+                      ),
+                      title: Text(
+                        subcategoria.nome,
+                        style: TextStyle(
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        ),
+                      ),
+                      trailing: isSelected 
+                          ? Icon(
+                              Icons.check_circle,
+                              color: _tipoSelecionado == 'receita' ? AppColors.tealPrimary : AppColors.vermelhoHeader,
+                            )
+                          : null,
+                      onTap: () => Navigator.pop(context, subcategoria),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    
+    if (subcategoria != null) {
+      setState(() {
+        _subcategoriaSelecionada = subcategoria.id;
+        _subcategoriaController.text = subcategoria.nome;
+      });
+      _atualizarPreview();
+      
+      // Após selecionar subcategoria, fazer scroll para o preview
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (mounted && _scrollController.hasClients) {
+          _scrollController.animateTo(
+            _scrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeInOut,
+          );
+        }
+      });
+    }
+  }
+
+
+  /// 💾 SALVAR TRANSAÇÃO
+  Future<void> _salvarTransacao() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _loading = true);
+
+    try {
+      final descricao = _descricaoController.text.trim();
+      final valor = _converterInputParaDouble(_valorController.text);
+      final observacoes = _observacoesController.text.trim();
+      // Usar os novos campos em vez do antigo sistema
+      // final numParcelas = _temParcelas ? int.tryParse(_parcelasController.text) : null;
+
+      if (widget.modo == 'criar') {
+        List<TransacaoModel> transacoesCriadas = [];
+
+        // ✅ GARANTIR QUE CATEGORIA EXISTE
+        String categoriaId = _categoriaSelecionada ?? '';
+        
+        if (categoriaId.isEmpty) {
+          // Criar categoria padrão se não existir nenhuma selecionada
+          categoriaId = await _transacaoService.criarCategoriaSeNecessario(
+            _tipoSelecionado == 'receita' ? 'Receita Geral' : 'Despesa Geral', 
+            _tipoSelecionado
+          );
+        }
+        
+        // ✅ VALIDAR SUBCATEGORIA SE SELECIONADA
+        String? subcategoriaId = _subcategoriaSelecionada;
+        if (subcategoriaId != null && subcategoriaId.isNotEmpty) {
+          final subcategoriaValida = _subcategorias.any((s) => 
+            s.id == subcategoriaId && s.categoriaId == categoriaId
+          );
+          
+          if (!subcategoriaValida) {
+            log('⚠️ Subcategoria inválida para categoria $categoriaId, removendo seleção');
+            subcategoriaId = null; // Remove subcategoria inválida
+          } else {
+            log('✅ Subcategoria $subcategoriaId validada para categoria $categoriaId');
+          }
+        }
+
+        if (_tipoSelecionado == 'receita') {
+          // ✅ USAR MÉTODO COMPLETO DE RECEITA COM TODOS OS CAMPOS
+          transacoesCriadas = await _transacaoService.criarReceita(
+            descricao: descricao,
+            valor: valor,
+            data: _dataSelecionada,
+            contaId: _contaSelecionada!,
+            categoriaId: categoriaId,
+            subcategoriaId: subcategoriaId,
+            tipoReceita: _tipoTransacao,
+            efetivado: _primeiroEfetivado, // Usar configuração específica
+            observacoes: observacoes.isEmpty ? null : observacoes,
+            numeroParcelas: _tipoTransacao == 'parcelada' ? _numeroParcelas : null,
+            frequenciaParcelada: _tipoTransacao == 'parcelada' ? _frequenciaParcelada : null,
+            frequenciaPrevisivel: _tipoTransacao == 'previsivel' ? _frequenciaPrevisivel : null,
+          );
+        } else {
+          // ✅ USAR MÉTODO COMPLETO DE DESPESA COM TODOS OS CAMPOS
+          transacoesCriadas = await _transacaoService.criarDespesa(
+            descricao: descricao,
+            valor: valor,
+            data: _dataSelecionada,
+            contaId: _contaSelecionada!,
+            categoriaId: categoriaId,
+            subcategoriaId: subcategoriaId,
+            tipoDespesa: _tipoTransacao,
+            efetivado: _primeiroEfetivado, // Usar configuração específica
+            observacoes: observacoes.isEmpty ? null : observacoes,
+            numeroParcelas: _tipoTransacao == 'parcelada' ? _numeroParcelas : null,
+            frequenciaParcelada: _tipoTransacao == 'parcelada' ? _frequenciaParcelada : null,
+            frequenciaPrevisivel: _tipoTransacao == 'previsivel' ? _frequenciaPrevisivel : null,
+          );
+        }
+
+        final quantidadeTexto = transacoesCriadas.length > 1 
+            ? '${transacoesCriadas.length} transações de'
+            : '';
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('$quantidadeTexto ${_formatarTipoTransacao(_tipoSelecionado).toLowerCase()} "$descricao" criada!')),
+          );
+        }
+      } else {
+        await _transacaoService.updateTransacao(
+          transacaoId: widget.transacao!.id,
+          descricao: descricao,
+          valor: valor,
+          data: _dataSelecionada,
+          contaId: _contaSelecionada,
+          efetivado: _efetivado,
+          observacoes: observacoes.isEmpty ? null : observacoes,
+        );
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('${_formatarTipoTransacao(_tipoSelecionado)} "$descricao" atualizada!')),
+          );
+        }
+      }
+
+      if (mounted) {
+        Navigator.of(context).pop(true); // Retorna sucesso
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao salvar transação: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      setState(() => _loading = false);
+    }
+  }
+
+  /// 🎨 WIDGET SELETOR DE TIPO
+  Widget _buildSeletorTipo() {
+    // ✅ OCULTAR quando vem de botões segregados (igual cartão)
+    if (widget.modo == 'criar' && widget.tipo != null) {
+      return const SizedBox.shrink(); // Oculto quando tipo pré-definido
+    }
+    
+    if (widget.modo == 'editar') {
+      // No modo edição, mostrar apenas como informação
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.grey[100],
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            Icon(_getIconePorTipo(_tipoSelecionado), color: _getCorPorTipo(_tipoSelecionado)),
+            const SizedBox(width: 12),
+            Text(
+              _formatarTipoTransacao(_tipoSelecionado),
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Tipo da Transação',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildOpcaoTipo('receita', 'Receita', Icons.add_circle, AppColors.tealPrimary),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildOpcaoTipo('despesa', 'Despesa', Icons.remove_circle, AppColors.vermelhoHeader),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildOpcaoTipo(String tipo, String label, IconData icone, Color cor) {
+    final selecionado = _tipoSelecionado == tipo;
+    
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _tipoSelecionado = tipo;
+          // Atualizar categoria baseada no tipo selecionado
+          final categoriasPorTipo = _categorias.where((c) => c.tipo == tipo).toList();
+          if (categoriasPorTipo.isNotEmpty) {
+            _categoriaSelecionada = categoriasPorTipo.first.id;
+            _carregarSubcategoriasPorCategoria(categoriasPorTipo.first.id);
+          } else {
+            _categoriaSelecionada = null;
+            _subcategoriaSelecionada = null;
+          }
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: selecionado ? cor.withOpacity(0.1) : Colors.grey[100],
+          border: Border.all(
+            color: selecionado ? cor : Colors.grey[300]!,
+            width: selecionado ? 2 : 1,
+          ),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          children: [
+            Icon(
+              icone,
+              color: selecionado ? cor : Colors.grey[600],
+              size: 32,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: TextStyle(
+                fontWeight: FontWeight.w500,
+                color: selecionado ? cor : Colors.grey[700],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 🎨 HELPER FUNCTIONS
+  IconData _getIconePorTipo(String tipo) {
+    switch (tipo) {
+      case 'receita':
+        return Icons.add_circle;
+      case 'despesa':
+        return Icons.remove_circle;
+      default:
+        return Icons.help_outline;
+    }
+  }
+
+  Color _getCorPorTipo(String tipo) {
+    switch (tipo) {
+      case 'receita':
+        return AppColors.tealPrimary;
+      case 'despesa':
+        return AppColors.vermelhoHeader;
+      default:
+        return Colors.grey[600]!;
+    }
+  }
+
+  String _formatarTipoTransacao(String tipo) {
+    switch (tipo) {
+      case 'receita':
+        return 'Receita';
+      case 'despesa':
+        return 'Despesa';
+      default:
+        return tipo;
+    }
+  }
+
+  /// 🎨 BUILD PREVIEW AUTOMÁTICO (IGUAL CARTÃO)
+  Widget _buildPreview() {
+    if (_preview == null || !_temDadosMinimos()) {
+      return const SizedBox.shrink();
+    }
+
+    final cor = _getCorPorTipo(_preview!['tipo']);
+    final icone = _getIconePorTipo(_preview!['tipo']);
+    
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cor.withAlpha(25), // ~10% opacity
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: cor.withAlpha(77)), // ~30% opacity
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                icone,
+                color: cor,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Preview da ${_formatarTipoTransacao(_preview!['tipo'])}',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: cor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          
+          // Descrição e Valor
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  _preview!['descricao'],
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              Text(
+                'R\$ ${(_preview!['valor'] as double).toStringAsFixed(2).replaceAll('.', ',')}',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: cor,
+                ),
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: 8),
+          
+          // Conta e Categoria
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '💳 ${_preview!['conta']}',
+                      style: const TextStyle(fontSize: 13, color: Colors.grey),
+                    ),
+                    Text(
+                      '📂 ${_preview!['categoria']}${_preview!['subcategoria'] != null ? ' › ${_preview!['subcategoria']}' : ''}',
+                      style: const TextStyle(fontSize: 13, color: Colors.grey),
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '📅 ${_formatarData(_preview!['data'])}',
+                    style: const TextStyle(fontSize: 13, color: Colors.grey),
+                  ),
+                  Text(
+                    _preview!['efetivado'] ? '✅ Efetivada' : '⏳ Pendente',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: _preview!['efetivado'] ? Colors.green : Colors.orange,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          
+          if (_preview!['observacoes']?.isNotEmpty == true) ...[
+            const SizedBox(height: 8),
+            Text(
+              '📝 ${_preview!['observacoes']}',
+              style: const TextStyle(fontSize: 13, color: Colors.grey),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// 📅 FORMATAR DATA
+  String _formatarData(DateTime data) {
+    return '${data.day.toString().padLeft(2, '0')}/${data.month.toString().padLeft(2, '0')}/${data.year}';
+  }
+
+  /// 📂 SELECIONAR CATEGORIA (MODAL IGUAL CARTÃO)
+  Future<void> _selecionarCategoria() async {
+    try {
+      debugPrint('🔔 Abrindo modal de categoria...');
+      
+      // Filtrar categorias por tipo
+      final categoriasPorTipo = _categorias
+          .where((c) => c.tipo == _tipoSelecionado)
+          .toList();
+      
+      if (categoriasPorTipo.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Nenhuma categoria de ${_tipoSelecionado} encontrada'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        return;
+      }
+
+      // Mostrar modal de seleção
+      final categoriaEscolhida = await showModalBottomSheet<CategoriaModel>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) => Container(
+          height: MediaQuery.of(context).size.height * 0.7,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            children: [
+              // Handle bar
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              
+              // Título
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  'Selecionar Categoria',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: _getCorPorTipo(_tipoSelecionado),
+                  ),
+                ),
+              ),
+              
+              // Lista de categorias
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: categoriasPorTipo.length,
+                  itemBuilder: (context, index) {
+                    final categoria = categoriasPorTipo[index];
+                    final isSelected = categoria.id == _categoriaSelecionada;
+                    
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: isSelected 
+                              ? _getCorPorTipo(_tipoSelecionado)
+                              : Colors.grey[300]!,
+                          width: isSelected ? 2 : 1,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        color: isSelected 
+                            ? _getCorPorTipo(_tipoSelecionado).withAlpha(25)
+                            : null,
+                      ),
+                      child: ListTile(
+                        leading: Icon(
+                          _getIconePorTipo(_tipoSelecionado),
+                          color: isSelected 
+                              ? _getCorPorTipo(_tipoSelecionado)
+                              : Colors.grey[600],
+                        ),
+                        title: Text(
+                          categoria.nome,
+                          style: TextStyle(
+                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                            color: isSelected ? _getCorPorTipo(_tipoSelecionado) : null,
+                          ),
+                        ),
+                        subtitle: categoria.descricao != null 
+                            ? Text(categoria.descricao!)
+                            : null,
+                        trailing: isSelected 
+                            ? Icon(
+                                Icons.check_circle,
+                                color: _getCorPorTipo(_tipoSelecionado),
+                              )
+                            : null,
+                        onTap: () => Navigator.of(context).pop(categoria),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              
+              // Botão cancelar
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancelar'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+
+      if (categoriaEscolhida != null) {
+        setState(() {
+          _categoriaSelecionada = categoriaEscolhida.id;
+          _categoriaEscolhida = categoriaEscolhida;
+          _subcategoriaSelecionada = null; // Reset subcategoria
+          _subcategoriaEscolhida = null;
+        });
+        
+        // Carregar subcategorias e abrir modal se houver
+        await _carregarSubcategoriasPorCategoria(categoriaEscolhida.id);
+        if (_subcategorias.isNotEmpty) {
+          _selecionarSubcategoria();
+        } else {
+          // Se não há subcategorias, atualizar preview e ir para observações
+          _atualizarPreview();
+          _observacoesFocusNode.requestFocus();
+        }
+      }
+    } catch (error) {
+      debugPrint('❌ Erro ao selecionar categoria: $error');
+    }
+  }
+
+  /// 📂 SELECIONAR SUBCATEGORIA (MODAL IGUAL CARTÃO)
+  Future<void> _selecionarSubcategoria() async {
+    try {
+      debugPrint('🔔 Abrindo modal de subcategoria...');
+      
+      if (_subcategorias.isEmpty) {
+        _atualizarPreview();
+        _observacoesFocusNode.requestFocus();
+        return;
+      }
+
+      // Mostrar modal de seleção de subcategoria
+      final subcategoriaEscolhida = await showModalBottomSheet<SubcategoriaModel>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) => Container(
+          height: MediaQuery.of(context).size.height * 0.6,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            children: [
+              // Handle bar
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              
+              // Título
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  'Selecionar Subcategoria',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: _getCorPorTipo(_tipoSelecionado),
+                  ),
+                ),
+              ),
+              
+              // Lista de subcategorias
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: _subcategorias.length,
+                  itemBuilder: (context, index) {
+                    final subcategoria = _subcategorias[index];
+                    final isSelected = subcategoria.id == _subcategoriaSelecionada;
+                    
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: isSelected 
+                              ? _getCorPorTipo(_tipoSelecionado)
+                              : Colors.grey[300]!,
+                          width: isSelected ? 2 : 1,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        color: isSelected 
+                            ? _getCorPorTipo(_tipoSelecionado).withAlpha(25)
+                            : null,
+                      ),
+                      child: ListTile(
+                        leading: Icon(
+                          Icons.subdirectory_arrow_right,
+                          color: isSelected 
+                              ? _getCorPorTipo(_tipoSelecionado)
+                              : Colors.grey[600],
+                        ),
+                        title: Text(
+                          subcategoria.nome,
+                          style: TextStyle(
+                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                            color: isSelected ? _getCorPorTipo(_tipoSelecionado) : null,
+                          ),
+                        ),
+                        trailing: isSelected 
+                            ? Icon(
+                                Icons.check_circle,
+                                color: _getCorPorTipo(_tipoSelecionado),
+                              )
+                            : null,
+                        onTap: () => Navigator.of(context).pop(subcategoria),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              
+              // Botões
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: const Text('Pular'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+
+      if (subcategoriaEscolhida != null) {
+        setState(() {
+          _subcategoriaSelecionada = subcategoriaEscolhida.id;
+          _subcategoriaEscolhida = subcategoriaEscolhida;
+        });
+      }
+      
+      // Atualizar preview e focar observações
+      _atualizarPreview();
+      _observacoesFocusNode.requestFocus();
+      
+    } catch (error) {
+      debugPrint('❌ Erro ao selecionar subcategoria: $error');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final titulo = widget.modo == 'criar' 
+        ? 'Nova ${_formatarTipoTransacao(_tipoSelecionado)}'
+        : 'Editar ${_formatarTipoTransacao(_tipoSelecionado)}';
+
+    return LoadingOverlay(
+      isLoading: _loading,
+      message: widget.modo == 'criar' ? 'Criando transação...' : 'Salvando alterações...',
+      child: Scaffold(
+        backgroundColor: AppColors.backgroundPrimary,
+        appBar: AppBar(
+          backgroundColor: _tipoSelecionado == 'receita' ? AppColors.tealPrimary : AppColors.vermelhoHeader,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          title: Text(
+            titulo,
+            style: const TextStyle(
+              color: Colors.white, 
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          centerTitle: true, // ✅ CENTRALIZADO igual cartão
+          actions: [
+            TextButton(
+              onPressed: _podeHabilitar ? _salvarTransacao : null,
+              child: Text(
+                'SALVAR',
+                style: TextStyle(
+                  color: _podeHabilitar ? Colors.white : AppColors.cinzaMedio,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+        body: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              // Título e Seletor de Tipo (fora do scroll igual cartão)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Título "Tipo de Receita" ou "Tipo de Despesa"
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                    child: Text(
+                      _tipoSelecionado == 'receita' ? 'Tipo de Receita' : 'Tipo de Despesa',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ),
+                  
+                  // Subtítulo menor
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    child: Text(
+                      _tipoSelecionado == 'receita' 
+                          ? 'Escolha como deseja registrar sua receita'
+                          : 'Escolha como deseja registrar sua despesa',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              // Seletor de tipo (apenas na criação - receita/despesa)
+              _buildSeletorTipo(),
+              
+              // Seletor de tipo de transação com TipoSelector
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: TipoSelectorExtensions.tipoTransacao(
+                  tipoSelecionado: _tipoTransacao,
+                  onChanged: (tipo) {
+                    setState(() {
+                      _tipoTransacao = tipo;
+                      _temParcelas = _tipoTransacao == 'parcelada'; // Compatibilidade
+                    });
+                    _atualizarPreview(); // Atualizar preview quando trocar tipo
+                  },
+                  tipoReceita: _tipoSelecionado,
+                ),
+              ),
+
+              // Form Fields (dentro do scroll igual cartão)
+              Expanded(
+                child: SingleChildScrollView(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.all(16), // ✅ PADDING COMPLETO
+                  child: Column(
+                    children: [
+                      // Descrição
+                      SmartField(
+                        controller: _descricaoController,
+                        focusNode: _descricaoFocusNode,
+                        label: 'Descrição',
+                        hint: _tipoSelecionado == 'receita' 
+                            ? 'Ex: Salário, Freelance, Venda...'
+                            : 'Ex: Supermercado, Gasolina, Farmácia...',
+                        icon: Icons.description, // ✅ ÍCONE CORRETO
+                        isCartaoContext: false, // ✅ CONTEXT TRANSAÇÃO
+                        textInputAction: TextInputAction.done,
+                        onEditingComplete: () {
+                          debugPrint('🔔 onEditingComplete chamado para descrição');
+                          FocusScope.of(context).unfocus(); // Remove foco atual
+                          _valorFocusNode.requestFocus();
+                        },
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Descrição é obrigatória';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Valor  
+                      SmartField(
+                        controller: _valorController,
+                        focusNode: _valorFocusNode,
+                        label: 'Valor', // ✅ DINÂMICO
+                        hint: 'R\$ 0,00',
+                        icon: Icons.attach_money,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [MoneyInputFormatter()],
+                        isCartaoContext: false,
+                        textInputAction: TextInputAction.next,
+                        onEditingComplete: () {
+                          debugPrint('🔔 onEditingComplete chamado para valor');
+                          final valorParsed = _parseMoneyValue(_valorController.text);
+                          debugPrint('🔔 Valor parseado: $valorParsed');
+                          if (valorParsed > 0) {
+                            debugPrint('🔔 Valor válido, navegando para categoria...');
+                            // Estratégia direta: abrir modal da categoria imediatamente
+                            FocusScope.of(context).unfocus(); 
+                            Future.delayed(const Duration(milliseconds: 300), () {
+                              if (mounted) {
+                                debugPrint('🔔 Abrindo modal de categoria diretamente...');
+                                _selecionarCategoria();
+                              }
+                            });
+                          } else {
+                            debugPrint('🔔 Valor inválido: $valorParsed');
+                          }
+                        },
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Valor é obrigatório';
+                          }
+                          final parsedValue = _parseMoneyValue(value);
+                          if (parsedValue <= 0) {
+                            return 'Valor deve ser maior que zero';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Data da transação
+                      SmartField(
+                        controller: _dataController,
+                        focusNode: _dataFocusNode,
+                        label: 'Data da transação',
+                        hint: 'DD/MM/AAAA',
+                        icon: Icons.calendar_today, // ✅ SEM OUTLINE
+                        readOnly: true,
+                        onTap: _selecionarData,
+                        isCartaoContext: false,
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Data é obrigatória';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Categoria e Subcategoria (lado a lado como na imagem)
+                      Row(
+                        children: [
+                          Expanded(
+                            child: SmartField(
+                              controller: _categoriaController,
+                              focusNode: _categoriaFocusNode,
+                              label: 'Categoria',
+                              hint: 'Ex: Alimentação',
+                              icon: Icons.local_offer_outlined,
+                              readOnly: true,
+                              onTap: _selecionarCategoria,
+                              isCartaoContext: false,
+                              showDot: _categoriaSelecionada != null,
+                              dotColor: _categoriaSelecionada != null && _categorias.isNotEmpty
+                                  ? _getCategoriaCorSelecionada()
+                                  : (_tipoSelecionado == 'receita' ? AppColors.tealPrimary : AppColors.vermelhoHeader),
+                              validator: (value) {
+                                // Categoria é opcional - será criada automaticamente
+                                return null;
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: SmartField(
+                              controller: _subcategoriaController,
+                              focusNode: _subcategoriaFocusNode,
+                              label: 'Subcategoria',
+                              hint: 'Ex: Supermercado',
+                              icon: Icons.bookmark_outline,
+                              readOnly: true,
+                              onTap: _subcategorias.isNotEmpty ? _selecionarSubcategoria : null,
+                              isCartaoContext: false,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Conta (igual ao cartão no formulário)
+                      SmartField(
+                        controller: TextEditingController(
+                          text: _contaSelecionada != null 
+                              ? _contas.firstWhere((c) => c.id == _contaSelecionada, 
+                                  orElse: () => ContaModel(
+                                  id: '', 
+                                  usuarioId: '', 
+                                  nome: '', 
+                                  tipo: '', 
+                                  saldoInicial: 0, 
+                                  saldo: 0, 
+                                  ativo: true, 
+                                  createdAt: DateTime.now(), 
+                                  updatedAt: DateTime.now()
+                              )).nome
+                              : ''
+                        ),
+                        label: 'Conta',
+                        hint: 'Selecionar conta',
+                        icon: Icons.account_balance,
+                        readOnly: true,
+                        onTap: _selecionarConta,
+                        isCartaoContext: false,
+                        showDot: _contaSelecionada != null,
+                        dotColor: _tipoSelecionado == 'receita' ? AppColors.tealPrimary : AppColors.vermelhoHeader,
+                        validator: (value) {
+                          if (_contaSelecionada == null) {
+                            return 'Conta é obrigatória';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Observações
+                      SmartField(
+                        controller: _observacoesController,
+                        focusNode: _observacoesFocusNode,
+                        label: 'Observações (opcional)',
+                        hint: 'Informações adicionais...',
+                        icon: Icons.note,
+                        maxLines: 3,
+                        isCartaoContext: false,
+                        textInputAction: TextInputAction.done,
+                        onEditingComplete: () {
+                          debugPrint('🔔 Observações completas, indo para botão salvar...');
+                          _salvarButtonFocusNode.requestFocus();
+                        },
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // 🎨 PREVIEW AUTOMÁTICO (IGUAL CARTÃO)
+                      _buildPreview(),
+
+                      const SizedBox(height: 24),
+
+                      // Botões com AppButton
+                      Row(
+                        children: [
+                          Expanded(
+                            child: AppButton.outline(
+                              text: 'Cancelar',
+                              onPressed: _loading ? null : () => Navigator.of(context).pop(false),
+                              size: AppButtonSize.medium,
+                              fullWidth: true,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _tipoSelecionado == 'receita'
+                                ? AppButtonExtensions.receita(
+                                    text: widget.modo == 'criar' ? 'Criar Receita' : 'Salvar',
+                                    onPressed: _loading ? null : _salvarTransacao,
+                                    size: AppButtonSize.medium,
+                                    fullWidth: true,
+                                    isLoading: _loading,
+                                    icon: widget.modo == 'criar' ? Icons.add_circle : Icons.save,
+                                  )
+                                : AppButtonExtensions.despesa(
+                                    text: widget.modo == 'criar' ? 'Criar Despesa' : 'Salvar',
+                                    onPressed: _loading ? null : _salvarTransacao,
+                                    size: AppButtonSize.medium,
+                                    fullWidth: true,
+                                    isLoading: _loading,
+                                    icon: widget.modo == 'criar' ? Icons.remove_circle : Icons.save,
+                                  ),
+                          ),
+                        ],
+                      ),
+                SmartField(
+                  controller: TextEditingController(
+                    text: _contaSelecionada != null 
+                        ? _contas.firstWhere((c) => c.id == _contaSelecionada, 
+                            orElse: () => ContaModel(
+                            id: '', 
+                            usuarioId: '', 
+                            nome: '', 
+                            tipo: '', 
+                            saldoInicial: 0, 
+                            saldo: 0, 
+                            ativo: true, 
+                            createdAt: DateTime.now(), 
+                            updatedAt: DateTime.now()
+                        )).nome
+                        : ''
+                  ),
+                  label: 'Conta',
+                  hint: 'Selecione uma conta',
+                  icon: Icons.account_balance,
+                  readOnly: true,
+                  transactionContext: _tipoSelecionado,
+                  onTap: _selecionarConta,
+                  validator: (value) {
+                    if (_contaSelecionada == null || _contaSelecionada!.isEmpty) {
+                      return 'Selecione uma conta';
+                    }
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: 16),
+
+                // Categoria com SmartField
+                SmartField(
+                  controller: TextEditingController(
+                    text: _categoriaSelecionada != null 
+                        ? _categorias.firstWhere((c) => c.id == _categoriaSelecionada, 
+                            orElse: () => CategoriaModel(
+                            id: '', 
+                            nome: '', 
+                            ativo: true, 
+                            tipo: '', 
+                            usuarioId: '', 
+                            createdAt: DateTime.now(), 
+                            updatedAt: DateTime.now()
+                        )).nome
+                        : ''
+                  ),
+                  label: 'Categoria',
+                  hint: _categorias.isEmpty 
+                      ? 'Categoria será criada automaticamente' 
+                      : 'Selecione uma categoria',
+                  icon: Icons.category,
+                  readOnly: true,
+                  transactionContext: _tipoSelecionado,
+                  onTap: _selecionarCategoria,
+                  validator: (value) {
+                    // Não exigir categoria - será criada automaticamente se necessário
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: 16),
+
+                // ✨ SUBCATEGORIA DINÂMICA
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  height: _categoriaSelecionada != null ? null : 0,
+                  child: _categoriaSelecionada != null 
+                      ? Column(
+                          children: [
+                            SmartField(
+                              controller: TextEditingController(
+                                text: _subcategoriaSelecionada != null 
+                                    ? _subcategorias.firstWhere((s) => s.id == _subcategoriaSelecionada, 
+                                        orElse: () => SubcategoriaModel(
+                            id: '', 
+                            nome: '', 
+                            ativo: true, 
+                            categoriaId: '', 
+                            usuarioId: '', 
+                            createdAt: DateTime.now(), 
+                            updatedAt: DateTime.now()
+                        )).nome
+                                    : ''
+                              ),
+                              label: 'Subcategoria',
+                              hint: _subcategorias.isEmpty 
+                                  ? 'Nenhuma subcategoria disponível' 
+                                  : 'Selecione uma subcategoria (opcional)',
+                              icon: Icons.label_outline,
+                              readOnly: true,
+                              transactionContext: _tipoSelecionado,
+                              onTap: _subcategorias.isNotEmpty ? _selecionarSubcategoria : null,
+                              validator: (valor) {
+                                // Subcategoria é opcional, mas se selecionada deve ser válida
+                                if (_subcategoriaSelecionada != null && _subcategoriaSelecionada!.isNotEmpty) {
+                                  final subcategoriaValida = _subcategorias.any((s) => s.id == _subcategoriaSelecionada);
+                                  if (!subcategoriaValida) {
+                                    return 'Subcategoria inválida para a categoria selecionada';
+                                  }
+                                }
+                                return null;
+                              },
+                            ),
+                            
+                            // 💡 Indicador de status das subcategorias
+                            if (_subcategorias.isNotEmpty)
+                              Container(
+                                margin: const EdgeInsets.only(top: 4),
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.info_outline,
+                                      size: 14,
+                                      color: Colors.blue[600],
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '${_subcategorias.length} subcategoria${_subcategorias.length > 1 ? 's' : ''} disponível${_subcategorias.length > 1 ? 'eis' : ''}',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.blue[600],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
+                        )
+                      : const SizedBox.shrink(),
+                ),
+
+                const SizedBox(height: 16),
+
+                // Data com SmartField
+                SmartField(
+                  controller: TextEditingController(
+                    text: DateFormat('dd/MM/yyyy').format(_dataSelecionada)
+                  ),
+                  label: 'Data',
+                  hint: 'DD/MM/AAAA',
+                  icon: Icons.calendar_today,
+                  readOnly: true,
+                  transactionContext: _tipoSelecionado,
+                  onTap: _selecionarData,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Data é obrigatória';
+                    }
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: 16),
+
+                // Status com StatusSwitch
+                _tipoSelecionado == 'receita'
+                    ? StatusSwitch.receita(
+                        value: _efetivado,
+                        onChanged: (valor) {
+                          setState(() {
+                            _efetivado = valor;
+                          });
+                        },
+                      )
+                    : StatusSwitch.despesa(
+                        value: _efetivado,
+                        onChanged: (valor) {
+                          setState(() {
+                            _efetivado = valor;
+                          });
+                        },
+                      ),
+
+                // Opções específicas por tipo de transação
+                ConditionalTransactionFields(
+                  tipoTransacao: _tipoTransacao,
+                  tipoSelecionado: _tipoSelecionado,
+                  valorTotal: _converterInputParaDouble(_valorController.text),
+                  numeroParcelas: _numeroParcelas,
+                  frequenciaParcelada: _frequenciaParcelada,
+                  onParcelasChanged: (value) => setState(() => _numeroParcelas = value),
+                  onFrequenciaParceladaChanged: (value) => setState(() => _frequenciaParcelada = value),
+                  frequenciaPrevisivel: _frequenciaPrevisivel,
+                  totalRecorrencias: _totalRecorrencias,
+                  onFrequenciaPrevisivelChanged: (value) {
+                    setState(() {
+                      _frequenciaPrevisivel = value;
+                      // Recalcular total de recorrências
+                      switch (value) {
+                        case 'semanal':
+                          _totalRecorrencias = 20 * 52;
+                          break;
+                        case 'quinzenal':
+                          _totalRecorrencias = 20 * 26;
+                          break;
+                        case 'mensal':
+                          _totalRecorrencias = 20 * 12;
+                          break;
+                        case 'anual':
+                          _totalRecorrencias = 20;
+                          break;
+                      }
+                    });
+                  },
+                  showPreview: true,
+                ),
+                
+                // Primeiro efetivado (para parceladas e previsíveis)
+                if (_tipoTransacao != 'extra') ...[
+                  SwitchListTile(
+                    title: const Text('Primeira transação efetivada'),
+                    subtitle: Text(_tipoTransacao == 'parcelada' 
+                        ? 'A primeira parcela já foi paga'
+                        : 'O primeiro pagamento já foi realizado'),
+                    value: _primeiroEfetivado,
+                    onChanged: (valor) {
+                      setState(() {
+                        _primeiroEfetivado = valor;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                ],
+
+                // Parcelas (apenas na criação) - MANTER PARA COMPATIBILIDADE
+                if (widget.modo == 'criar' && false) ...[
+                  SwitchListTile(
+                    title: const Text('Dividir em parcelas'),
+                    subtitle: Text(_temParcelas 
+                        ? 'Será criada uma transação para cada parcela' 
+                        : 'Transação única'),
+                    value: _temParcelas,
+                    onChanged: (valor) {
+                      setState(() {
+                        _temParcelas = valor;
+                        if (valor) {
+                          _tipoTransacao = 'parcelada';
+                        } else {
+                          _tipoTransacao = 'extra';
+                          _parcelasController.clear();
+                        }
+                      });
+                    },
+                  ),
+
+                  if (_temParcelas) ...[
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _parcelasController,
+                      decoration: const InputDecoration(
+                        labelText: 'Número de Parcelas',
+                        hintText: 'Ex: 3, 6, 12',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.format_list_numbered),
+                      ),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                      ],
+                      validator: (value) {
+                        if (_temParcelas) {
+                          if (value == null || value.isEmpty) {
+                            return 'Digite o número de parcelas';
+                          }
+                          final numero = int.tryParse(value);
+                          if (numero == null || numero < 2) {
+                            return 'Mínimo de 2 parcelas';
+                          }
+                          if (numero > 60) {
+                            return 'Máximo de 60 parcelas';
+                          }
+                        }
+                        return null;
+                      },
+                    ),
+                  ],
+                ],
+
+                const SizedBox(height: 16),
+
+                // Observações com SmartField evoluído
+                TransacaoSmartField.SmartField(
+                  controller: _observacoesController,
+                  focusNode: _observacoesFocusNode,
+                  label: 'Observações (opcional)',
+                  hint: 'Informações adicionais...',
+                  icon: Icons.note,
+                  maxLines: 3,
+                  transactionContext: _tipoSelecionado,
+                  textInputAction: TextInputAction.done,
+                  onChanged: (value) => _atualizarPreview(),
+                  onEditingComplete: () {
+                    debugPrint('🔔 Observações completas, indo para botão salvar...');
+                    _salvarButtonFocusNode.requestFocus();
+                  },
+                ),
+
+                const SizedBox(height: 16),
+
+                // 🎨 PREVIEW AUTOMÁTICO (IGUAL CARTÃO)
+                _buildPreview(),
+
+                const SizedBox(height: 24),
+
+                // Botões com AppButton
+                Row(
+                  children: [
+                    Expanded(
+                      child: AppButton.outline(
+                        text: 'Cancelar',
+                        onPressed: _loading ? null : () => Navigator.of(context).pop(false),
+                        size: AppButtonSize.medium,
+                        fullWidth: true,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _tipoSelecionado == 'receita'
+                          ? AppButtonExtensions.receita(
+                              text: widget.modo == 'criar' ? 'Criar Receita' : 'Salvar',
+                              onPressed: _loading ? null : _salvarTransacao,
+                              size: AppButtonSize.medium,
+                              fullWidth: true,
+                              isLoading: _loading,
+                              icon: widget.modo == 'criar' ? Icons.add_circle : Icons.save,
+                            )
+                          : AppButtonExtensions.despesa(
+                              text: widget.modo == 'criar' ? 'Criar Despesa' : 'Salvar',
+                              onPressed: _loading ? null : _salvarTransacao,
+                              size: AppButtonSize.medium,
+                              fullWidth: true,
+                              isLoading: _loading,
+                              icon: widget.modo == 'criar' ? Icons.remove_circle : Icons.save,
+                            ),
+                    ),
+                  ],
+                ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 🎯 SELETOR DE TIPO DE TRANSAÇÃO
+  Widget _buildSeletorTipoTransacao() {
+    final tipos = [
+      {
+        'id': 'extra',
+        'nome': 'Extra',
+        'icone': Icons.star,
+        'descricao': 'Valor único',
+        'cor': Colors.orange,
+      },
+      {
+        'id': 'parcelada', 
+        'nome': 'Parcelada',
+        'icone': Icons.calendar_month,
+        'descricao': 'Dividida em parcelas',
+        'cor': Colors.blue,
+      },
+      {
+        'id': 'previsivel',
+        'nome': _tipoSelecionado == 'receita' ? 'Receita Mensal' : 'Despesa Mensal',
+        'icone': Icons.repeat,
+        'descricao': 'Repete todo mês',
+        'cor': Colors.green,
+      },
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Tipo de ${_tipoSelecionado == 'receita' ? 'Receita' : 'Despesa'}',
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: tipos.map((tipo) {
+            final selecionado = _tipoTransacao == tipo['id'];
+            return Expanded(
+              child: GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _tipoTransacao = tipo['id'] as String;
+                    _temParcelas = _tipoTransacao == 'parcelada'; // Compatibilidade
+                  });
+                },
+                child: Container(
+                  margin: const EdgeInsets.only(right: 8),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: selecionado 
+                        ? (tipo['cor'] as Color).withOpacity(0.1)
+                        : Colors.grey[100],
+                    border: Border.all(
+                      color: selecionado 
+                          ? (tipo['cor'] as Color) 
+                          : Colors.grey[300]!,
+                      width: selecionado ? 2 : 1,
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(
+                        tipo['icone'] as IconData,
+                        color: selecionado 
+                            ? (tipo['cor'] as Color)
+                            : Colors.grey[600],
+                        size: 24,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        tipo['nome'] as String,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: selecionado ? FontWeight.w600 : FontWeight.w500,
+                          color: selecionado 
+                              ? (tipo['cor'] as Color)
+                              : Colors.grey[700],
+                        ),
+                      ),
+                      Text(
+                        tipo['descricao'] as String,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  /// 📅 OPÇÕES PARA TRANSAÇÕES PARCELADAS
+  List<Widget> _buildOpcoesParcelada() {
+    return [
+      const SizedBox(height: 16),
+      Row(
+        children: [
+          Expanded(
+            flex: 2,
+            child: TextFormField(
+              initialValue: _numeroParcelas.toString(),
+              decoration: const InputDecoration(
+                labelText: 'Número de Parcelas',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.format_list_numbered),
+              ),
+              keyboardType: TextInputType.number,
+              onChanged: (value) {
+                setState(() {
+                  _numeroParcelas = int.tryParse(value) ?? 12;
+                });
+              },
+              validator: (value) {
+                final numero = int.tryParse(value ?? '');
+                if (numero == null || numero < 2 || numero > 60) {
+                  return 'Entre 2 e 60 parcelas';
+                }
+                return null;
+              },
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            flex: 3,
+            child: DropdownButtonFormField<String>(
+              value: _frequenciaParcelada,
+              decoration: const InputDecoration(
+                labelText: 'Frequência',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.schedule),
+              ),
+              items: const [
+                DropdownMenuItem(value: 'semanal', child: Text('Semanal')),
+                DropdownMenuItem(value: 'quinzenal', child: Text('Quinzenal')),
+                DropdownMenuItem(value: 'mensal', child: Text('Mensal')),
+                DropdownMenuItem(value: 'anual', child: Text('Anual')),
+              ],
+              onChanged: (value) {
+                if (value != null) {
+                  setState(() {
+                    _frequenciaParcelada = value;
+                  });
+                }
+              },
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: 8),
+      Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.blue[50],
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.info, color: Colors.blue[700], size: 16),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Serão criadas $_numeroParcelas transações ${_frequenciaParcelada}s',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.blue[700],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ];
+  }
+
+  /// 🔄 OPÇÕES PARA TRANSAÇÕES PREVISÍVEIS/RECORRENTES
+  List<Widget> _buildOpcoesPrevisivel() {
+    return [
+      const SizedBox(height: 16),
+      DropdownButtonFormField<String>(
+        value: _frequenciaPrevisivel,
+        decoration: const InputDecoration(
+          labelText: 'Frequência de Recorrência',
+          border: OutlineInputBorder(),
+          prefixIcon: Icon(Icons.repeat),
+        ),
+        items: const [
+          DropdownMenuItem(value: 'semanal', child: Text('Semanal')),
+          DropdownMenuItem(value: 'quinzenal', child: Text('Quinzenal')),
+          DropdownMenuItem(value: 'mensal', child: Text('Mensal')),
+          DropdownMenuItem(value: 'anual', child: Text('Anual')),
+        ],
+        onChanged: (value) {
+          if (value != null) {
+            setState(() {
+              _frequenciaPrevisivel = value;
+              // Calcular total de recorrências baseado na frequência
+              switch (value) {
+                case 'semanal':
+                  _totalRecorrencias = 20 * 52; // 20 anos
+                  break;
+                case 'quinzenal':
+                  _totalRecorrencias = 20 * 26; // 20 anos
+                  break;
+                case 'mensal':
+                  _totalRecorrencias = 20 * 12; // 20 anos
+                  break;
+                case 'anual':
+                  _totalRecorrencias = 20; // 20 anos
+                  break;
+              }
+            });
+          }
+        },
+      ),
+      const SizedBox(height: 8),
+      Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.green[50],
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.info, color: Colors.green[700], size: 16),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Serão criadas $_totalRecorrencias transações ${_frequenciaPrevisivel}s (20 anos)',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.green[700],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ];
+  }
+}
