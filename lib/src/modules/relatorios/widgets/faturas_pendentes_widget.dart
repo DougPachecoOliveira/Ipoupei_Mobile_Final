@@ -13,11 +13,11 @@ import '../services/faturas_pendentes_service.dart';
 
 /// Widget compacto para faturas pendentes críticas
 class FaturasPendentesWidget extends StatefulWidget {
-  final Function(String cartaoId) onFaturaTap;
+  final Function(String cartaoId) onPagarFatura;
 
   const FaturasPendentesWidget({
     super.key,
-    required this.onFaturaTap,
+    required this.onPagarFatura,
   });
 
   @override
@@ -84,35 +84,20 @@ class _FaturasPendentesWidgetState extends State<FaturasPendentesWidget> {
 
     debugPrint('🔍 [FATURAS_WIDGET] Mostrando widget com ${_faturas.length} faturas');
 
-    return Container(
-      // Sem margin - usa o padding do ScrollView igual outros widgets
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(13),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header compacto
-          _buildHeader(),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Header compacto
+        _buildHeader(),
 
-          // Lista de faturas
-          if (_loading)
-            _buildLoadingState()
-          else
-            ..._buildFaturasList(),
+        const SizedBox(height: 8),
 
-          // Padding bottom
-          const SizedBox(height: 8),
-        ],
-      ),
+        // Lista de mini cards de faturas
+        if (_loading)
+          _buildLoadingState()
+        else
+          ..._buildFaturasCards(),
+      ],
     );
   }
 
@@ -122,7 +107,7 @@ class _FaturasPendentesWidgetState extends State<FaturasPendentesWidget> {
     final totalVencendo = _faturas.quantidadeVencendo3Dias;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 12, 18, 6), // Compacto
+      padding: const EdgeInsets.symmetric(horizontal: 16), // Alinhado com cards
       child: Row(
         children: [
           // Ícone de alerta
@@ -215,133 +200,139 @@ class _FaturasPendentesWidgetState extends State<FaturasPendentesWidget> {
     );
   }
 
-  /// 📋 Lista de faturas compacta
-  List<Widget> _buildFaturasList() {
-    final widgets = <Widget>[];
+  /// 📋 Lista de mini cards de faturas
+  List<Widget> _buildFaturasCards() {
+    return _faturas.map((fatura) => _buildFaturaCard(fatura)).toList();
+  }
 
-    for (int i = 0; i < _faturas.length; i++) {
-      final fatura = _faturas[i];
-      final isLast = i == _faturas.length - 1;
-
-      // Item da fatura
-      widgets.add(_buildFaturaItem(fatura));
-
-      // Divider (exceto no último)
-      if (!isLast) {
-        widgets.add(_buildDivider());
+  /// 💳 Mini card da fatura (formato consolidado)
+  Widget _buildFaturaCard(FaturaPendente fatura) {
+    // Cor do cartão (tenta usar a cor do cartão ou padrão)
+    Color corCartao = AppColors.roxoHeader;
+    if (fatura.corCartao != null && fatura.corCartao!.isNotEmpty) {
+      try {
+        corCartao = Color(int.parse(fatura.corCartao!.replaceAll('#', '0xFF')));
+      } catch (e) {
+        // Fallback para cor padrão
       }
     }
 
-    return widgets;
-  }
-
-  /// 💳 Item individual da fatura (ultra compacto)
-  Widget _buildFaturaItem(FaturaPendente fatura) {
-    return InkWell(
-      onTap: () => widget.onFaturaTap(fatura.cartaoId),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8), // Compacto
-        child: Column(
-          children: [
-            // Primeira linha: Ícone + Nome + Valor
-            Row(
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Card(
+        elevation: 2,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: InkWell(
+          onTap: () => widget.onPagarFatura(fatura.cartaoId),
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              gradient: LinearGradient(
+                colors: [
+                  corCartao,
+                  corCartao.withValues(alpha: 0.8),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+            child: Row(
               children: [
-                // Ícone do cartão (pequeno)
+                // Ícone do cartão
                 Container(
-                  width: 24, // Bem pequeno
-                  height: 24,
+                  width: 32,
+                  height: 32,
                   decoration: BoxDecoration(
-                    color: AppColors.roxoHeader.withAlpha(26),
-                    borderRadius: BorderRadius.circular(4),
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(
                     Icons.credit_card,
-                    color: AppColors.roxoHeader,
-                    size: 14,
+                    color: Colors.white,
+                    size: 18,
                   ),
                 ),
-                const SizedBox(width: 10),
 
-                // Nome do cartão
+                const SizedBox(width: 12),
+
+                // Informações do cartão
                 Expanded(
-                  child: Text(
-                    fatura.nomeCartao,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.cinzaEscuro,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Nome do cartão
+                      Text(
+                        fatura.nomeCartao,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+
+                      const SizedBox(height: 2),
+
+                      // Data de vencimento
+                      Text(
+                        'Venc. ${fatura.dataVencimento.day}/${fatura.dataVencimento.month}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.white.withValues(alpha: 0.9),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
 
-                // Valor da fatura
-                Text(
-                  CurrencyFormatter.format(fatura.valorFatura),
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.vermelhoErro,
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 4),
-
-            // Segunda linha: Status + Badge (se vencida)
-            Row(
-              children: [
-                const SizedBox(width: 34), // Alinhado com texto acima
-
-                // Status da fatura
-                Expanded(
-                  child: Text(
-                    fatura.statusTexto,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: fatura.corStatus,
-                      fontWeight: fatura.isCritica ? FontWeight.w500 : FontWeight.normal,
-                    ),
-                  ),
-                ),
-
-                // Badge "VENCIDO" se necessário
-                if (fatura.mostrarBadgeVencido)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: AppColors.vermelhoErro,
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                    child: const Text(
-                      'VENCIDO',
-                      style: TextStyle(
-                        fontSize: 8,
+                // Valor e status
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    // Valor da fatura
+                    Text(
+                      CurrencyFormatter.format(fatura.valorFatura),
+                      style: const TextStyle(
+                        fontSize: 14,
                         fontWeight: FontWeight.w700,
                         color: Colors.white,
-                        letterSpacing: 0.3,
                       ),
                     ),
-                  ),
+
+                    const SizedBox(height: 2),
+
+                    // Badge de status
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: fatura.isCritica
+                            ? Colors.red[400]
+                            : Colors.orange[400],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        fatura.isCritica ? 'VENCIDA' : 'VENCE EM ${fatura.diasAteVencimento}D',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  /// ➖ Divider compacto
-  Widget _buildDivider() {
-    return const Padding(
-      padding: EdgeInsets.only(left: 52), // Alinhado com texto
-      child: Divider(
-        height: 1,
-        thickness: 1,
-        color: AppColors.cinzaBorda,
-      ),
-    );
-  }
 }

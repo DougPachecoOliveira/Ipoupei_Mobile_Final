@@ -12,6 +12,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../database/local_database.dart';
+import '../services/grupos_metadados_service.dart';
 import 'connectivity_helper.dart';
 
 /// Status de sincronização
@@ -450,7 +451,10 @@ class SyncManager {
     
     // Transações: ano anterior + atual + 2 meses futuros
     await _downloadTransactionsFullRange(userId);
-    
+
+    // Sincronizar metadados dos grupos após download das transações
+    await _syncGruposMetadados(userId);
+
     // Atualizar timestamps de todas as tabelas
     final now = DateTime.now().toIso8601String();
     for (final table in _syncTables) {
@@ -1035,6 +1039,9 @@ class SyncManager {
       
       // ✅ ADICIONADO: Download de transações que estava faltando
       await _downloadRecentTransactions(userId);
+
+      // Sincronizar metadados dos grupos após download das transações
+      await _syncGruposMetadados(userId);
     }
   }
 
@@ -1457,12 +1464,132 @@ class SyncManager {
       }
       
       debugPrint('✅ Sincronização do período concluída');
-      
+
     } catch (e) {
       debugPrint('❌ Erro ao sincronizar período: $e');
     }
   }
-  
+
+  /// 📊 SINCRONIZA METADADOS DOS GRUPOS DE TRANSAÇÕES
+  Future<void> _syncGruposMetadados(String userId) async {
+    try {
+      print('🚀 [SYNC] === INICIANDO SYNC DOS METADADOS ===');
+      debugPrint('📊 Sincronizando metadados dos grupos de transações...');
+
+      // ✅ BUSCAR METADADOS AGREGADOS DO SUPABASE (dados completos)
+      final metadados = await _downloadGruposMetadados(userId);
+
+      // Salvar no banco local
+      final service = GruposMetadadosService.instance;
+      int processados = 0;
+
+      for (final metadata in metadados) {
+        await service.salvarMetadadosSupabase(metadata);
+        processados++;
+      }
+
+      debugPrint('✅ $processados grupos de metadados sincronizados do Supabase');
+      print('🏁 [SYNC] === SYNC DOS METADADOS FINALIZADO ===');
+
+    } catch (e) {
+      print('❌ [SYNC] ERRO NO SYNC DOS METADADOS: $e');
+      debugPrint('❌ Erro ao sincronizar metadados dos grupos: $e');
+    }
+  }
+
+  /// 📥 DOWNLOAD DOS METADADOS AGREGADOS DO SUPABASE
+  Future<List<Map<String, dynamic>>> _downloadGruposMetadados(String userId) async {
+    try {
+      print('🔽 [DOWNLOAD] Iniciando download dos metadados do Supabase...');
+      debugPrint('📥 Baixando metadados agregados do Supabase...');
+
+      // Query agregada para buscar metadados de todos os grupos
+      final response = await Supabase.instance.client
+        .from('transacoes')
+        .select('''
+          grupo_recorrencia,
+          grupo_parcelamento,
+          descricao,
+          valor,
+          data,
+          efetivado,
+          tipo_recorrencia
+        ''')
+        .eq('usuario_id', userId)
+        .or('grupo_recorrencia.not.is.null,grupo_parcelamento.not.is.null');
+
+      print('📦 ${response.length} transações de grupos encontradas no Supabase');
+      print('🔍 Query utilizada: SELECT grupo_recorrencia, grupo_parcelamento, descricao, valor, data, efetivado, tipo_recorrencia FROM transacoes WHERE usuario_id = $userId AND (grupo_recorrencia IS NOT NULL OR grupo_parcelamento IS NOT NULL)');
+
+      // Debug: verificar se encontrou o grupo específico
+      final grupoEspecifico = '255434f4-05be-4bea-b1fe-125757683fde';
+      final transacoesDoGrupo = response.where((t) =>
+        t['grupo_recorrencia'] == grupoEspecifico || t['grupo_parcelamento'] == grupoEspecifico
+      ).toList();
+      print('🎯 Grupo $grupoEspecifico: ${transacoesDoGrupo.length} transações encontradas');
+
+      debugPrint('📦 ${response.length} transações de grupos encontradas no Supabase');
+
+      // Processar e agregar por grupo
+      Map<String, Map<String, dynamic>> grupos = {};
+
+      for (final transacao in response) {
+        final grupoId = (transacao['grupo_recorrencia'] ?? transacao['grupo_parcelamento']) as String?;
+        if (grupoId == null) continue;
+
+        final tipoGrupo = transacao['grupo_recorrencia'] != null ? 'recorrencia' : 'parcelamento';
+        final isEfetivado = transacao['efetivado'] == true;
+        final valor = (transacao['valor'] as num?)?.toDouble() ?? 0.0;
+        final data = DateTime.parse(transacao['data']);
+
+        if (!grupos.containsKey(grupoId)) {
+          grupos[grupoId] = {
+            'grupo_id': grupoId,
+            'tipo_grupo': tipoGrupo,
+            'descricao': transacao['descricao'],
+            'valor_unitario': valor,
+            'data_primeira': data,
+            'data_ultima': data,
+            'total_items': 0,
+            'items_efetivados': 0,
+            'items_pendentes': 0,
+            'valor_total': 0.0,
+            'valor_efetivado': 0.0,
+            'valor_pendente': 0.0,
+            'tipo_recorrencia': transacao['tipo_recorrencia'],
+          };
+        }
+
+        final grupo = grupos[grupoId]!;
+        grupo['total_items'] = grupo['total_items'] + 1;
+        grupo['valor_total'] = grupo['valor_total'] + valor;
+
+        if (isEfetivado) {
+          grupo['items_efetivados'] = grupo['items_efetivados'] + 1;
+          grupo['valor_efetivado'] = grupo['valor_efetivado'] + valor;
+        } else {
+          grupo['items_pendentes'] = grupo['items_pendentes'] + 1;
+          grupo['valor_pendente'] = grupo['valor_pendente'] + valor;
+        }
+
+        // Atualizar datas extremas
+        if (data.isBefore(grupo['data_primeira'])) {
+          grupo['data_primeira'] = data;
+        }
+        if (data.isAfter(grupo['data_ultima'])) {
+          grupo['data_ultima'] = data;
+        }
+      }
+
+      debugPrint('✅ ${grupos.length} grupos processados');
+      return grupos.values.toList();
+
+    } catch (e) {
+      debugPrint('❌ Erro ao baixar metadados do Supabase: $e');
+      return [];
+    }
+  }
+
   /// Atualiza status e notifica listeners
   void _updateStatus(SyncStatus newStatus) {
     if (_status != newStatus) {

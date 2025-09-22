@@ -1,9 +1,9 @@
-// 📌 Transações Pendentes Service - iPoupei Mobile (relaxed filters)
+// 📌 Transações Pendentes Service - iPoupei Mobile
 //
 // Serviço para detectar transações vencidas e não efetivadas
 // Inclui dados da categoria para exibição visual
 //
-// Critérios: efetivado = 0 AND data < hoje (ano todo, não só mês atual)
+// Critérios: efetivado = 0 AND data < hoje (apenas transações vencidas)
 
 import 'package:flutter/foundation.dart';
 import '../../../database/local_database.dart';
@@ -28,11 +28,8 @@ class TransacoesPendentesService {
       }
 
       final hoje = DateTime.now();
-      final inicioDoBuscar = DateTime(hoje.year - 1, 1, 1); // Busca até 1 ano atrás
 
       debugPrint('📌 Buscando transações pendentes vencidas para usuário: $userId');
-      debugPrint('📌 Período: ${inicioDoBuscar.toIso8601String()} até ${hoje.toIso8601String()}');
-      debugPrint('📌 Hoje formatado: ${hoje.toIso8601String().split('T')[0]}');
 
       // Query com JOIN para pegar dados da categoria
       final result = await _db.rawQuery('''
@@ -50,8 +47,8 @@ class TransacoesPendentesService {
         LEFT JOIN categorias c ON t.categoria_id = c.id
         WHERE t.usuario_id = ?
           AND t.efetivado = 0
-          AND DATE(t.data) >= DATE('2020-01-01')
-      ''', [userId]);
+          AND DATE(t.data) < DATE(?)
+      ''', [userId, hoje.toIso8601String().split('T')[0]]);
 
       debugPrint('📌 Transações pendentes encontradas: ${result.length}');
 
@@ -68,8 +65,11 @@ class TransacoesPendentesService {
         }
       }
 
+      // Filtrar novamente para garantir que só vencidas passem (dupla verificação)
+      final transacoesFiltradas = transacoesPendentes.apenasVencidas;
+
       // Ordenar por data (mais antigas primeiro = mais críticas)
-      final transacoesOrdenadas = transacoesPendentes.ordenadasPorData;
+      final transacoesOrdenadas = transacoesFiltradas.ordenadasPorData;
 
       debugPrint('📌 Total de transações pendentes vencidas: ${transacoesOrdenadas.length}');
 

@@ -10,6 +10,9 @@ import '../../shared/theme/app_colors.dart';
 import '../../shared/utils/currency_formatter.dart';
 import '../models/transacao_pendente_model.dart';
 import '../services/transacoes_pendentes_service.dart';
+import '../../transacoes/services/transacao_edit_service.dart';
+import '../../transacoes/services/transacao_service.dart';
+import '../../transacoes/pages/transacoes_page.dart';
 
 /// Widget para transações pendentes vencidas
 class TransacoesPendentesWidget extends StatefulWidget {
@@ -30,6 +33,9 @@ class _TransacoesPendentesWidgetState extends State<TransacoesPendentesWidget> {
   ResumoTransacoesPendentes? _resumo;
   bool _loading = false;
   String? _error;
+  bool _expandido = false;
+  bool _minimizado = false;
+  static const int _limiteTransacoes = 4;
 
   @override
   void initState() {
@@ -106,13 +112,24 @@ class _TransacoesPendentesWidgetState extends State<TransacoesPendentesWidget> {
           // Header compacto
           _buildHeader(),
 
-          // Conteúdo
-          if (_loading)
-            _buildLoadingState()
-          else if (_resumo != null && _resumo!.hasTransacoes)
-            ..._buildGruposList()
-          else
-            const SizedBox.shrink(),
+          // Conteúdo com animação
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            height: _minimizado ? 0 : null,
+            child: _minimizado
+                ? const SizedBox.shrink()
+                : Column(
+                    children: [
+                      if (_loading)
+                        _buildLoadingState()
+                      else if (_resumo != null && _resumo!.hasTransacoes)
+                        ..._buildGruposList()
+                      else
+                        const SizedBox.shrink(),
+                    ],
+                  ),
+          ),
 
           // Padding bottom
           const SizedBox(height: 8),
@@ -171,7 +188,9 @@ class _TransacoesPendentesWidgetState extends State<TransacoesPendentesWidget> {
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
-                '$totalTransacoes vencida${totalTransacoes > 1 ? 's' : ''}',
+                _expandido || totalTransacoes <= _limiteTransacoes
+                    ? '$totalTransacoes vencida${totalTransacoes > 1 ? 's' : ''}'
+                    : '${_limiteTransacoes}+ vencidas',
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
@@ -180,9 +199,37 @@ class _TransacoesPendentesWidgetState extends State<TransacoesPendentesWidget> {
               ),
             ),
 
-          // Botão refresh (pequeno)
+          // Botões de ação (minimizar e refresh)
           const SizedBox(width: 8),
-          if (!_loading)
+          if (!_loading) ...[
+            // Botão minimizar/expandir
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  _minimizado = !_minimizado;
+                  if (_minimizado) {
+                    _expandido = false; // Reset expansão ao minimizar
+                  }
+                });
+              },
+              child: Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: AppColors.cinzaClaro,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Icon(
+                  _minimizado ? Icons.expand_more : Icons.expand_less,
+                  color: AppColors.cinzaMedio,
+                  size: 14,
+                ),
+              ),
+            ),
+
+            const SizedBox(width: 6),
+
+            // Botão refresh
             GestureDetector(
               onTap: _carregarTransacoes,
               child: Container(
@@ -199,6 +246,7 @@ class _TransacoesPendentesWidgetState extends State<TransacoesPendentesWidget> {
                 ),
               ),
             ),
+          ],
         ],
       ),
     );
@@ -225,29 +273,36 @@ class _TransacoesPendentesWidgetState extends State<TransacoesPendentesWidget> {
     }
 
     final widgets = <Widget>[];
+    int transacoesAdicionadas = 0;
+    final totalTransacoes = _resumo!.totalTransacoes;
 
-    for (int i = 0; i < _resumo!.gruposPorData.length; i++) {
-      final grupo = _resumo!.gruposPorData[i];
-      final isLast = i == _resumo!.gruposPorData.length - 1;
+    // Coletar todas as transações em ordem
+    final todasTransacoes = <TransacaoPendente>[];
+    for (final grupo in _resumo!.gruposPorData) {
+      todasTransacoes.addAll(grupo.transacoes);
+    }
 
-      // Header da data (se mais de uma transação)
-      if (grupo.quantidade > 1) {
-        widgets.add(_buildDataHeader(grupo));
+    // Limitar transações se não expandido
+    final transacoesParaMostrar = _expandido
+        ? todasTransacoes
+        : todasTransacoes.take(_limiteTransacoes).toList();
+
+    // Renderizar transações
+    for (int i = 0; i < transacoesParaMostrar.length; i++) {
+      final transacao = transacoesParaMostrar[i];
+      final isLast = i == transacoesParaMostrar.length - 1;
+
+      widgets.add(_buildTransacaoItem(transacao, true));
+
+      // Divider (exceto no último item)
+      if (!isLast) {
+        widgets.add(_buildDivider());
       }
+    }
 
-      // Transações do grupo
-      for (int j = 0; j < grupo.transacoes.length; j++) {
-        final transacao = grupo.transacoes[j];
-        final isLastInGroup = j == grupo.transacoes.length - 1;
-        final isVeryLast = isLast && isLastInGroup;
-
-        widgets.add(_buildTransacaoItem(transacao, grupo.quantidade == 1));
-
-        // Divider (exceto no último item total)
-        if (!isVeryLast) {
-          widgets.add(_buildDivider());
-        }
-      }
+    // Botão "Ver mais" se há mais transações
+    if (!_expandido && totalTransacoes > _limiteTransacoes) {
+      widgets.add(_buildBotaoVerMais(totalTransacoes - _limiteTransacoes));
     }
 
     return widgets;
@@ -308,7 +363,7 @@ class _TransacoesPendentesWidgetState extends State<TransacoesPendentesWidget> {
   /// 📌 Item individual da transação
   Widget _buildTransacaoItem(TransacaoPendente transacao, bool mostrarData) {
     return InkWell(
-      onTap: widget.onTransacoesTap,
+      onTap: () => _mostrarOpcoesRapidas(transacao),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
         child: Row(
@@ -318,13 +373,12 @@ class _TransacoesPendentesWidgetState extends State<TransacoesPendentesWidget> {
               width: 32,
               height: 32,
               decoration: BoxDecoration(
-                color: transacao.corCategoria.withAlpha(26),
+                color: transacao.corCategoria,
                 borderRadius: BorderRadius.circular(6),
               ),
-              child: Icon(
-                transacao.iconeCategoria,
-                color: transacao.corCategoria,
-                size: 16,
+              child: transacao.renderIconeCategoria(
+                size: 14,
+                color: Colors.white,
               ),
             ),
             const SizedBox(width: 12),
@@ -334,16 +388,31 @@ class _TransacoesPendentesWidgetState extends State<TransacoesPendentesWidget> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Descrição
-                  Text(
-                    transacao.descricao,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.cinzaEscuro,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  // Descrição com ícone discreto de tipo
+                  Row(
+                    children: [
+                      // Ícone discreto do tipo (receita/despesa)
+                      Icon(
+                        transacao.iconeDiscreto,
+                        size: 12,
+                        color: transacao.corTipo.withOpacity(0.6),
+                      ),
+                      const SizedBox(width: 4),
+
+                      // Descrição
+                      Expanded(
+                        child: Text(
+                          transacao.descricao,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.cinzaEscuro,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
 
                   const SizedBox(height: 2),
@@ -414,6 +483,270 @@ class _TransacoesPendentesWidgetState extends State<TransacoesPendentesWidget> {
         height: 1,
         thickness: 1,
         color: AppColors.cinzaBorda,
+      ),
+    );
+  }
+
+  /// 🔽 Botão "Ver mais"
+  Widget _buildBotaoVerMais(int transacoesRestantes) {
+    return InkWell(
+      onTap: () {
+        setState(() {
+          _expandido = true;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.expand_more,
+              size: 16,
+              color: AppColors.cinzaMedio,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              'Ver mais $transacoesRestantes transaçõe${transacoesRestantes > 1 ? 's' : ''}',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: AppColors.cinzaMedio,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 🔄 Navegar para transações pendentes com filtros
+  void _navegarParaTransacoesPendentes() {
+    Navigator.pop(context); // Fecha modal
+
+    // Calcular período: da transação mais antiga até hoje
+    DateTime? dataMaisAntiga;
+    DateTime dataHoje = DateTime.now();
+
+    if (_resumo != null && _resumo!.gruposPorData.isNotEmpty) {
+      // Pega a data mais antiga (já está ordenado por data crescente)
+      dataMaisAntiga = _resumo!.gruposPorData.first.data;
+      debugPrint('📅 Data mais antiga pendente: ${dataMaisAntiga.toIso8601String()}');
+    } else {
+      // Fallback: últimos 30 dias se não houver dados
+      dataMaisAntiga = dataHoje.subtract(const Duration(days: 30));
+      debugPrint('📅 Usando fallback de 30 dias: ${dataMaisAntiga.toIso8601String()}');
+    }
+
+    debugPrint('📅 Navegando para transações pendentes:');
+    debugPrint('   - Período: ${dataMaisAntiga.toIso8601String().split('T')[0]} até ${dataHoje.toIso8601String().split('T')[0]}');
+    debugPrint('   - Total pendentes: ${_resumo?.totalTransacoes ?? 0}');
+
+    // Navegar para TransacoesPage com filtros
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => TransacoesPage(
+          modoInicial: TransacoesPageMode.todas,
+          filtrosIniciais: {
+            'status': ['pendente'], // Apenas transações pendentes
+            'dataInicio': dataMaisAntiga,
+            'dataFim': dataHoje,
+          },
+        ),
+      ),
+    );
+  }
+
+  /// ✅ Efetivar transação pendente
+  Future<void> _efetivarTransacao(TransacaoPendente transacao) async {
+    Navigator.pop(context); // Fecha modal
+
+    try {
+      // Primeiro, precisamos buscar a transação completa
+      final transacaoService = TransacaoService.instance;
+      final transacaoCompleta = await transacaoService.fetchTransacaoPorId(transacao.id);
+
+      if (transacaoCompleta == null) {
+        throw Exception('Transação não encontrada');
+      }
+
+      // Usar TransacaoEditService para efetivar
+      final editService = TransacaoEditService.instance;
+      final resultado = await editService.efetivar(transacaoCompleta);
+
+      if (!resultado.sucesso) {
+        throw Exception(resultado.erro ?? 'Erro desconhecido ao efetivar transação');
+      }
+
+      // Mostrar feedback de sucesso
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Transação "${transacao.descricao}" efetivada com sucesso!',
+                    style: const TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: AppColors.tealPrimary,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+
+      // Recarregar lista
+      _carregarTransacoes();
+    } catch (e) {
+      debugPrint('❌ Erro ao efetivar transação: $e');
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error, color: Colors.white, size: 20),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text(
+                    'Erro ao efetivar transação. Tente novamente.',
+                    style: TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: AppColors.vermelhoErro,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
+  /// 💬 Modal de opções rápidas para transação pendente
+  void _mostrarOpcoesRapidas(TransacaoPendente transacao) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle visual do modal
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.cinzaMedio,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // Info da transação
+            Text(
+              transacao.descricao,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: AppColors.cinzaEscuro,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '${CurrencyFormatter.format(transacao.valor)} • Venceu há ${transacao.diasAtraso} dia${transacao.diasAtraso > 1 ? 's' : ''}',
+              style: TextStyle(
+                fontSize: 14,
+                color: transacao.isCritica ? AppColors.vermelhoErro : AppColors.amareloAlerta,
+                fontWeight: FontWeight.w500,
+              ),
+              textAlign: TextAlign.center,
+            ),
+
+            const SizedBox(height: 24),
+
+            // Opção 1: Efetivar
+            ListTile(
+              leading: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.tealPrimary.withAlpha(26),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.check_circle,
+                  color: AppColors.tealPrimary,
+                  size: 20,
+                ),
+              ),
+              title: const Text(
+                'Efetivar Transação',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.cinzaEscuro,
+                ),
+              ),
+              subtitle: const Text(
+                'Marcar como paga/recebida',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.cinzaTexto,
+                ),
+              ),
+              onTap: () => _efetivarTransacao(transacao),
+            ),
+
+            const Divider(height: 1, color: AppColors.cinzaBorda),
+
+            // Opção 2: Ver todas pendentes
+            ListTile(
+              leading: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.azul.withAlpha(26),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.list_alt,
+                  color: AppColors.azul,
+                  size: 20,
+                ),
+              ),
+              title: const Text(
+                'Ver Todas Pendentes',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.cinzaEscuro,
+                ),
+              ),
+              subtitle: Text(
+                '${_resumo?.totalTransacoes ?? 0} transaçõe${(_resumo?.totalTransacoes ?? 0) > 1 ? 's' : ''} pendente${(_resumo?.totalTransacoes ?? 0) > 1 ? 's' : ''}',
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.cinzaTexto,
+                ),
+              ),
+              onTap: () => _navegarParaTransacoesPendentes(),
+            ),
+
+            // Padding bottom para safe area
+            SizedBox(height: MediaQuery.of(context).padding.bottom),
+          ],
+        ),
       ),
     );
   }

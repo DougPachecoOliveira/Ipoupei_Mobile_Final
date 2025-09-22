@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../shared/theme/app_colors.dart';
-import '../../../shared/components/ui/smart_field.dart';
+import '../components/smart_money_field.dart';
+import '../components/smart_input_field.dart';
 import '../models/transacao_model.dart';
 import '../services/transacao_edit_service.dart' show TransacaoEditService, EscopoEdicao;
 
@@ -131,16 +132,38 @@ class _AlterarValorPageState extends State<AlterarValorPage> {
 
   /// ✅ PODE HABILITAR BOTÃO SALVAR (SIMILAR AO TRANSACAO FORM)
   bool get _podeHabilitar {
-    final novoValor = double.tryParse(_valorController.text.replaceAll(',', '.'));
-    return !_processando &&
-           _valorController.text.isNotEmpty &&
-           novoValor != null &&
-           novoValor > 0;
+    final texto = _valorController.text.trim();
+    if (texto.isEmpty) return false;
+
+    // Usar o parser do CurrencyFormatter para validar
+    try {
+      final novoValor = _parseValue(texto);
+      return !_processando && novoValor > 0;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Parse do valor usando a mesma lógica do SmartMoneyField
+  double _parseValue(String text) {
+    if (text.isEmpty) return 0.0;
+
+    // Remove tudo exceto números e vírgula
+    String cleaned = text.replaceAll(RegExp(r'[^0-9,.]'), '');
+
+    if (cleaned.isEmpty) return 0.0;
+
+    // Se tem vírgula, é formato brasileiro
+    if (cleaned.contains(',')) {
+      cleaned = cleaned.replaceAll('.', '').replaceAll(',', '.');
+    }
+
+    return double.tryParse(cleaned) ?? 0.0;
   }
 
   Future<void> _salvarNovoValor() async {
-    final novoValor = double.tryParse(_valorController.text.replaceAll(',', '.'));
-    if (novoValor == null || novoValor <= 0) {
+    final novoValor = _parseValue(_valorController.text);
+    if (novoValor <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Digite um valor válido')),
       );
@@ -200,16 +223,18 @@ class _AlterarValorPageState extends State<AlterarValorPage> {
     }
   }
 
-  String _getTransactionContext() {
+  TransactionContext _getTransactionContext() {
     switch (widget.transacao.tipo) {
       case 'receita':
-        return 'receita';
+        return TransactionContext.receita;
       case 'despesa':
-        return 'despesa';
+        return widget.transacao.cartaoId != null
+          ? TransactionContext.cartao
+          : TransactionContext.despesa;
       case 'transferencia':
-        return 'transferencia';
+        return TransactionContext.transferencia;
       default:
-        return 'despesa';
+        return TransactionContext.despesa;
     }
   }
 
@@ -275,14 +300,18 @@ class _AlterarValorPageState extends State<AlterarValorPage> {
               _buildCardTransacao(),
               const SizedBox(height: 24),
               
-              SmartField(
+              SmartMoneyField(
                 controller: _valorController,
-                label: 'Novo Valor',
-                hint: 'R\$ 0,00',
-                icon: Icons.attach_money,
-                keyboardType: TextInputType.number,
-                transactionContext: _getTransactionContext(),
+                labelText: 'Novo Valor',
+                hintText: 'Digite o novo valor',
+                context: _getTransactionContext(),
                 autofocus: true,
+                onValueChanged: (value) {
+                  // Callback quando o valor muda
+                  setState(() {
+                    // Atualiza preview
+                  });
+                },
               ),
               
               if (_temParcelasOuRecorrencias) ...[
@@ -492,8 +521,8 @@ class _AlterarValorPageState extends State<AlterarValorPage> {
   }
 
   Widget _buildPreviewAlteracoes() {
-    final novoValor = double.tryParse(_valorController.text.replaceAll(',', '.'));
-    if (novoValor == null || novoValor <= 0) return const SizedBox.shrink();
+    final novoValor = _parseValue(_valorController.text);
+    if (novoValor <= 0) return const SizedBox.shrink();
     
     final valorAtual = widget.transacao.valor;
     final diferenca = novoValor - valorAtual;

@@ -71,10 +71,12 @@ enum TransacoesPageMode {
 
 class TransacoesPage extends StatefulWidget {
   final TransacoesPageMode modoInicial;
-  
+  final Map<String, dynamic>? filtrosIniciais;
+
   const TransacoesPage({
     super.key,
     this.modoInicial = TransacoesPageMode.todas,
+    this.filtrosIniciais,
   });
 
   @override
@@ -130,7 +132,7 @@ class _TransacoesPageState extends State<TransacoesPage>
   @override
   void initState() {
     super.initState();
-    
+
     // Inicializar TabController - Padrão Device
     _tabController = TabController(
       length: TransacoesPageMode.values.length,
@@ -138,14 +140,55 @@ class _TransacoesPageState extends State<TransacoesPage>
       initialIndex: widget.modoInicial.index,
     );
     _modoAtual = widget.modoInicial;
-    
+
+    // Aplicar filtros iniciais se fornecidos
+    if (widget.filtrosIniciais != null) {
+      _aplicarFiltrosIniciais(widget.filtrosIniciais!);
+    }
+
     // Listener para mudanças de tab
     _tabController.addListener(_onTabChanged);
-    
+
     // Carregar dados
     _carregarDados();
   }
-  
+
+  void _aplicarFiltrosIniciais(Map<String, dynamic> filtros) {
+    setState(() {
+      // Aplicar filtros de status
+      if (filtros.containsKey('status')) {
+        _filtrosPersonalizados['status'] = List<String>.from(filtros['status']);
+
+        // Se incluir 'pendente', mostrar pendentes
+        if (filtros['status'].contains('pendente')) {
+          _mostrarPendentes = true;
+        }
+      }
+
+      // Aplicar filtros de data
+      if (filtros.containsKey('dataInicio')) {
+        _filtrosPersonalizados['dataInicio'] = filtros['dataInicio'];
+      }
+
+      if (filtros.containsKey('dataFim')) {
+        _filtrosPersonalizados['dataFim'] = filtros['dataFim'];
+      }
+
+      // Aplicar outros filtros se necessário
+      if (filtros.containsKey('categorias')) {
+        _filtrosPersonalizados['categorias'] = List<String>.from(filtros['categorias']);
+      }
+
+      if (filtros.containsKey('contas')) {
+        _filtrosPersonalizados['contas'] = List<String>.from(filtros['contas']);
+      }
+
+      if (filtros.containsKey('cartoes')) {
+        _filtrosPersonalizados['cartoes'] = List<String>.from(filtros['cartoes']);
+      }
+    });
+  }
+
   @override
   void dispose() {
     _tabController.dispose();

@@ -265,13 +265,7 @@ class _DespesaCartaoPageState extends State<DespesaCartaoPage> {
 
   Future<void> _carregarSubcategorias(String categoriaId) async {
     try {
-      debugPrint('🔄 Carregando subcategorias para categoria: $categoriaId');
       final subcategorias = await _categoriaService.listarSubcategorias(categoriaId);
-      debugPrint('📂 Subcategorias encontradas: ${subcategorias.length}');
-      
-      for (final sub in subcategorias) {
-        debugPrint('📋 Subcategoria: ${sub.nome} (ativo: ${sub.ativo})');
-      }
       
       setState(() {
         _subcategorias = subcategorias;
@@ -384,7 +378,6 @@ class _DespesaCartaoPageState extends State<DespesaCartaoPage> {
     }
 
     setState(() => _preview = preview);
-    debugPrint('🔄 Preview atualizado: ${_preview != null ? 'Ativo' : 'Nulo'}');
   }
 
   /// Verificar se tem dados mínimos para preview

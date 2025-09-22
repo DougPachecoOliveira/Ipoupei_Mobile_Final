@@ -220,7 +220,7 @@ class RelatoriosService {
         ...categoria,
         'subcategorias': subcategorias.map((sub) => {
           ...sub,
-          'percentual': totalCategoria > 0 ? ((sub['valor'] as double / totalCategoria) * 100).toStringAsFixed(1) : '0',
+          'percentual': totalCategoria > 0 ? (((sub['valor'] as double) / totalCategoria) * 100).toStringAsFixed(1) : '0',
         }).toList(),
       };
     }).toList();

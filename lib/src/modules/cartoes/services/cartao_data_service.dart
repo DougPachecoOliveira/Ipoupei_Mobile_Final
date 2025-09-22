@@ -6,6 +6,7 @@ import '../models/fatura_model.dart';
 import '../../transacoes/models/transacao_model.dart';
 import '../../../database/local_database.dart';
 import '../../../auth_integration.dart';
+import '../../../sync/connectivity_helper.dart';
 
 /// ✅ SERVIÇO EQUIVALENTE AO useCartoesData.js
 /// Responsável por buscar dados relacionados a cartões e faturas
@@ -16,6 +17,7 @@ class CartaoDataService {
 
   final LocalDatabase _localDb = LocalDatabase.instance;
   final AuthIntegration _authIntegration = AuthIntegration.instance;
+  final Uuid _uuid = const Uuid();
   
   // Getters para compatibilidade com os novos métodos
   SupabaseClient get _supabaseClient => Supabase.instance.client;
@@ -1189,56 +1191,75 @@ class CartaoDataService {
     required String faturaVencimento,
     String? observacoes,
   }) async {
-    log('💳 Criando despesa simples no cartão: $cartaoId');
-    
+    log('💳 Criando despesa OFFLINE-FIRST no cartão: $cartaoId');
+
     try {
+      // 🔍 VERIFICA CONECTIVIDADE PRIMEIRO
+      final isOnline = await ConnectivityHelper.instance.isOnline();
+      log('🌐 Status conectividade: ${isOnline ? "ONLINE" : "OFFLINE"}');
+
+      final now = DateTime.now();
+      final transacaoId = _uuid.v4();
+
       final transacao = {
-        // ✅ Deixar id vazio para auto-generate UUID
+        'id': transacaoId,
         'usuario_id': _userId,
         'cartao_id': cartaoId,
         'categoria_id': categoriaId,
         'subcategoria_id': subcategoriaId,
         'descricao': descricao,
         'valor': valorTotal,
-        'data': '${dataCompra}T00:00:00Z', // ✅ Timestamp completo
+        'data': '${dataCompra}T00:00:00Z',
         'tipo': 'despesa',
-        'numero_parcelas': 1, // ✅ Compatível com schema
-        'total_parcelas': 1, // ✅ Campo adicional necessário
+        'numero_parcelas': 1,
+        'total_parcelas': 1,
         'fatura_vencimento': faturaVencimento,
         'observacoes': observacoes,
         'efetivado': false,
-        'recorrente': false, // ✅ Despesa simples não é recorrente
-        'eh_recorrente': false, // ✅ Campo adicional
-        // ✅ Não enviar created_at/updated_at - deixar Supabase gerenciar
+        'recorrente': false,
+        'eh_recorrente': false,
+        'created_at': now.toIso8601String(),
+        'updated_at': now.toIso8601String(),
+        'sincronizado': isOnline,
       };
 
-      // ✅ GARANTIR que não tem campo 'id' 
-      transacao.remove('id');
-      
-      // 🔍 DEBUG: Dados sendo enviados para Supabase
-      log('🔍 DADOS PARA SUPABASE (DESPESA SIMPLES):');
-      log('   📅 dataCompra (recebido): $dataCompra');
-      log('   🎯 faturaVencimento (recebido): $faturaVencimento');
-      log('   TODOS OS CAMPOS:');
-      transacao.forEach((key, value) {
-        log('      $key: $value');
-      });
-      
-      // Inserir transação na tabela de transações
-      await _supabaseClient
-          .from('transacoes')
-          .insert(transacao);
+      // ✅ SEMPRE SALVA NO SQLITE LOCAL PRIMEIRO (OFFLINE-FIRST)
+      await LocalDatabase.instance.addTransacaoLocal(transacao);
+      log('💾 Despesa salva no SQLite: $transacaoId');
 
-      // Atualizar fatura correspondente
-      await _atualizarValorFatura(faturaVencimento, cartaoId, valorTotal);
+      // ✅ SE ESTIVER ONLINE, TENTA SALVAR NO SUPABASE TAMBÉM
+      if (isOnline) {
+        try {
+          // Preparar dados para Supabase (sem campos locais)
+          final transacaoSupabase = Map<String, dynamic>.from(transacao);
+          transacaoSupabase.remove('sincronizado');
 
-      log('✅ Despesa de cartão criada com sucesso');
-      
+          await _supabaseClient
+              .from('transacoes')
+              .insert(transacaoSupabase);
+
+          // Atualizar fatura correspondente
+          await _atualizarValorFatura(faturaVencimento, cartaoId, valorTotal);
+
+          log('☁️ Despesa sincronizada com Supabase: $transacaoId');
+        } catch (onlineError) {
+          log('⚠️ Erro ao sincronizar online (dados salvos offline): $onlineError');
+
+          // Marca como não sincronizado para tentar depois
+          await LocalDatabase.instance.updateTransacaoLocal(
+            transacaoId,
+            {'sincronizado': false}
+          );
+        }
+      }
+
+      log('✅ Despesa de cartão criada com sucesso (offline-first)');
+
       return {
         'success': true,
         'data': transacao,
       };
-      
+
     } catch (error) {
       log('❌ Erro ao criar despesa de cartão: $error');
       return {
@@ -1497,11 +1518,8 @@ class CartaoDataService {
         
         // ✅ GARANTIR que não tem campo 'id' 
         transacao.remove('id');
-        
+
         transacoes.add(transacao);
-        
-        // Atualizar fatura correspondente
-        await _atualizarValorFatura(faturaVencimento, cartaoId, valorMensal);
       }
 
       // 🔍 DEBUG: Dados sendo enviados para Supabase (parceladas/recorrentes)
@@ -1522,55 +1540,111 @@ class CartaoDataService {
       
       // 🔧 OFFLINE-FIRST: Salvar transações no banco LOCAL primeiro
       log('💾 Salvando ${transacoes.length} transações no banco local (offline-first)...');
-      
+
       for (int i = 0; i < transacoes.length; i++) {
         final transacao = transacoes[i];
-        
-        // Preparar dados para SQLite (converter para formato do banco local)
-        final transacaoParaLocal = Map<String, dynamic>.from(transacao);
-        
-        // 🔧 CONVERTER TODOS OS BOOLEANS PARA INTEGER (SQLite requirement)
-        transacaoParaLocal.forEach((key, value) {
-          if (value is bool) {
-            transacaoParaLocal[key] = value ? 1 : 0;
-            log('🔧 Convertido campo boolean $key: $value → ${value ? 1 : 0}');
-          }
-        });
-        
+
         // Garantir que tem um ID único (UUID)
-        if (transacaoParaLocal['id'] == null) {
-          transacaoParaLocal['id'] = const Uuid().v4();
+        if (transacao['id'] == null) {
+          transacao['id'] = const Uuid().v4();
         }
-        
-        // Converter timestamps para formato SQLite
-        if (transacaoParaLocal['data'] != null) {
-          final dateStr = transacaoParaLocal['data'] as String;
-          transacaoParaLocal['data'] = dateStr.split('T')[0]; // Apenas YYYY-MM-DD
+
+        // Converter data para formato SQLite (apenas YYYY-MM-DD)
+        if (transacao['data'] != null) {
+          final dateStr = transacao['data'] as String;
+          transacao['data'] = dateStr.split('T')[0];
         }
-        
-        // (Conversão de boolean já feita acima)
-        
-        // Adicionar timestamps obrigatórios para SQLite
+
+        // Garantir timestamps obrigatórios
         final now = DateTime.now().toIso8601String();
-        transacaoParaLocal['created_at'] = now;
-        transacaoParaLocal['updated_at'] = now;
-        transacaoParaLocal['sincronizado'] = 0; // Marca como não sincronizado
-        
+        transacao['created_at'] = now;
+        transacao['updated_at'] = now;
+
         try {
-          // Inserir no banco local
-          await _localDb.database!.insert('transacoes', transacaoParaLocal);
+          // ✅ USAR MÉTODO PADRONIZADO (igual TransacaoService)
+          await LocalDatabase.instance.addTransacaoLocal(transacao);
           log('💾 Transação ${i + 1}/${transacoes.length} salva localmente: ${transacao['descricao']}');
         } catch (e) {
           log('❌ Erro ao salvar transação ${i + 1} localmente: $e');
           throw Exception('Erro ao salvar transação no banco local: $e');
         }
-        
-        // Atualizar a transação na lista com o ID gerado
-        transacoes[i] = transacaoParaLocal;
+
+        // Atualizar a transação na lista
+        transacoes[i] = transacao;
       }
-      
+
+      // 🌐 Tentar sincronizar com Supabase se estiver online
+      final isOnline = await ConnectivityHelper.instance.isOnline();
+      log('🌐 Status conectividade: ${isOnline ? "ONLINE" : "OFFLINE"}');
+
+      if (isOnline) {
+        try {
+          // Preparar dados para Supabase (sem campos específicos do SQLite)
+          final transacoesSupabase = transacoes.map((transacao) {
+            final transacaoSupabase = Map<String, dynamic>.from(transacao);
+
+            // Remover campos específicos do SQLite
+            transacaoSupabase.remove('sincronizado');
+            transacaoSupabase.remove('sync_status');
+            transacaoSupabase.remove('last_sync');
+
+            // Restaurar formato de data para Supabase
+            if (transacaoSupabase['data'] != null) {
+              final dateStr = transacaoSupabase['data'] as String;
+              if (!dateStr.contains('T')) {
+                transacaoSupabase['data'] = '${dateStr}T00:00:00Z';
+              }
+            }
+
+            // Remover ID para deixar Supabase auto-gerar
+            transacaoSupabase.remove('id');
+
+            return transacaoSupabase;
+          }).toList();
+
+          // Inserir todas as transações no Supabase de uma vez
+          await _supabaseClient.from('transacoes').insert(transacoesSupabase);
+
+          // Marcar todas como sincronizadas no banco local
+          for (final transacao in transacoes) {
+            await LocalDatabase.instance.updateTransacaoLocal(
+              transacao['id'],
+              {'sincronizado': true}
+            );
+          }
+
+          // Atualizar faturas no Supabase
+          for (final transacao in transacoes) {
+            try {
+              await _atualizarValorFatura(
+                transacao['fatura_vencimento'] as String,
+                cartaoId,
+                valorMensal
+              );
+            } catch (faturaError) {
+              log('⚠️ Erro ao atualizar fatura: $faturaError');
+            }
+          }
+
+          log('☁️ ${transacoes.length} transação(ões) ${isParcela ? "parcelada(s)" : "recorrente(s)"} sincronizada(s) com Supabase');
+
+        } catch (onlineError) {
+          log('⚠️ Erro ao sincronizar online (dados salvos offline): $onlineError');
+
+          // Marca como não sincronizado para tentar depois
+          for (final transacao in transacoes) {
+            await LocalDatabase.instance.updateTransacaoLocal(
+              transacao['id'],
+              {'sincronizado': false}
+            );
+          }
+        }
+      } else {
+        log('📱 Modo OFFLINE: ${transacoes.length} despesa(s) ${isParcela ? "parcelada(s)" : "recorrente(s)"} salva(s) localmente para sincronizar depois');
+      }
+
       log('✅ Despesa ${isParcela ? "parcelada" : "recorrente"} criada OFFLINE-FIRST: ${transacoes.length} itens');
-      
+
       return {
         'success': true,
         'data': transacoes,

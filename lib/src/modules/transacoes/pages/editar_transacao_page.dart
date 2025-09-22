@@ -14,12 +14,11 @@ import '../../categorias/services/categoria_service.dart';
 import '../../categorias/data/categoria_icons.dart';
 import '../../categorias/models/categoria_model.dart';
 import '../../../database/local_database.dart';
+import '../../../services/grupos_metadados_service.dart';
+import '../../../sync/sync_manager.dart';
 import '../../contas/models/conta_model.dart';
 import '../../cartoes/models/cartao_model.dart';
-import '../components/smart_field.dart';
-import '../components/transaction_card.dart';
-import '../components/edit_option_card.dart';
-import '../components/gradient_button.dart';
+import '../../../shared/utils/currency_formatter.dart';
 import 'alterar_descricao_page.dart';
 import 'alterar_valor_page.dart';
 import 'alterar_data_page.dart';
@@ -80,6 +79,18 @@ class _EditarTransacaoPageState extends State<EditarTransacaoPage> {
   bool _temParcelasOuRecorrencias = false;
   bool _processando = false;
   int _quantidadeFuturas = 0;
+  DateTime? _dataPrimeiraTransacao;
+  DateTime? _dataUltimaTransacao;
+  int? _posicaoAtualNoGrupo;
+  int? _totalTransacoesGrupo;
+
+  // Dados financeiros do grupo
+  double? _valorTotalGrupo;
+  double? _valorEfetivadoGrupo;
+  double? _valorPendenteGrupo;
+  int? _itemsEfetivados;
+  int? _itemsPendentes;
+  GrupoMetadados? _metadadosGrupo;
 
   // Controllers para edição rápida
   final _valorController = TextEditingController();
@@ -105,6 +116,26 @@ class _EditarTransacaoPageState extends State<EditarTransacaoPage> {
   @override
   void initState() {
     super.initState();
+
+    // Debug logging para troubleshooting de grupos grandes
+    print('===== EDITANDO TRANSAÇÃO =====');
+    log('ID: ${widget.transacao.id}');
+    log('Descrição: ${widget.transacao.descricao}');
+    log('Valor: ${widget.transacao.valor}');
+    log('Data: ${widget.transacao.data}');
+    log('Efetivado: ${widget.transacao.efetivado}');
+    log('Recorrente: ${widget.transacao.recorrente}');
+    log('Grupo Recorrência: ${widget.transacao.grupoRecorrencia}');
+    log('Tipo Recorrência: ${widget.transacao.tipoRecorrencia}');
+    log('Número Recorrência: ${widget.transacao.numeroRecorrencia}');
+    log('Total Recorrências: ${widget.transacao.totalRecorrencias}');
+    log('Parcela Única: ${widget.transacao.parcelaUnica}');
+    log('Grupo Parcelamento: ${widget.transacao.grupoParcelamento}');
+    log('Parcela Atual: ${widget.transacao.parcelaAtual}');
+    log('Total Parcelas: ${widget.transacao.totalParcelas}');
+    log('User ID: ${widget.transacao.usuarioId}');
+    log('===============================');
+
     _valorController.text = widget.transacao.valor.toStringAsFixed(2);
     
     // Listener para atualizar preview em tempo real
@@ -140,10 +171,13 @@ class _EditarTransacaoPageState extends State<EditarTransacaoPage> {
     // Verificar se tem parcelas ou recorrências
     if (widget.transacao.recorrente || widget.transacao.grupoRecorrencia != null) {
       _temParcelasOuRecorrencias = true;
-      
+
       // Calcular quantidade de futuras transações
       _calcularQuantidadeFuturas();
-      
+
+      // Buscar metadados do grupo (datas, valores, progresso)
+      await _buscarMetadadosGrupo();
+
       // Se a transação estiver efetivada, força incluir futuras (só pode alterar futuras)
       if (widget.transacao.efetivado) {
         _incluirFuturas = true;
@@ -160,9 +194,9 @@ class _EditarTransacaoPageState extends State<EditarTransacaoPage> {
   
   void _calcularQuantidadeFuturas() {
     // Se tem parcelas
-    if (widget.transacao.numeroTotalParcelas != null && widget.transacao.numeroTotalParcelas! > 1) {
-      final atual = widget.transacao.numeroParcelaAtual ?? 1;
-      final total = widget.transacao.numeroTotalParcelas!;
+    if (widget.transacao.totalParcelas != null && widget.transacao.totalParcelas! > 1) {
+      final atual = widget.transacao.parcelaAtual ?? 1;
+      final total = widget.transacao.totalParcelas!;
       _quantidadeFuturas = total - atual;
     }
     // Se é recorrente - estimar baseado em um ano
@@ -199,7 +233,316 @@ class _EditarTransacaoPageState extends State<EditarTransacaoPage> {
       }
     }
   }
-  
+
+  /// Buscar datas da primeira e última transação do grupo
+  Future<void> _buscarDatasGrupo() async {
+    try {
+      log('🔍 [DEBUG] _buscarDatasGrupo() iniciado');
+      log('🔍 Transação ID: ${widget.transacao.id}');
+      log('🔍 Grupo Recorrência: ${widget.transacao.grupoRecorrencia}');
+      log('🔍 Grupo Parcelamento: ${widget.transacao.grupoParcelamento}');
+      log('🔍 Número Recorrência: ${widget.transacao.numeroRecorrencia}');
+      log('🔍 Total Recorrências: ${widget.transacao.totalRecorrencias}');
+      log('🔍 Parcela Atual: ${widget.transacao.parcelaAtual}');
+      log('🔍 Total Parcelas: ${widget.transacao.totalParcelas}');
+
+      final db = LocalDatabase.instance;
+
+      // Para parcelas: usar grupo_parcelamento e parcela_atual/total_parcelas
+      if (widget.transacao.totalParcelas != null && widget.transacao.totalParcelas! > 1) {
+        if (widget.transacao.grupoParcelamento != null) {
+          // Buscar primeira e última parcela baseado nos números sequenciais
+          final queryDatas = '''
+            SELECT
+              (SELECT data FROM transacoes t1
+               WHERE t1.grupo_parcelamento = ? AND t1.usuario_id = ?
+                 AND t1.parcela_atual = 1) as primeira_data,
+              (SELECT data FROM transacoes t2
+               WHERE t2.grupo_parcelamento = ? AND t2.usuario_id = ?
+                 AND t2.parcela_atual = (
+                   SELECT MAX(parcela_atual) FROM transacoes t3
+                   WHERE t3.grupo_parcelamento = ? AND t3.usuario_id = ?
+                 )) as ultima_data,
+              MAX(total_parcelas) as total_parcelas,
+              COUNT(*) as parcelas_criadas
+            FROM transacoes
+            WHERE grupo_parcelamento = ? AND usuario_id = ?
+          ''';
+
+          final resultado = await db.rawQuery(queryDatas, [
+            widget.transacao.grupoParcelamento,  // primeira_data subquery
+            widget.transacao.usuarioId,
+            widget.transacao.grupoParcelamento,  // ultima_data subquery
+            widget.transacao.usuarioId,
+            widget.transacao.grupoParcelamento,  // MAX subquery dentro de ultima_data
+            widget.transacao.usuarioId,
+            widget.transacao.grupoParcelamento,  // WHERE principal
+            widget.transacao.usuarioId
+          ]);
+
+          print('🔍 [DEBUG] Parcelas - Query resultado: $resultado');
+
+          if (resultado.isNotEmpty) {
+            if (resultado.first['primeira_data'] != null) {
+              _dataPrimeiraTransacao = DateTime.parse(resultado.first['primeira_data']);
+              print('✅ Primeira parcela: ${resultado.first['primeira_data']}');
+            }
+            if (resultado.first['ultima_data'] != null) {
+              _dataUltimaTransacao = DateTime.parse(resultado.first['ultima_data']);
+              print('✅ Última data do grupo: ${resultado.first['ultima_data']}');
+            }
+            _totalTransacoesGrupo = resultado.first['total_parcelas'];
+            print('✅ Total parcelas: ${resultado.first['total_parcelas']}');
+            print('✅ Parcelas criadas: ${resultado.first['parcelas_criadas']}');
+          }
+
+          // Usar parcela_atual diretamente
+          _posicaoAtualNoGrupo = widget.transacao.parcelaAtual;
+
+          return; // Já processado
+        }
+      }
+      // Para recorrências: usar grupo_recorrencia e numero_recorrencia/total_recorrencias
+      else if (widget.transacao.recorrente && widget.transacao.grupoRecorrencia != null) {
+        // Buscar primeira e última recorrência baseado nos números sequenciais
+        final queryDatas = '''
+          SELECT
+            (SELECT data FROM transacoes t1
+             WHERE t1.grupo_recorrencia = ? AND t1.usuario_id = ?
+               AND t1.numero_recorrencia = 1) as primeira_data,
+            (SELECT data FROM transacoes t2
+             WHERE t2.grupo_recorrencia = ? AND t2.usuario_id = ?
+               AND t2.numero_recorrencia = (
+                 SELECT MAX(numero_recorrencia) FROM transacoes t3
+                 WHERE t3.grupo_recorrencia = ? AND t3.usuario_id = ?
+               )) as ultima_data,
+            MAX(total_recorrencias) as total_recorrencias,
+            COUNT(*) as recorrencias_criadas
+          FROM transacoes
+          WHERE grupo_recorrencia = ? AND usuario_id = ?
+        ''';
+
+        final resultado = await db.rawQuery(queryDatas, [
+          widget.transacao.grupoRecorrencia,  // primeira_data subquery
+          widget.transacao.usuarioId,
+          widget.transacao.grupoRecorrencia,  // ultima_data subquery
+          widget.transacao.usuarioId,
+          widget.transacao.grupoRecorrencia,  // MAX subquery dentro de ultima_data
+          widget.transacao.usuarioId,
+          widget.transacao.grupoRecorrencia,  // WHERE principal
+          widget.transacao.usuarioId
+        ]);
+
+        print('🔍 [DEBUG] Recorrências - Query resultado: $resultado');
+
+        if (resultado.isNotEmpty) {
+          if (resultado.first['primeira_data'] != null) {
+            _dataPrimeiraTransacao = DateTime.parse(resultado.first['primeira_data']);
+            print('✅ Primeira recorrência: ${resultado.first['primeira_data']}');
+          }
+          if (resultado.first['ultima_data'] != null) {
+            _dataUltimaTransacao = DateTime.parse(resultado.first['ultima_data']);
+            print('✅ Última data do grupo: ${resultado.first['ultima_data']}');
+          }
+          _totalTransacoesGrupo = resultado.first['total_recorrencias'];
+          print('✅ Total recorrências: ${resultado.first['total_recorrencias']}');
+          print('✅ Recorrências criadas: ${resultado.first['recorrencias_criadas']}');
+        }
+
+        // Usar numero_recorrencia diretamente
+        _posicaoAtualNoGrupo = widget.transacao.numeroRecorrencia;
+
+        return; // Já processado
+      }
+
+      // Fallback para transações sem grupo: buscar pela descrição/valor
+      if (widget.transacao.totalParcelas != null && widget.transacao.totalParcelas! > 1) {
+        // Para parcelas sem grupo, usar campos diretos
+        _posicaoAtualNoGrupo = widget.transacao.parcelaAtual ?? 1;
+        _totalTransacoesGrupo = widget.transacao.totalParcelas;
+
+        final queryFallback = '''
+          SELECT MIN(data) as primeira_data, MAX(data) as ultima_data
+          FROM transacoes
+          WHERE descricao = ? AND valor = ? AND total_parcelas = ? AND usuario_id = ?
+          ORDER BY parcela_atual ASC
+        ''';
+
+        final resultado = await db.rawQuery(queryFallback, [
+          widget.transacao.descricao,
+          widget.transacao.valor,
+          widget.transacao.totalParcelas,
+          widget.transacao.usuarioId
+        ]);
+
+        if (resultado.isNotEmpty && resultado.first['primeira_data'] != null) {
+          _dataPrimeiraTransacao = DateTime.parse(resultado.first['primeira_data']);
+          _dataUltimaTransacao = DateTime.parse(resultado.first['ultima_data']);
+        }
+      }
+      else if (widget.transacao.recorrente) {
+        final queryFallback = '''
+          SELECT MIN(data) as primeira_data, MAX(data) as ultima_data, MAX(total_recorrencias) as total
+          FROM transacoes
+          WHERE descricao = ? AND valor = ? AND recorrente = 1 AND usuario_id = ?
+          ORDER BY numero_recorrencia ASC
+        ''';
+
+        final resultado = await db.rawQuery(queryFallback, [
+          widget.transacao.descricao,
+          widget.transacao.valor,
+          widget.transacao.usuarioId
+        ]);
+
+        if (resultado.isNotEmpty && resultado.first['primeira_data'] != null) {
+          _dataPrimeiraTransacao = DateTime.parse(resultado.first['primeira_data']);
+          _dataUltimaTransacao = DateTime.parse(resultado.first['ultima_data']);
+          _totalTransacoesGrupo = resultado.first['total'];
+        }
+
+        // Usar numero_recorrencia diretamente
+        _posicaoAtualNoGrupo = widget.transacao.numeroRecorrencia;
+      }
+
+    } catch (e) {
+      log('❌ [ERROR] Erro ao buscar datas do grupo: $e');
+      // Em caso de erro, usar dados estimados
+      _dataPrimeiraTransacao = widget.transacao.data;
+      _dataUltimaTransacao = widget.transacao.data;
+    }
+
+    // Debug: mostrar resultados finais
+    log('🔍 [DEBUG] Resultados finais do _buscarDatasGrupo:');
+    log('🔍 Primeira data: $_dataPrimeiraTransacao');
+    log('🔍 Última data: $_dataUltimaTransacao');
+    log('🔍 Posição atual no grupo: $_posicaoAtualNoGrupo');
+    log('🔍 Total transações do grupo: $_totalTransacoesGrupo');
+    log('🔍 [DEBUG] _buscarDatasGrupo() finalizado');
+  }
+
+  /// 📊 BUSCAR METADADOS DO GRUPO (método otimizado)
+  Future<void> _buscarMetadadosGrupo() async {
+    try {
+      print('📊 [DEBUG] _buscarMetadadosGrupo() iniciado');
+
+      String? grupoId;
+      String tipoGrupo;
+
+      // Identificar qual tipo de grupo e o ID
+      if (widget.transacao.grupoRecorrencia != null) {
+        grupoId = widget.transacao.grupoRecorrencia;
+        tipoGrupo = 'recorrencia';
+        print('🔍 Grupo de recorrência identificado: $grupoId');
+      } else if (widget.transacao.grupoParcelamento != null) {
+        grupoId = widget.transacao.grupoParcelamento;
+        tipoGrupo = 'parcelamento';
+        print('🔍 Grupo de parcelamento identificado: $grupoId');
+      } else {
+        print('⚠️ Transação sem grupo identificado');
+        return;
+      }
+
+      if (grupoId == null) {
+        print('⚠️ ID do grupo é null');
+        return;
+      }
+
+      // Buscar metadados na tabela otimizada
+      final service = GruposMetadadosService.instance;
+      _metadadosGrupo = await service.obterMetadadosGrupo(grupoId, widget.transacao.usuarioId);
+
+      if (_metadadosGrupo != null) {
+        // ✅ Usar dados dos metadados
+        _dataPrimeiraTransacao = _metadadosGrupo!.dataPrimeira;
+        _dataUltimaTransacao = _metadadosGrupo!.dataUltima;
+        _totalTransacoesGrupo = _metadadosGrupo!.totalItems;
+        _valorTotalGrupo = _metadadosGrupo!.valorTotal;
+        _valorEfetivadoGrupo = _metadadosGrupo!.valorEfetivado;
+        _valorPendenteGrupo = _metadadosGrupo!.valorPendente;
+        _itemsEfetivados = _metadadosGrupo!.itemsEfetivados;
+        _itemsPendentes = _metadadosGrupo!.itemsPendentes;
+
+        // Posição atual da transação - com correção para números inconsistentes
+        if (tipoGrupo == 'recorrencia') {
+          final numeroOriginal = widget.transacao.numeroRecorrencia;
+          print('🔍 Posição recorrência original: $numeroOriginal');
+          print('🔍 Total do grupo: ${_metadadosGrupo!.totalItems}');
+
+          // Se numero_recorrencia é igual ao total, significa que todos têm o mesmo número
+          // Neste caso, usamos NULL para não mostrar posição incorreta
+          if (numeroOriginal != null && numeroOriginal == _metadadosGrupo!.totalItems) {
+            print('⚠️ Números de recorrência inconsistentes detectados - não mostrando posição');
+            _posicaoAtualNoGrupo = null;
+          } else {
+            _posicaoAtualNoGrupo = numeroOriginal;
+          }
+        } else {
+          _posicaoAtualNoGrupo = widget.transacao.parcelaAtual;
+          print('🔍 Posição parcelamento: ${widget.transacao.parcelaAtual}');
+        }
+
+        print('✅ Metadados carregados: ${_metadadosGrupo!.descricao}');
+        print('📊 Progresso: ${_metadadosGrupo!.progressoQuantidadeFormatado}');
+        print('💰 Valores: ${CurrencyFormatter.format(_valorEfetivadoGrupo ?? 0)} de ${CurrencyFormatter.format(_valorTotalGrupo ?? 0)}');
+      } else {
+        print('⚠️ Metadados não encontrados, usando método fallback');
+        // Fallback para o método antigo se metadados não existirem
+        await _buscarDatasGrupo();
+
+        // ✅ FORÇAR SYNC DOS METADADOS DO SUPABASE
+        print('🔄 Forçando sync dos metadados do Supabase...');
+        try {
+          await _forcarSyncMetadados();
+          // Tentar buscar novamente após o sync
+          _metadadosGrupo = await service.obterMetadadosGrupo(grupoId, widget.transacao.usuarioId);
+          if (_metadadosGrupo != null) {
+            print('✅ Metadados encontrados após sync forçado!');
+            // Recarregar dados com metadados corretos
+            _dataPrimeiraTransacao = _metadadosGrupo!.dataPrimeira;
+            _dataUltimaTransacao = _metadadosGrupo!.dataUltima;
+            _totalTransacoesGrupo = _metadadosGrupo!.totalItems;
+            _valorTotalGrupo = _metadadosGrupo!.valorTotal;
+            _valorEfetivadoGrupo = _metadadosGrupo!.valorEfetivado;
+            _valorPendenteGrupo = _metadadosGrupo!.valorPendente;
+            _itemsEfetivados = _metadadosGrupo!.itemsEfetivados;
+            _itemsPendentes = _metadadosGrupo!.itemsPendentes;
+          }
+        } catch (e) {
+          print('❌ Erro ao forçar sync dos metadados: $e');
+        }
+
+        // Tentar gerar metadados localmente para próximas consultas
+        await service.atualizarMetadadosGrupo(grupoId, widget.transacao.usuarioId, tipoGrupo);
+      }
+
+      print('📊 [DEBUG] _buscarMetadadosGrupo() finalizado');
+    } catch (e) {
+      print('❌ [ERROR] Erro ao buscar metadados do grupo: $e');
+      // Fallback para método antigo em caso de erro
+      await _buscarDatasGrupo();
+    }
+  }
+
+  /// 🔄 FORÇAR SYNC DOS METADADOS DO SUPABASE
+  Future<void> _forcarSyncMetadados() async {
+    try {
+      print('🚀 Forçando download dos metadados do Supabase...');
+
+      // Limpar metadados antigos primeiro
+      final service = GruposMetadadosService.instance;
+      await service.limparTodosMetadados();
+
+      // Forçar nova sincronização
+      final syncManager = SyncManager.instance;
+      await syncManager.syncAll(); // Isso vai chamar o sync dos metadados
+
+      print('✅ Sync forçado concluído');
+    } catch (e) {
+      print('❌ Erro no sync forçado: $e');
+      rethrow;
+    }
+  }
+
   /// Recarrega a transação do banco de dados
   Future<void> _recarregarTransacao() async {
     try {
@@ -235,9 +578,10 @@ class _EditarTransacaoPageState extends State<EditarTransacaoPage> {
     try {
       // Carregar dados da conta
       if (widget.transacao.contaId != null) {
-        final conta = await ContaService.instance.getContaById(
+        final contas = await ContaService.instance.fetchContas();
+        final conta = ContaService.instance.getContaById(
           widget.transacao.contaId!,
-          await ContaService.instance.fetchContas(),
+          contas,
         );
         if (conta != null) {
           _nomeConta = conta.nome;
@@ -577,16 +921,6 @@ class _EditarTransacaoPageState extends State<EditarTransacaoPage> {
                 icone: Icons.category,
                 cor: AppColors.tealPrimary,
                 onTap: () => _showEdicaoCategoria(),
-              ),
-              const SizedBox(height: 12),
-              
-              // Editar Descrição
-              EditOptionCard(
-                titulo: 'Alterar Descrição',
-                subtitulo: 'Mude a descrição da transação',
-                icone: Icons.edit,
-                cor: AppColors.azul,
-                onTap: () => _showEdicaoDescricao(),
               ),
               const SizedBox(height: 12),
               
@@ -964,7 +1298,7 @@ class _EditarTransacaoPageState extends State<EditarTransacaoPage> {
                 // Valor
                 Expanded(
                   child: Text(
-                    'R\$ ${widget.transacao.valor.toStringAsFixed(2).replaceAll('.', ',')}',
+                    CurrencyFormatter.format(widget.transacao.valor),
                     style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -1085,6 +1419,58 @@ class _EditarTransacaoPageState extends State<EditarTransacaoPage> {
                 ),
               ],
             ),
+
+            // 📍 LINHA 3.5: Detalhes de período e progresso (para parcelas/recorrências)
+            if (_temParcelasOuRecorrencias) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Icon(
+                    Icons.schedule_outlined,
+                    size: 14,
+                    color: AppColors.cinzaTexto,
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      _formatarDetalhesProgresso(),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: AppColors.cinzaTexto,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+
+            // 📍 LINHA 4: Observações (se existirem)
+            if (widget.transacao.observacoes != null && widget.transacao.observacoes!.trim().isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Icon(
+                    Icons.note_outlined,
+                    size: 14,
+                    color: AppColors.cinzaTexto,
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      widget.transacao.observacoes!.trim(),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: AppColors.cinzaTexto,
+                        fontStyle: FontStyle.italic,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       ),
@@ -1680,22 +2066,106 @@ class _EditarTransacaoPageState extends State<EditarTransacaoPage> {
   /// Formatar informações de parcelas/recorrência de forma compacta
   String _formatarInfoParcelas() {
     final transacao = widget.transacao;
-    
+
+    // ✅ USAR METADADOS SE DISPONÍVEIS (mais preciso)
+    if (_metadadosGrupo != null) {
+      if (_metadadosGrupo!.tipoGrupo == 'parcelamento') {
+        final atual = _posicaoAtualNoGrupo ?? transacao.parcelaAtual ?? 1;
+        final total = _metadadosGrupo!.totalItems ?? 1;
+        return '$atual/$total parcelas';
+      } else if (_metadadosGrupo!.tipoGrupo == 'recorrencia') {
+        final numeroRecorrencia = _posicaoAtualNoGrupo ?? transacao.numeroRecorrencia;
+        final totalRecorrencias = _metadadosGrupo!.totalItems ?? transacao.totalRecorrencias;
+
+        // Formatar tipo de recorrência (usar dos metadados ou fallback)
+        String tipoFormatado = 'Recorrente';
+        final tipoRecorrencia = _metadadosGrupo!.tipoRecorrencia ?? transacao.tipoRecorrencia;
+        if (tipoRecorrencia != null && tipoRecorrencia.isNotEmpty) {
+          tipoFormatado = 'Recorrente ${tipoRecorrencia.toLowerCase()}';
+        }
+
+        // Adicionar posição se disponível, consistente e não for muito grande
+        if (numeroRecorrencia != null && totalRecorrencias != null &&
+            totalRecorrencias <= 100 && numeroRecorrencia != totalRecorrencias) {
+          return '$tipoFormatado • $numeroRecorrencia/$totalRecorrencias';
+        } else if (totalRecorrencias != null && totalRecorrencias > 100) {
+          return '$tipoFormatado • ${_metadadosGrupo!.itemsEfetivados ?? 0}/${totalRecorrencias} efetivadas';
+        } else {
+          return tipoFormatado;
+        }
+      }
+    }
+
+    // 📋 FALLBACK PARA MÉTODO ANTIGO
     // Se tem parcelas
-    if (transacao.numeroTotalParcelas != null && transacao.numeroTotalParcelas! > 1) {
-      final atual = transacao.numeroParcelaAtual ?? 1;
-      final total = transacao.numeroTotalParcelas!;
+    if (transacao.totalParcelas != null && transacao.totalParcelas! > 1) {
+      final atual = transacao.parcelaAtual ?? 1;
+      final total = transacao.totalParcelas!;
       return '$atual/$total parcelas';
     }
-    
-    // Se é recorrente
+
+    // Se é recorrente - incluir posição se disponível
     if (transacao.recorrente) {
-      final tipo = transacao.tipoRecorrencia ?? 'Mensal';
-      return 'Recorrente $tipo';
+      final numeroRecorrencia = _posicaoAtualNoGrupo ?? transacao.numeroRecorrencia;
+      final totalRecorrencias = _totalTransacoesGrupo ?? transacao.totalRecorrencias;
+
+      // Formatar tipo de recorrência
+      String tipoFormatado = 'Recorrente';
+      if (transacao.tipoRecorrencia != null && transacao.tipoRecorrencia!.isNotEmpty) {
+        final tipo = transacao.tipoRecorrencia!;
+        final tipoCapitalizado = tipo[0].toUpperCase() + tipo.substring(1).toLowerCase();
+        tipoFormatado = 'Recorrente $tipoCapitalizado';
+      }
+
+      if (numeroRecorrencia != null && totalRecorrencias != null) {
+        return '$tipoFormatado • $numeroRecorrencia/$totalRecorrencias';
+      } else if (numeroRecorrencia != null) {
+        return '$tipoFormatado • Ocorrência $numeroRecorrencia';
+      } else {
+        return tipoFormatado;
+      }
     }
-    
+
     // Se é simples
     return 'Transação única';
+  }
+
+  /// Formatar detalhes de período e progresso para parcelas/recorrências
+  String _formatarDetalhesProgresso() {
+    if (!_temParcelasOuRecorrencias) return '';
+
+    // Função helper para formatar data (formato compacto)
+    String formatarData(DateTime? data) {
+      if (data == null) return 'N/A';
+
+      const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
+                     'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+
+      final mes = meses[data.month - 1];
+      final ano = data.year.toString().substring(2); // Apenas últimos 2 dígitos
+
+      return '$mes/$ano';
+    }
+
+    List<String> detalhes = [];
+
+    // Adicionar período (datas) - formato compacto
+    final inicioData = formatarData(_dataPrimeiraTransacao);
+    if (_dataUltimaTransacao != null) {
+      final fimData = formatarData(_dataUltimaTransacao);
+      detalhes.add('De $inicioData à $fimData');
+    } else {
+      detalhes.add('A partir de $inicioData');
+    }
+
+    // ✅ ADICIONAR INFORMAÇÕES FINANCEIRAS (se disponíveis) - formato compacto
+    if (_metadadosGrupo != null && _valorTotalGrupo != null && _valorEfetivadoGrupo != null) {
+      final valorEfetivado = CurrencyFormatter.format(_valorEfetivadoGrupo!);
+      final valorTotal = CurrencyFormatter.format(_valorTotalGrupo!);
+      detalhes.add('$valorEfetivado/$valorTotal');
+    }
+
+    return detalhes.join(' • ');
   }
 
   /// Obter nome da conta/cartão

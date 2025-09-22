@@ -7,6 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../categorias/data/categoria_icons.dart';
 
 /// Modelo para transação pendente vencida
 class TransacaoPendente {
@@ -54,6 +55,14 @@ class TransacaoPendente {
     return diferenca.inDays;
   }
 
+  /// Verificar se a transação está realmente vencida (data no passado)
+  bool get isVencida {
+    final hoje = DateTime.now();
+    final dataTransacaoSemHora = DateTime(dataTransacao.year, dataTransacao.month, dataTransacao.day);
+    final hojeSemHora = DateTime(hoje.year, hoje.month, hoje.day);
+    return dataTransacaoSemHora.isBefore(hojeSemHora);
+  }
+
   /// Verificar se é crítica (mais de 7 dias atrasada)
   bool get isCritica => diasAtraso > 7;
 
@@ -69,6 +78,13 @@ class TransacaoPendente {
     return tipo == 'receita'
         ? const Color(0xFF10B981) // Verde
         : const Color(0xFFDC3545); // Vermelho
+  }
+
+  /// Ícone discreto do tipo (receita/despesa) - para usar ao lado da descrição
+  IconData get iconeDiscreto {
+    return tipo == 'receita'
+        ? Icons.arrow_upward // Seta para cima (receita)
+        : Icons.arrow_downward; // Seta para baixo (despesa)
   }
 
   /// Cor da categoria ou padrão
@@ -88,9 +104,37 @@ class TransacaoPendente {
 
   /// Ícone da categoria ou padrão
   IconData get iconeCategoria {
-    // Por enquanto usa ícones padrão, depois pode ser melhorado
-    if (tipo == 'receita') return Icons.trending_up;
-    return Icons.trending_down;
+    if (categoriaIcone != null && categoriaIcone!.isNotEmpty) {
+      try {
+        return CategoriaIcons.getIconFromName(categoriaIcone!);
+      } catch (e) {
+        // Fallback para ícone padrão
+      }
+    }
+
+    // Fallback para ícone baseado no tipo
+    if (tipo == 'receita') {
+      return Icons.trending_up_outlined;
+    }
+    return Icons.shopping_cart_outlined;
+  }
+
+  /// Widget do ícone da categoria renderizado
+  Widget renderIconeCategoria({double size = 16, Color? color}) {
+    if (categoriaIcone != null && categoriaIcone!.isNotEmpty) {
+      return CategoriaIcons.renderIcon(
+        categoriaIcone!,
+        size,
+        color: color ?? Colors.white,
+      );
+    }
+
+    // Fallback
+    return Icon(
+      iconeCategoria,
+      size: size,
+      color: color ?? Colors.white,
+    );
   }
 
   /// Data formatada para agrupamento
@@ -246,6 +290,10 @@ extension TransacoesPendentesExtension on List<TransacaoPendente> {
   /// Filtrar apenas críticas
   List<TransacaoPendente> get apenasCriticas =>
       where((t) => t.isCritica).toList();
+
+  /// Filtrar apenas vencidas (data no passado)
+  List<TransacaoPendente> get apenasVencidas =>
+      where((t) => t.isVencida).toList();
 
   /// Ordenar por data (mais antigas primeiro)
   List<TransacaoPendente> get ordenadasPorData {

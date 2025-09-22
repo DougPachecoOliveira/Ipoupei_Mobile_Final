@@ -12,6 +12,11 @@ import '../widgets/resumo_financeiro_widget.dart';
 import '../widgets/faturas_pendentes_widget.dart';
 import '../widgets/transacoes_pendentes_widget.dart';
 import '../models/resumo_financeiro_model.dart';
+import '../../cartoes/models/cartao_model.dart';
+import '../../cartoes/models/fatura_model.dart';
+import '../../cartoes/services/cartao_service.dart';
+import '../../cartoes/services/cartao_data_service.dart';
+import '../../cartoes/pages/pagamento_fatura_page.dart';
 import 'resumo_executivo_page.dart';
 import 'evolucao_mensal_page.dart';
 import 'relatorio_categoria_page.dart';
@@ -27,6 +32,8 @@ class RelatoriosPage extends StatefulWidget {
 
 class _RelatoriosPageState extends State<RelatoriosPage> {
   final _relatorioService = RelatorioService.instance;
+  final _cartaoService = CartaoService.instance;
+  final _cartaoDataService = CartaoDataService.instance;
   
   DateTime _dataInicio = DateTime.now().subtract(const Duration(days: 30));
   DateTime _dataFim = DateTime.now();
@@ -274,6 +281,150 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
     );
   }
 
+  /// 💳 Navegar para pagamento de fatura
+  Future<void> _navegarParaPagamentoFatura(String cartaoId) async {
+    debugPrint('💳 Navegando para pagamento da fatura do cartão: $cartaoId');
+
+    try {
+      // Buscar dados do cartão
+      final cartao = await _cartaoService.buscarCartaoPorId(cartaoId);
+      if (cartao == null) {
+        debugPrint('❌ Cartão não encontrado: $cartaoId');
+        return;
+      }
+
+      // Buscar fatura mais antiga pendente
+      final faturaPrioritaria = await _buscarFaturaMaisAntigaPendente(cartao);
+
+      if (faturaPrioritaria == null) {
+        debugPrint('✅ Nenhuma fatura pendente encontrada para pagamento');
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.check_circle, color: Colors.white, size: 20),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      'Nenhuma fatura a pagar no momento',
+                      style: TextStyle(fontSize: 14),
+                    ),
+                  ),
+                ],
+              ),
+              backgroundColor: Colors.green[600],
+              behavior: SnackBarBehavior.floating,
+              margin: const EdgeInsets.all(16),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+        return;
+      }
+
+      debugPrint('✅ Fatura prioritária encontrada: ${faturaPrioritaria.id}');
+      debugPrint('💰 Valor da fatura: ${faturaPrioritaria.valorTotalFormatado}');
+      debugPrint('📅 Vencimento: ${faturaPrioritaria.dataVencimentoFormatada}');
+
+      // Navegar para página de pagamento
+      if (!mounted) return;
+      final resultado = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PagamentoFaturaPage(
+            cartao: cartao,
+            fatura: faturaPrioritaria,
+          ),
+        ),
+      );
+
+      // Se o pagamento foi realizado, atualizar dados
+      if (resultado == true) {
+        debugPrint('💰 Pagamento realizado - recarregando dados');
+        _carregarResumo();
+      }
+
+    } catch (e) {
+      debugPrint('❌ Erro ao navegar para pagamento de fatura: $e');
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao carregar fatura: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  /// 🔍 Buscar fatura mais antiga pendente para pagamento
+  Future<FaturaModel?> _buscarFaturaMaisAntigaPendente(CartaoModel cartao) async {
+    try {
+      debugPrint('🔍 Buscando fatura mais antiga para cartão: ${cartao.id}');
+
+      // Buscar faturas dos últimos 6 meses
+      final hoje = DateTime.now();
+      final inicioRange = DateTime(hoje.year, hoje.month - 6, 1);
+      final fimRange = DateTime(hoje.year, hoje.month + 3, 30);
+
+      final faturas = <FaturaModel>[];
+
+      // Buscar faturas do período
+      var mesAtual = inicioRange;
+      while (mesAtual.isBefore(fimRange)) {
+        try {
+          final faturasMes = await _cartaoDataService.buscarFaturasCartao(
+            cartao.id,
+            mesReferencia: mesAtual
+          );
+
+          if (faturasMes.isNotEmpty) {
+            faturas.addAll(faturasMes);
+          }
+        } catch (e) {
+          debugPrint('⚠️ Erro ao buscar faturas do mês ${mesAtual.month}/${mesAtual.year}: $e');
+        }
+
+        mesAtual = DateTime(mesAtual.year, mesAtual.month + 1, 1);
+      }
+
+      debugPrint('📋 Total de faturas encontradas: ${faturas.length}');
+
+      if (faturas.isEmpty) {
+        debugPrint('📋 Nenhuma fatura encontrada');
+        return null;
+      }
+
+      // Filtrar faturas pendentes com valor > 0
+      final faturasPendentes = faturas.where((f) =>
+        !f.paga && f.valorTotal > 0.01
+      ).toList();
+
+      debugPrint('📋 Faturas pendentes: ${faturasPendentes.length}');
+
+      if (faturasPendentes.isEmpty) {
+        debugPrint('✅ Nenhuma fatura pendente');
+        return null;
+      }
+
+      // Ordenar por data de vencimento (mais antigas primeiro)
+      faturasPendentes.sort((a, b) => a.dataVencimento.compareTo(b.dataVencimento));
+
+      final faturaPrioritaria = faturasPendentes.first;
+      debugPrint('🎯 Fatura mais antiga: ${faturaPrioritaria.id} - Venc: ${faturaPrioritaria.dataVencimentoFormatada}');
+
+      return faturaPrioritaria;
+
+    } catch (e) {
+      debugPrint('❌ Erro ao buscar fatura mais antiga: $e');
+      return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final resumo = _resumoExecutivo;
@@ -347,7 +498,7 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
 
               // Widget de Faturas Pendentes (só aparece se houver faturas críticas)
               FaturasPendentesWidget(
-                onFaturaTap: _navegarParaGestaoCartoes,
+                onPagarFatura: _navegarParaPagamentoFatura,
               ),
 
               const SizedBox(height: 12),

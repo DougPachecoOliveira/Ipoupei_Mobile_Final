@@ -46,7 +46,7 @@ class LocalDatabase {
       
       _database = await openDatabase(
         path,
-        version: 3,
+        version: 4,
         onCreate: _createTables,
         onUpgrade: _upgradeTables,
       );
@@ -318,6 +318,33 @@ class LocalDatabase {
         attempts INTEGER DEFAULT 0
       )
     ''');
+
+    // Tabela grupos_metadados - para resolver performance de grupos grandes
+    await db.execute('''
+      CREATE TABLE grupos_metadados (
+        id TEXT PRIMARY KEY,
+        usuario_id TEXT NOT NULL,
+        tipo_grupo TEXT NOT NULL,
+        grupo_id TEXT NOT NULL,
+        descricao TEXT,
+        valor_unitario REAL,
+        data_primeira TEXT,
+        data_ultima TEXT,
+        total_items INTEGER,
+        items_efetivados INTEGER,
+        items_pendentes INTEGER,
+        valor_total REAL,
+        valor_efetivado REAL,
+        valor_pendente REAL,
+        tipo_recorrencia TEXT,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        sync_status TEXT DEFAULT 'synced',
+        last_sync TEXT,
+        UNIQUE(grupo_id, usuario_id),
+        FOREIGN KEY (usuario_id) REFERENCES perfil_usuario (id)
+      )
+    ''');
     
     // Índices para melhor performance
     await db.execute('CREATE INDEX idx_contas_usuario ON contas(usuario_id)');
@@ -331,6 +358,9 @@ class LocalDatabase {
     await db.execute('CREATE INDEX idx_faturas_cartao ON faturas(cartao_id)');
     await db.execute('CREATE INDEX idx_faturas_periodo ON faturas(ano, mes)');
     await db.execute('CREATE INDEX idx_sync_queue_table ON sync_queue(table_name)');
+    await db.execute('CREATE INDEX idx_grupos_metadados_usuario ON grupos_metadados(usuario_id)');
+    await db.execute('CREATE INDEX idx_grupos_metadados_grupo ON grupos_metadados(grupo_id)');
+    await db.execute('CREATE INDEX idx_grupos_metadados_tipo ON grupos_metadados(tipo_grupo)');
     
     debugPrint('✅ Tabelas locais criadas com estrutura espelho do Supabase');
   }
@@ -393,17 +423,58 @@ class LocalDatabase {
 
       debugPrint('✅ Campos do diagnóstico adicionados na versão 3');
     }
+
+    if (oldVersion < 4) {
+      debugPrint('🔄 Adicionando tabela grupos_metadados na versão 4...');
+
+      // Tabela grupos_metadados - para resolver performance de grupos grandes
+      await db.execute('''
+        CREATE TABLE grupos_metadados (
+          id TEXT PRIMARY KEY,
+          usuario_id TEXT NOT NULL,
+          tipo_grupo TEXT NOT NULL,
+          grupo_id TEXT NOT NULL,
+          descricao TEXT,
+          valor_unitario REAL,
+          data_primeira TEXT,
+          data_ultima TEXT,
+          total_items INTEGER,
+          items_efetivados INTEGER,
+          items_pendentes INTEGER,
+          valor_total REAL,
+          valor_efetivado REAL,
+          valor_pendente REAL,
+          tipo_recorrencia TEXT,
+          created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          sync_status TEXT DEFAULT 'synced',
+          last_sync TEXT,
+          UNIQUE(grupo_id, usuario_id),
+          FOREIGN KEY (usuario_id) REFERENCES perfil_usuario (id)
+        )
+      ''');
+
+      // Índices para a tabela grupos_metadados
+      await db.execute('CREATE INDEX idx_grupos_metadados_usuario ON grupos_metadados(usuario_id)');
+      await db.execute('CREATE INDEX idx_grupos_metadados_grupo ON grupos_metadados(grupo_id)');
+      await db.execute('CREATE INDEX idx_grupos_metadados_tipo ON grupos_metadados(tipo_grupo)');
+
+      debugPrint('✅ Tabela grupos_metadados criada na versão 4');
+    }
   }
   
   /// 👤 DEFINE USUÁRIO ATUAL
   Future<void> setCurrentUser(String userId) async {
     if (!_initialized) await initialize();
-    
-    _currentUserId = userId;
-    debugPrint('👤 Usuário atual definido: $userId');
-    
-    // Verifica se o perfil do usuário existe localmente
-    await _ensureUserProfile(userId);
+
+    // Log apenas quando o usuário realmente muda
+    if (_currentUserId != userId) {
+      debugPrint('👤 Usuário alterado para: $userId');
+      _currentUserId = userId;
+
+      // Verifica se o perfil do usuário existe localmente
+      await _ensureUserProfile(userId);
+    }
   }
   
   /// 🚪 LIMPA USUÁRIO ATUAL
@@ -665,23 +736,12 @@ class LocalDatabase {
       whereArgs.add(tipo);
     }
     
-    log('🔍 DEBUG fetchCategoriasLocal:');
-    log('  📋 Query WHERE: $whereClause');
-    log('  📋 Args: $whereArgs');
-    
     final result = await _database!.query(
       'categorias',
       where: whereClause,
       whereArgs: whereArgs,
       orderBy: 'created_at DESC',
     );
-    
-    log('  📋 Resultados encontrados: ${result.length}');
-    if (result.isNotEmpty) {
-      for (final item in result) {
-        log('  📊 Categoria: ${item['nome']}, ID: ${item['id']}, Tipo: ${item['tipo']}, Ativo: ${item['ativo']}');
-      }
-    }
     
     return result;
   }
@@ -761,26 +821,13 @@ class LocalDatabase {
       return [];
     }
     
-    debugPrint('🔍 Buscando subcategorias para user: $_currentUserId');
-    
     String whereClause = 's.usuario_id = ? AND s.ativo = 1';
     List<dynamic> whereArgs = [_currentUserId];
-    
+
     if (categoriaId != null && categoriaId.isNotEmpty) {
       whereClause += ' AND s.categoria_id = ?';
       whereArgs.add(categoriaId);
     }
-    
-    // Primeiro, vamos ver TODAS as subcategorias para debug
-    final debugResult = await _database!.rawQuery('''
-      SELECT COUNT(*) as total, 
-             SUM(CASE WHEN ativo = 1 THEN 1 ELSE 0 END) as ativas,
-             SUM(CASE WHEN ativo = 0 THEN 1 ELSE 0 END) as inativas
-      FROM subcategorias 
-      WHERE usuario_id = ?
-    ''', [_currentUserId]);
-    
-    debugPrint('📊 Debug subcategorias - Total: ${debugResult.first['total']}, Ativas: ${debugResult.first['ativas']}, Inativas: ${debugResult.first['inativas']}');
     
     final result = await _database!.rawQuery('''
       SELECT 
@@ -800,9 +847,9 @@ class LocalDatabase {
       ORDER BY s.created_at DESC
     ''', whereArgs);
     
-    debugPrint('✅ fetchSubcategoriasLocal retornou: ${result.length} itens');
-    if (result.isNotEmpty) {
-      debugPrint('📝 Primeira subcategoria: ${result.first['nome']} (ativo: ${result.first['ativo']})');
+    // Log apenas em caso de erro ou quando vazio
+    if (result.isEmpty && categoriaId != null) {
+      debugPrint('⚠️ Nenhuma subcategoria encontrada para categoria: $categoriaId');
     }
     
     return result;
@@ -837,28 +884,10 @@ class LocalDatabase {
     }
     
     debugPrint('💾 Salvando subcategoria offline: ${subcategoriaData['nome']}');
-    debugPrint('📝 Dados subcategoria: usuario_id=${subcategoriaData['usuario_id']}, ativo=${subcategoriaData['ativo']}, categoria_id=${subcategoriaData['categoria_id']}');
-    
-    // Debug: Verificar se a categoria parent existe no SQLite
-    final categoriaExists = await _database!.query(
-      'categorias',
-      where: 'id = ? AND usuario_id = ? AND ativo = 1',
-      whereArgs: [subcategoriaData['categoria_id'], subcategoriaData['usuario_id']],
-    );
-    debugPrint('🔍 Categoria parent existe no SQLite? ${categoriaExists.isNotEmpty} (${categoriaExists.length} encontradas)');
-    
     subcategoriaData['sync_status'] = 'pending';
     subcategoriaData['last_sync'] = null;
-    
+
     await _database!.insert('subcategorias', subcategoriaData);
-    
-    // Debug: Verificar se foi realmente salva
-    final savedSubcategoria = await _database!.query(
-      'subcategorias',
-      where: 'id = ? AND usuario_id = ?',
-      whereArgs: [subcategoriaData['id'], subcategoriaData['usuario_id']],
-    );
-    debugPrint('🔍 Subcategoria salva verificada: ${savedSubcategoria.length} encontradas');
     
     // Adiciona à fila de sync
     await addToSyncQueue(
@@ -868,7 +897,6 @@ class LocalDatabase {
       subcategoriaData,
     );
     
-    debugPrint('✅ Subcategoria salva no SQLite: ${subcategoriaData['id']}');
     return subcategoriaData['id'];
   }
   

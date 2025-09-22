@@ -19,7 +19,7 @@ class FaturasPendentesService {
   /// 🚨 Buscar faturas pendentes críticas
   /// Retorna apenas faturas vencidas OU vencendo nos próximos 3 dias
   /// Usa o sistema de faturas real baseado em transações
-  Future<List<FaturaPendente>> buscarFaturasPendentes() async {
+  Future<List<FaturaPendente>> buscarFaturasPendentes({bool forceMostrar = false}) async {
     try {
       final userId = _db.currentUserId;
       if (userId == null) {
@@ -30,7 +30,6 @@ class FaturasPendentesService {
       debugPrint('💳 Buscando faturas pendentes para usuário: $userId');
 
       final hoje = DateTime.now();
-      final dataLimite = hoje.add(const Duration(days: 3));
 
       // Buscar cartões ativos do usuário
       final cartoesResult = await _db.select(
@@ -49,26 +48,38 @@ class FaturasPendentesService {
           final nomeCartao = cartaoData['nome'] as String? ?? 'Cartão';
           final diaVencimento = cartaoData['dia_vencimento'] as int? ?? 15;
 
-          // Calcular data de vencimento para o mês atual
+          // Calcular data de vencimento para o mês atual/anterior
           final mesAtual = DateTime(hoje.year, hoje.month, diaVencimento);
-          final dataVencimento = mesAtual.isBefore(hoje)
-              ? DateTime(hoje.year, hoje.month + 1, diaVencimento)
-              : mesAtual;
+          final mesAnterior = DateTime(hoje.year, hoje.month - 1, diaVencimento);
 
-          // Buscar transações pendentes não efetivadas do cartão
+          // Se hoje passou do vencimento do mês atual, considera vencida
+          // Se ainda não passou, verifica se há transações do mês anterior não pagas
+          DateTime dataVencimento;
+          if (hoje.day > diaVencimento) {
+            // Já passou do vencimento deste mês - fatura vencida
+            dataVencimento = mesAtual;
+          } else {
+            // Ainda não chegou o vencimento - verifica fatura do mês anterior
+            dataVencimento = mesAnterior;
+          }
+
+          // Calcular período da fatura (desde vencimento anterior até a data atual)
+          final inicioFatura = DateTime(dataVencimento.year, dataVencimento.month - 1, diaVencimento);
+          final fimFatura = dataVencimento;
+
           debugPrint('💳 🔍 Buscando transações para cartão $nomeCartao ($cartaoId)');
-          debugPrint('💳 🔍 Query: data <= ${hoje.toIso8601String().split('T')[0]}');
+          debugPrint('💳 🔍 Período da fatura: ${inicioFatura.toIso8601String().split('T')[0]} até ${fimFatura.toIso8601String().split('T')[0]}');
 
           final transacoesResult = await _db.rawQuery('''
             SELECT
               SUM(CASE WHEN t.tipo = 'despesa' THEN t.valor ELSE -t.valor END) as valor_total,
-              COUNT(*) as quantidade,
-              GROUP_CONCAT(t.descricao || ' (' || t.data || ')') as detalhes
+              COUNT(*) as quantidade
             FROM transacoes t
             WHERE t.cartao_id = ?
               AND t.efetivado = 0
-              AND DATE(t.data) >= DATE('2020-01-01')
-          ''', [cartaoId]);
+              AND DATE(t.data) > DATE(?)
+              AND DATE(t.data) <= DATE(?)
+          ''', [cartaoId, inicioFatura.toIso8601String().split('T')[0], fimFatura.toIso8601String().split('T')[0]]);
 
           debugPrint('💳 🔍 Resultado query: ${transacoesResult.first}');
 
@@ -79,11 +90,14 @@ class FaturasPendentesService {
 
           // Só considera se tem valor > 0 e está vencida ou vencendo em 3 dias
           if (valorFatura > 0.01) {
-            final diasAteVencimento = dataVencimento.difference(hoje).inDays;
+            final diasAteVencimento = dataVencimento.difference(DateTime(hoje.year, hoje.month, hoje.day)).inDays;
             final isVencida = diasAteVencimento < 0;
-            final venceEm3Dias = diasAteVencimento >= 0 && diasAteVencimento <= 3;
+            final venceHoje = diasAteVencimento == 0;
+            final venceEm3Dias = diasAteVencimento > 0 && diasAteVencimento <= 3;
 
-            if (isVencida || venceEm3Dias) {
+            debugPrint('💳 📊 $nomeCartao: Vencimento em $diasAteVencimento dias (${dataVencimento.day}/${dataVencimento.month})');
+
+            if (isVencida || venceHoje || venceEm3Dias || forceMostrar) {
               final fatura = FaturaPendente(
                 cartaoId: cartaoId,
                 nomeCartao: nomeCartao,
@@ -210,5 +224,10 @@ class FaturasPendentesService {
   void limparCache() {
     debugPrint('🧹 Cache de faturas pendentes limpo');
     // Por enquanto não temos cache, mas pode ser implementado depois
+  }
+
+  /// 🧪 Método para teste - força mostrar todas as faturas com saldo
+  Future<List<FaturaPendente>> buscarFaturasParaTeste() async {
+    return await buscarFaturasPendentes(forceMostrar: true);
   }
 }
