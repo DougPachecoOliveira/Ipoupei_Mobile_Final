@@ -6,10 +6,14 @@
 // Design: Dois gráficos lado a lado - Despesas e Receitas
 
 import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart';
 import '../../shared/theme/app_colors.dart';
 import '../../shared/utils/currency_formatter.dart';
+import '../../../shared/components/charts/interactive_pie_chart.dart';
 import '../services/graficos_categoria_service.dart';
+import '../../categorias/pages/categorias_page.dart';
+import '../../categorias/pages/gestao_categoria_page.dart';
+import '../../categorias/models/categoria_model.dart';
+import '../../categorias/services/categoria_service.dart';
 
 /// Widget com gráficos de pizza para despesas e receitas por categoria
 class GraficosCategoriaWidget extends StatefulWidget {
@@ -28,9 +32,11 @@ class GraficosCategoriaWidget extends StatefulWidget {
 
 class _GraficosCategoriaWidgetState extends State<GraficosCategoriaWidget> {
   final GraficosCategoriaService _service = GraficosCategoriaService.instance;
+  final CategoriaService _categoriaService = CategoriaService.instance;
 
   List<Map<String, dynamic>> _despesasPorCategoria = [];
   List<Map<String, dynamic>> _receitasPorCategoria = [];
+  List<CategoriaModel> _todasCategorias = [];
   bool _loading = false;
   String? _error;
 
@@ -49,7 +55,7 @@ class _GraficosCategoriaWidgetState extends State<GraficosCategoriaWidget> {
     }
   }
 
-  /// 🔄 Carregar dados dos gráficos
+  /// 🔄 Carregar dados dos gráficos e categorias
   Future<void> _carregarDados() async {
     setState(() {
       _loading = true;
@@ -60,11 +66,13 @@ class _GraficosCategoriaWidgetState extends State<GraficosCategoriaWidget> {
       final results = await Future.wait([
         _service.buscarDespesasPorCategoria(widget.dataInicio, widget.dataFim),
         _service.buscarReceitasPorCategoria(widget.dataInicio, widget.dataFim),
+        _categoriaService.fetchCategorias(), // Buscar todas as categorias
       ]);
 
       setState(() {
-        _despesasPorCategoria = results[0];
-        _receitasPorCategoria = results[1];
+        _despesasPorCategoria = results[0] as List<Map<String, dynamic>>;
+        _receitasPorCategoria = results[1] as List<Map<String, dynamic>>;
+        _todasCategorias = results[2] as List<CategoriaModel>;
         _loading = false;
       });
     } catch (e) {
@@ -146,107 +154,29 @@ class _GraficosCategoriaWidgetState extends State<GraficosCategoriaWidget> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
+            // Gráfico + Legenda (sem header)
             Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: cor.withAlpha(26),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    icone,
-                    color: cor,
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  titulo,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.black87,
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 24),
-
-            // Gráfico + Legenda
-            Row(
-              children: [
-                // Gráfico de pizza
+                // Gráfico interativo reutilizável
                 Expanded(
-                  flex: 2,
-                  child: SizedBox(
-                    height: 200,
-                    child: PieChart(
-                      _buildPieChartData(dados),
+                  child: InteractivePieChartWithLegend(
+                    data: _convertToChartData(dados),
+                    centerTitle: titulo.split(' ')[0], // "Despesas" ou "Receitas"
+                    centerSubtitle: 'Categoria',
+                    centerTitleColor: cor.withAlpha(204),
+                    centerSubtitleColor: cor.withAlpha(153),
+                    onTap: (item) => _navegarParaCategoriaEspecifica(
+                      context,
+                      item.label,
+                      titulo,
                     ),
-                  ),
-                ),
-
-                const SizedBox(width: 20),
-
-                // Legenda
-                Expanded(
-                  flex: 1,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      for (final categoria in dados.take(6))
-                        Builder(
-                          builder: (context) {
-                            final cores = _getCoresGrafico();
-                            final index = dados.indexOf(categoria);
-                            final cor = cores[index % cores.length];
-
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 12,
-                                    height: 12,
-                                    decoration: BoxDecoration(
-                                      color: cor,
-                                      borderRadius: BorderRadius.circular(2),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          categoria['categoria'] ?? '',
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w500,
-                                            color: Colors.black87,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        Text(
-                                          CurrencyFormatter.format(categoria['total_valor'] ?? 0.0),
-                                          style: const TextStyle(
-                                            fontSize: 11,
-                                            color: Colors.grey,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
-                    ],
+                    onLegendTap: (item) => _navegarParaCategoriaEspecifica(
+                      context,
+                      item.label,
+                      titulo,
+                    ),
+                    valueFormatter: (value) => CurrencyFormatter.format(value),
+                    height: 200,
                   ),
                 ),
               ],
@@ -257,8 +187,26 @@ class _GraficosCategoriaWidgetState extends State<GraficosCategoriaWidget> {
     );
   }
 
-  /// 🎨 Cores para o gráfico
-  List<Color> _getCoresGrafico() {
+  /// 🎨 Obter cor real da categoria
+  Color _getCorCategoria(String nomeCategoria) {
+    try {
+      final categoria = _todasCategorias.firstWhere(
+        (cat) => cat.nome.toLowerCase() == nomeCategoria.toLowerCase(),
+      );
+
+      // Converter string hex para Color
+      final colorHex = categoria.cor.replaceAll('#', '');
+      return Color(int.parse('FF$colorHex', radix: 16));
+    } catch (e) {
+      // Fallback para cores padrão se não encontrar a categoria
+      final cores = _getCoresGraficoFallback();
+      final index = nomeCategoria.hashCode % cores.length;
+      return cores[index];
+    }
+  }
+
+  /// 🎨 Cores fallback se não encontrar categoria
+  List<Color> _getCoresGraficoFallback() {
     return [
       Colors.blue,
       Colors.green,
@@ -273,36 +221,66 @@ class _GraficosCategoriaWidgetState extends State<GraficosCategoriaWidget> {
     ];
   }
 
-  /// 📊 Dados do gráfico de pizza
-  PieChartData _buildPieChartData(List<Map<String, dynamic>> dados) {
-    final cores = _getCoresGrafico();
-    final total = dados.fold(0.0, (sum, cat) => sum + (cat['total_valor'] ?? 0.0));
+  /// 🔄 Converter dados para o formato do componente reutilizável
+  List<PieChartDataItem> _convertToChartData(List<Map<String, dynamic>> dados) {
+    return dados.take(6).map((categoria) {
+      final valor = (categoria['total_valor'] ?? 0.0).toDouble();
+      final nome = categoria['categoria'] as String;
+      final cor = _getCorCategoria(nome); // Usar cor real da categoria
 
-    if (total == 0) {
-      return PieChartData(sections: []);
-    }
+      return PieChartDataItem(
+        label: nome,
+        value: valor,
+        color: cor,
+        data: categoria, // Dados originais para referência
+      );
+    }).toList();
+  }
 
-    return PieChartData(
-      sectionsSpace: 2,
-      centerSpaceRadius: 50,
-      sections: dados.take(6).map((categoria) {
-        final index = dados.indexOf(categoria);
-        final cor = cores[index % cores.length];
-        final valor = (categoria['total_valor'] ?? 0.0).toDouble();
-        final percentual = (valor / total) * 100;
+  /// 🧭 Navegar para página de categorias (fallback)
+  Future<void> _navegarParaCategorias(BuildContext context, String titulo) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const CategoriasPage(),
+      ),
+    );
+  }
 
-        return PieChartSectionData(
-          color: cor,
-          value: valor,
-          title: '${percentual.toStringAsFixed(1)}%',
-          radius: 60,
-          titleStyle: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
+  /// 🎯 Navegar para gestão de categoria específica
+  Future<void> _navegarParaCategoriaEspecifica(BuildContext context, String nomeCategoria, String titulo) async {
+    try {
+      // Buscar a categoria pelo nome
+      final isDespesa = titulo.toLowerCase().contains('despesas');
+      final tipo = isDespesa ? 'despesa' : 'receita';
+
+      final categorias = await _categoriaService.fetchCategorias(tipo: tipo);
+      final categoria = categorias
+          .where((cat) => cat.ativo) // Filtrar apenas categorias ativas
+          .firstWhere(
+            (cat) => cat.nome.toLowerCase() == nomeCategoria.toLowerCase(),
+            orElse: () => throw Exception('Categoria não encontrada'),
+          );
+
+      if (context.mounted) {
+        // Aguardar retorno da navegação e recarregar dados
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => GestaoCategoriaPage(categoria: categoria),
           ),
         );
-      }).toList(),
-    );
+
+        // Recarregar dados após voltar para atualizar cores
+        _carregarDados();
+      }
+    } catch (e) {
+      // Se não encontrar a categoria, vai para a página geral
+      if (context.mounted) {
+        await _navegarParaCategorias(context, titulo);
+        // Recarregar também no fallback
+        _carregarDados();
+      }
+    }
   }
 }

@@ -70,6 +70,184 @@ enum TransacoesPageMode {
   final bool apenasCartao;
 }
 
+/// Filtros de período para navegação temporal
+enum FiltroPeriodo {
+  mesAtual(
+    titulo: 'Mês Atual',
+    icone: Icons.calendar_today,
+  ),
+  anoAtual(
+    titulo: 'Ano Atual',
+    icone: Icons.date_range,
+  ),
+  ultimos3Meses(
+    titulo: 'Últimos 3 Meses',
+    icone: Icons.calendar_month,
+  ),
+  ultimos6Meses(
+    titulo: 'Últimos 6 Meses',
+    icone: Icons.date_range,
+  );
+
+  const FiltroPeriodo({
+    required this.titulo,
+    required this.icone,
+  });
+
+  final String titulo;
+  final IconData icone;
+}
+
+/// Visões rápidas pragmáticas
+enum VisaoRapida {
+  // Status
+  pendentes(
+    titulo: 'Pendentes (sem cartão)',
+    icone: Icons.pending_actions,
+    categoria: 'Status',
+  ),
+  faturasPendentes(
+    titulo: 'Faturas Pendentes',
+    icone: Icons.credit_card_outlined,
+    categoria: 'Status',
+  ),
+  efetivadas(
+    titulo: 'Efetivadas',
+    icone: Icons.check_circle_outline,
+    categoria: 'Status',
+  ),
+  vencidas(
+    titulo: 'Vencidas',
+    icone: Icons.warning_outlined,
+    categoria: 'Status',
+  ),
+
+  // Origem
+  porCartao(
+    titulo: 'Por Cartão',
+    icone: Icons.credit_card,
+    categoria: 'Origem',
+  ),
+  porConta(
+    titulo: 'Por Conta',
+    icone: Icons.account_balance_wallet,
+    categoria: 'Origem',
+  ),
+  transferencias(
+    titulo: 'Transferências',
+    icone: Icons.swap_horiz,
+    categoria: 'Origem',
+  ),
+
+  // Combinadas
+  despesasMes(
+    titulo: 'Despesas do Mês',
+    icone: Icons.trending_down,
+    categoria: 'Inteligentes',
+  ),
+  receitasAno(
+    titulo: 'Receitas do Ano',
+    icone: Icons.trending_up,
+    categoria: 'Inteligentes',
+  );
+
+  const VisaoRapida({
+    required this.titulo,
+    required this.icone,
+    required this.categoria,
+  });
+
+  final String titulo;
+  final IconData icone;
+  final String categoria;
+}
+
+/// Enum para filtros inteligentes pré-definidos (DEPRECATED - será removido)
+enum FiltroInteligente {
+  // Por período
+  mesAtual(
+    titulo: 'Mês Atual',
+    icone: Icons.calendar_today,
+    categoria: 'Período',
+  ),
+  anoAtual(
+    titulo: 'Ano Atual',
+    icone: Icons.date_range,
+    categoria: 'Período',
+  ),
+  ultimos3Meses(
+    titulo: 'Últimos 3 Meses',
+    icone: Icons.calendar_month,
+    categoria: 'Período',
+  ),
+  ultimos6Meses(
+    titulo: 'Últimos 6 Meses',
+    icone: Icons.date_range,
+    categoria: 'Período',
+  ),
+
+  // Por status
+  transacoesPendentes(
+    titulo: 'Pendentes (sem cartão)',
+    icone: Icons.pending_actions,
+    categoria: 'Status',
+  ),
+  faturasPendentes(
+    titulo: 'Faturas Pendentes',
+    icone: Icons.credit_card_outlined,
+    categoria: 'Status',
+  ),
+  transacoesEfetivadas(
+    titulo: 'Efetivadas',
+    icone: Icons.check_circle_outline,
+    categoria: 'Status',
+  ),
+  transacoesVencidas(
+    titulo: 'Vencidas',
+    icone: Icons.warning_outlined,
+    categoria: 'Status',
+  ),
+
+  // Por origem
+  porCartao(
+    titulo: 'Por Cartão',
+    icone: Icons.credit_card,
+    categoria: 'Origem',
+  ),
+  porConta(
+    titulo: 'Por Conta',
+    icone: Icons.account_balance_wallet,
+    categoria: 'Origem',
+  ),
+  transferencias(
+    titulo: 'Transferências',
+    icone: Icons.swap_horiz,
+    categoria: 'Origem',
+  ),
+
+  // Combinados inteligentes
+  despesasMes(
+    titulo: 'Despesas do Mês',
+    icone: Icons.trending_down,
+    categoria: 'Inteligentes',
+  ),
+  receitasAno(
+    titulo: 'Receitas do Ano',
+    icone: Icons.trending_up,
+    categoria: 'Inteligentes',
+  );
+
+  const FiltroInteligente({
+    required this.titulo,
+    required this.icone,
+    required this.categoria,
+  });
+
+  final String titulo;
+  final IconData icone;
+  final String categoria;
+}
+
 class TransacoesPage extends StatefulWidget {
   final TransacoesPageMode modoInicial;
   final Map<String, dynamic>? filtrosIniciais;
@@ -108,6 +286,12 @@ class _TransacoesPageState extends State<TransacoesPage>
   String? _contaFiltro;
   bool _agruparPorDia = true;
   bool _mostrarPendentes = true;
+
+  // Filtros por categoria
+  FiltroPeriodo? _periodoAtivo;
+  VisaoRapida? _visaoAtiva;
+  FiltroInteligente? _filtroAtivo; // DEPRECATED - manter por compatibilidade temporária
+  Map<String, dynamic> _parametrosFiltro = {};
   
   // Toggle específico para cartões - Padrão Device
   bool _porFatura = true; // true = "Por Fatura", false = "Detalhado"
@@ -210,11 +394,18 @@ class _TransacoesPageState extends State<TransacoesPage>
   /// 🔄 CARREGAR DADOS - Adaptativo por modo
   Future<void> _carregarDados() async {
     setState(() => _loading = true);
-    
+
     try {
-      // Período do mês atual
-      final inicioMes = DateTime(_mesAtual.year, _mesAtual.month, 1);
-      final fimMes = DateTime(_mesAtual.year, _mesAtual.month + 1, 0);
+      // Determinar período baseado no filtro ativo ou mês atual
+      DateTime inicioMes, fimMes;
+
+      if (_filtroAtivo != null && _parametrosFiltro.containsKey('inicio')) {
+        inicioMes = _parametrosFiltro['inicio'] as DateTime;
+        fimMes = _parametrosFiltro['fim'] as DateTime;
+      } else {
+        inicioMes = DateTime(_mesAtual.year, _mesAtual.month, 1);
+        fimMes = DateTime(_mesAtual.year, _mesAtual.month + 1, 0);
+      }
       
       // Carregar dados base em paralelo (offline-first)
       final futures = await Future.wait([
@@ -349,6 +540,19 @@ class _TransacoesPageState extends State<TransacoesPage>
   }
   
   Future<void> _selecionarMes() async {
+    final resultado = await _mostrarModalPeriodo();
+
+    if (resultado != null) {
+      if (resultado['tipo'] == 'filtro_periodo') {
+        _aplicarFiltroPeriodo(resultado['periodo'] as FiltroPeriodo);
+      } else if (resultado['tipo'] == 'data_picker') {
+        _abrirSeletorData();
+      }
+    }
+  }
+
+  /// Abre o DatePicker tradicional
+  Future<void> _abrirSeletorData() async {
     final data = await showDatePicker(
       context: context,
       initialDate: _mesAtual,
@@ -357,13 +561,686 @@ class _TransacoesPageState extends State<TransacoesPage>
       locale: const Locale('pt', 'BR'),
       initialDatePickerMode: DatePickerMode.year,
     );
-    
+
     if (data != null) {
       setState(() {
         _mesAtual = DateTime(data.year, data.month);
+        _filtroAtivo = null; // Limpar filtro ativo
+        _parametrosFiltro.clear();
       });
       _carregarDados();
     }
+  }
+
+  /// Aplica filtro de período selecionado
+  void _aplicarFiltroPeriodo(FiltroPeriodo periodo) {
+    final agora = DateTime.now();
+
+    setState(() {
+      _periodoAtivo = periodo;
+      _visaoAtiva = null; // Limpar visão ativa
+      _filtroAtivo = null; // Limpar filtro antigo
+      _parametrosFiltro = _gerarParametrosFiltroPeriodo(periodo);
+
+      // Para "Mês Atual" e "Ano Atual", também atualiza a navegação
+      if (periodo == FiltroPeriodo.mesAtual) {
+        _mesAtual = DateTime(agora.year, agora.month);
+        _periodoAtivo = null; // Não manter como filtro, apenas navegar
+        _parametrosFiltro.clear();
+      } else if (periodo == FiltroPeriodo.anoAtual) {
+        _mesAtual = DateTime(agora.year, agora.month);
+        _periodoAtivo = null; // Não manter como filtro, apenas navegar
+        _parametrosFiltro.clear();
+      }
+    });
+    _carregarDados();
+  }
+
+  /// Aplica visão rápida selecionada
+  void _aplicarVisaoRapida(VisaoRapida visao) {
+    setState(() {
+      _visaoAtiva = visao;
+      _periodoAtivo = null; // Limpar período ativo
+      _filtroAtivo = null; // Limpar filtro antigo
+      _parametrosFiltro = _gerarParametrosVisaoRapida(visao);
+    });
+    _carregarDados();
+  }
+
+  /// Gera parâmetros para filtro de período
+  Map<String, dynamic> _gerarParametrosFiltroPeriodo(FiltroPeriodo periodo) {
+    final agora = DateTime.now();
+
+    switch (periodo) {
+      case FiltroPeriodo.mesAtual:
+        return {
+          'inicio': DateTime(agora.year, agora.month, 1),
+          'fim': DateTime(agora.year, agora.month + 1, 0),
+        };
+
+      case FiltroPeriodo.anoAtual:
+        return {
+          'inicio': DateTime(agora.year, 1, 1),
+          'fim': DateTime(agora.year, 12, 31),
+        };
+
+      case FiltroPeriodo.ultimos3Meses:
+        return {
+          'inicio': DateTime(agora.year, agora.month - 2, 1),
+          'fim': DateTime(agora.year, agora.month + 1, 0),
+        };
+
+      case FiltroPeriodo.ultimos6Meses:
+        return {
+          'inicio': DateTime(agora.year, agora.month - 5, 1),
+          'fim': DateTime(agora.year, agora.month + 1, 0),
+        };
+    }
+  }
+
+  /// Gera parâmetros para visão rápida
+  Map<String, dynamic> _gerarParametrosVisaoRapida(VisaoRapida visao) {
+    final agora = DateTime.now();
+
+    switch (visao) {
+      case VisaoRapida.pendentes:
+        return {
+          'efetivado': false,
+          'cartao': false,
+        };
+
+      case VisaoRapida.faturasPendentes:
+        return {
+          'cartao': true,
+          'efetivado': false,
+        };
+
+      case VisaoRapida.efetivadas:
+        return {
+          'efetivado': true,
+        };
+
+      case VisaoRapida.vencidas:
+        return {
+          'vencidas': true,
+          'efetivado': false,
+        };
+
+      case VisaoRapida.porCartao:
+        return {
+          'cartao': true,
+        };
+
+      case VisaoRapida.porConta:
+        return {
+          'cartao': false,
+        };
+
+      case VisaoRapida.transferencias:
+        return {
+          'tipo': 'transferencia',
+        };
+
+      case VisaoRapida.despesasMes:
+        return {
+          'tipo': 'despesa',
+          'cartao': false,
+          'inicio': DateTime(agora.year, agora.month, 1),
+          'fim': DateTime(agora.year, agora.month + 1, 0),
+        };
+
+      case VisaoRapida.receitasAno:
+        return {
+          'tipo': 'receita',
+          'inicio': DateTime(agora.year, 1, 1),
+          'fim': DateTime(agora.year, 12, 31),
+        };
+    }
+  }
+
+  /// Modal com filtros de período
+  Future<Map<String, dynamic>?> _mostrarModalPeriodo() async {
+    return await showModalBottomSheet<Map<String, dynamic>>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _buildModalPeriodo(),
+    );
+  }
+
+  /// Modal com visões rápidas
+  Future<VisaoRapida?> _mostrarModalVisoesRapidas() async {
+    return await showModalBottomSheet<VisaoRapida>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _buildModalVisoesRapidas(),
+    );
+  }
+
+  /// Modal com filtros inteligentes pré-definidos (DEPRECATED)
+  Future<Map<String, dynamic>?> _mostrarModalFiltros() async {
+    return await showModalBottomSheet<Map<String, dynamic>>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _buildModalFiltros(),
+    );
+  }
+
+  /// Aplica filtro inteligente selecionado
+  void _aplicarFiltroInteligente(FiltroInteligente filtro) {
+    setState(() {
+      _filtroAtivo = filtro;
+      _parametrosFiltro = _gerarParametrosFiltro(filtro);
+    });
+    _carregarDados();
+  }
+
+  /// Gera parâmetros específicos para cada filtro
+  Map<String, dynamic> _gerarParametrosFiltro(FiltroInteligente filtro) {
+    final agora = DateTime.now();
+
+    switch (filtro) {
+      case FiltroInteligente.mesAtual:
+        return {
+          'inicio': DateTime(agora.year, agora.month, 1),
+          'fim': DateTime(agora.year, agora.month + 1, 0),
+        };
+
+      case FiltroInteligente.anoAtual:
+        return {
+          'inicio': DateTime(agora.year, 1, 1),
+          'fim': DateTime(agora.year, 12, 31),
+        };
+
+      case FiltroInteligente.ultimos3Meses:
+        return {
+          'inicio': DateTime(agora.year, agora.month - 2, 1),
+          'fim': DateTime(agora.year, agora.month + 1, 0),
+        };
+
+      case FiltroInteligente.ultimos6Meses:
+        return {
+          'inicio': DateTime(agora.year, agora.month - 5, 1),
+          'fim': DateTime(agora.year, agora.month + 1, 0),
+        };
+
+      case FiltroInteligente.transacoesPendentes:
+        return {
+          'efetivado': false,
+          'cartao': false,
+        };
+
+      case FiltroInteligente.faturasPendentes:
+        return {
+          'cartao': true,
+          'efetivado': false,
+        };
+
+      case FiltroInteligente.transacoesEfetivadas:
+        return {
+          'efetivado': true,
+        };
+
+      case FiltroInteligente.transacoesVencidas:
+        return {
+          'vencidas': true,
+          'efetivado': false,
+        };
+
+      case FiltroInteligente.porCartao:
+        return {
+          'cartao': true,
+        };
+
+      case FiltroInteligente.porConta:
+        return {
+          'cartao': false,
+        };
+
+      case FiltroInteligente.transferencias:
+        return {
+          'tipo': 'transferencia',
+        };
+
+      case FiltroInteligente.despesasMes:
+        return {
+          'tipo': 'despesa',
+          'cartao': false,
+          'inicio': DateTime(agora.year, agora.month, 1),
+          'fim': DateTime(agora.year, agora.month + 1, 0),
+        };
+
+      case FiltroInteligente.receitasAno:
+        return {
+          'tipo': 'receita',
+          'inicio': DateTime(agora.year, 1, 1),
+          'fim': DateTime(agora.year, 12, 31),
+        };
+
+      default:
+        return {};
+    }
+  }
+
+  /// Constrói o modal de seleção de período
+  Widget _buildModalPeriodo() {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Header
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.calendar_today,
+                  color: Theme.of(context).primaryColor,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Selecionar Período',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close),
+                ),
+              ],
+            ),
+          ),
+
+          // Lista de períodos
+          Flexible(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Column(
+                children: _buildFiltrosPeriodo(),
+              ),
+            ),
+          ),
+
+          // Opção do seletor de data tradicional
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              border: Border(top: BorderSide(color: Colors.grey[200]!)),
+            ),
+            child: SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () => Navigator.pop(context, {'tipo': 'data_picker'}),
+                icon: const Icon(Icons.calendar_month),
+                label: const Text('Escolher Data Específica'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.all(16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Constrói o modal de visões rápidas
+  Widget _buildModalVisoesRapidas() {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Header
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.visibility,
+                  color: Theme.of(context).primaryColor,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Visões Rápidas',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close),
+                ),
+              ],
+            ),
+          ),
+
+          // Lista de visões agrupadas por categoria
+          Flexible(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Column(
+                children: _buildVisoesAgrupadas(),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Constrói o modal de seleção de filtros (DEPRECATED)
+  Widget _buildModalFiltros() {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Header
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.filter_list,
+                  color: Theme.of(context).primaryColor,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Selecionar Filtro',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close),
+                ),
+              ],
+            ),
+          ),
+
+          // Lista de filtros agrupados por categoria
+          Flexible(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Column(
+                children: _buildFiltrosAgrupados(),
+              ),
+            ),
+          ),
+
+          // Opção do seletor de data tradicional
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              border: Border(top: BorderSide(color: Colors.grey[200]!)),
+            ),
+            child: SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () => Navigator.pop(context, {'tipo': 'data_picker'}),
+                icon: const Icon(Icons.calendar_month),
+                label: const Text('Escolher Data Específica'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.all(16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Constrói lista de filtros de período
+  List<Widget> _buildFiltrosPeriodo() {
+    final widgets = <Widget>[];
+
+    for (final periodo in FiltroPeriodo.values) {
+      widgets.add(_buildItemPeriodo(periodo));
+    }
+
+    return widgets;
+  }
+
+  /// Constrói visões agrupadas por categoria
+  List<Widget> _buildVisoesAgrupadas() {
+    final grupos = <String, List<VisaoRapida>>{};
+
+    // Agrupa visões por categoria
+    for (final visao in VisaoRapida.values) {
+      grupos.putIfAbsent(visao.categoria, () => []).add(visao);
+    }
+
+    final widgets = <Widget>[];
+
+    for (final categoria in grupos.keys) {
+      // Título da categoria
+      widgets.add(
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+          child: Row(
+            children: [
+              Text(
+                categoria,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[700],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+
+      // Visões da categoria
+      for (final visao in grupos[categoria]!) {
+        widgets.add(_buildItemVisao(visao));
+      }
+    }
+
+    return widgets;
+  }
+
+  /// Constrói item individual de período
+  Widget _buildItemPeriodo(FiltroPeriodo periodo) {
+    final isAtivo = _periodoAtivo == periodo;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+      decoration: BoxDecoration(
+        color: isAtivo ? Theme.of(context).primaryColor.withValues(alpha: 0.1) : null,
+        borderRadius: BorderRadius.circular(8),
+        border: isAtivo ? Border.all(color: Theme.of(context).primaryColor, width: 1) : null,
+      ),
+      child: ListTile(
+        leading: Icon(
+          periodo.icone,
+          color: isAtivo ? Theme.of(context).primaryColor : Colors.grey[600],
+        ),
+        title: Text(
+          periodo.titulo,
+          style: TextStyle(
+            fontWeight: isAtivo ? FontWeight.w600 : FontWeight.normal,
+            color: isAtivo ? Theme.of(context).primaryColor : Colors.black87,
+          ),
+        ),
+        trailing: isAtivo
+          ? Icon(
+              Icons.check_circle,
+              color: Theme.of(context).primaryColor,
+            )
+          : null,
+        onTap: () {
+          Navigator.pop(context, {
+            'tipo': 'filtro_periodo',
+            'periodo': periodo,
+          });
+        },
+      ),
+    );
+  }
+
+  /// Constrói item individual de visão
+  Widget _buildItemVisao(VisaoRapida visao) {
+    final isAtiva = _visaoAtiva == visao;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+      decoration: BoxDecoration(
+        color: isAtiva ? Theme.of(context).primaryColor.withValues(alpha: 0.1) : null,
+        borderRadius: BorderRadius.circular(8),
+        border: isAtiva ? Border.all(color: Theme.of(context).primaryColor, width: 1) : null,
+      ),
+      child: ListTile(
+        leading: Icon(
+          visao.icone,
+          color: isAtiva ? Theme.of(context).primaryColor : Colors.grey[600],
+        ),
+        title: Text(
+          visao.titulo,
+          style: TextStyle(
+            fontWeight: isAtiva ? FontWeight.w600 : FontWeight.normal,
+            color: isAtiva ? Theme.of(context).primaryColor : Colors.black87,
+          ),
+        ),
+        trailing: isAtiva
+          ? Icon(
+              Icons.check_circle,
+              color: Theme.of(context).primaryColor,
+            )
+          : null,
+        onTap: () {
+          Navigator.pop(context, visao);
+        },
+      ),
+    );
+  }
+
+  /// Constrói filtros agrupados por categoria (DEPRECATED)
+  List<Widget> _buildFiltrosAgrupados() {
+    final grupos = <String, List<FiltroInteligente>>{};
+
+    // Agrupa filtros por categoria
+    for (final filtro in FiltroInteligente.values) {
+      grupos.putIfAbsent(filtro.categoria, () => []).add(filtro);
+    }
+
+    final widgets = <Widget>[];
+
+    for (final categoria in grupos.keys) {
+      // Título da categoria
+      widgets.add(
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+          child: Row(
+            children: [
+              Text(
+                categoria,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[700],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+
+      // Filtros da categoria
+      for (final filtro in grupos[categoria]!) {
+        widgets.add(_buildItemFiltro(filtro));
+      }
+    }
+
+    return widgets;
+  }
+
+  /// Constrói item individual de filtro
+  Widget _buildItemFiltro(FiltroInteligente filtro) {
+    final isAtivo = _filtroAtivo == filtro;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+      decoration: BoxDecoration(
+        color: isAtivo ? Theme.of(context).primaryColor.withValues(alpha: 0.1) : null,
+        borderRadius: BorderRadius.circular(8),
+        border: isAtivo ? Border.all(color: Theme.of(context).primaryColor, width: 1) : null,
+      ),
+      child: ListTile(
+        leading: Icon(
+          filtro.icone,
+          color: isAtivo ? Theme.of(context).primaryColor : Colors.grey[600],
+        ),
+        title: Text(
+          filtro.titulo,
+          style: TextStyle(
+            fontWeight: isAtivo ? FontWeight.w600 : FontWeight.normal,
+            color: isAtivo ? Theme.of(context).primaryColor : Colors.black87,
+          ),
+        ),
+        trailing: isAtivo
+          ? Icon(
+              Icons.check_circle,
+              color: Theme.of(context).primaryColor,
+            )
+          : null,
+        onTap: () {
+          Navigator.pop(context, {
+            'tipo': 'filtro_inteligente',
+            'filtro': filtro,
+          });
+        },
+      ),
+    );
   }
 
   /// ➕ NAVEGAR PARA NOVA TRANSAÇÃO
@@ -1176,6 +2053,426 @@ class _TransacoesPageState extends State<TransacoesPage>
     }
   }
 
+  /// Widget para exibir chips dos filtros ativos
+  Widget _buildFiltrosAtivosChips() {
+    final List<Widget> chips = [];
+
+    // 1. PERÍODO ATIVO
+    if (_periodoAtivo != null) {
+      chips.add(_buildChipPeriodoAtivo(_periodoAtivo!));
+    }
+
+    // 2. VISÃO ATIVA
+    if (_visaoAtiva != null) {
+      chips.add(_buildChipVisaoAtiva(_visaoAtiva!));
+    }
+
+    // 3. FILTRO INTELIGENTE ATIVO (DEPRECATED - manter por compatibilidade)
+    if (_filtroAtivo != null) {
+      chips.add(_buildChipFiltroInteligente(_filtroAtivo!));
+    }
+
+    // 4. PERÍODO/DATA (se não há filtros ativos)
+    if (_periodoAtivo == null && _visaoAtiva == null && _filtroAtivo == null) {
+      chips.add(_buildChipPeriodo());
+    }
+
+    // 3. FILTROS PERSONALIZADOS
+    if (_temFiltrosAtivos()) {
+      // Categorias
+      if (_filtrosPersonalizados['categorias']?.isNotEmpty ?? false) {
+        for (final categoriaId in _filtrosPersonalizados['categorias']) {
+          final categoria = _encontrarCategoria(categoriaId);
+          if (categoria != null) {
+            chips.add(_buildChipCategoriaFiltro(categoria));
+          }
+        }
+      }
+
+      // Cartões
+      if (_filtrosPersonalizados['cartoes']?.isNotEmpty ?? false) {
+        for (final cartaoId in _filtrosPersonalizados['cartoes']) {
+          final cartao = _cartoes.firstWhere(
+            (c) => c.id == cartaoId,
+            orElse: () => CartaoModel(
+              id: '',
+              usuarioId: '',
+              nome: 'Cartão',
+              limite: 0,
+              diaFechamento: 1,
+              diaVencimento: 10,
+              ativo: true,
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+            ),
+          );
+          chips.add(_buildChipCartaoFiltro(cartao));
+        }
+      }
+
+      // Contas
+      if (_filtrosPersonalizados['contas']?.isNotEmpty ?? false) {
+        for (final contaId in _filtrosPersonalizados['contas']) {
+          final conta = _contas.firstWhere(
+            (c) => c.id == contaId,
+            orElse: () => ContaModel(
+              id: '',
+              usuarioId: '',
+              nome: 'Conta',
+              tipo: 'corrente',
+              saldoInicial: 0,
+              saldo: 0,
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+            ),
+          );
+          chips.add(_buildChipContaFiltro(conta));
+        }
+      }
+
+      // Status
+      if (_filtrosPersonalizados['status']?.isNotEmpty ?? false) {
+        for (final status in _filtrosPersonalizados['status']) {
+          chips.add(_buildChipStatusFiltro(status));
+        }
+      }
+
+      // Valor mínimo
+      if (_filtrosPersonalizados['valorMinimo'] != null && _filtrosPersonalizados['valorMinimo'] > 0) {
+        chips.add(_buildChipValorMinimo(_filtrosPersonalizados['valorMinimo']));
+      }
+
+      // Valor máximo
+      if (_filtrosPersonalizados['valorMaximo'] != null && _filtrosPersonalizados['valorMaximo'] > 0) {
+        chips.add(_buildChipValorMaximo(_filtrosPersonalizados['valorMaximo']));
+      }
+    }
+
+    // Se não há chips, não mostrar nada
+    if (chips.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    // Adicionar botão "Limpar filtros" se há filtros ativos
+    if (_periodoAtivo != null || _visaoAtiva != null || _filtroAtivo != null || _temFiltrosAtivos()) {
+      chips.add(_buildChipLimparFiltros());
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Wrap(
+        spacing: 6,
+        runSpacing: 4,
+        children: chips,
+      ),
+    );
+  }
+
+  /// Chip para filtro inteligente ativo
+  Widget _buildChipFiltroInteligente(FiltroInteligente filtro) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: Theme.of(context).primaryColor,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            filtro.icone,
+            size: 12,
+            color: Colors.white,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            filtro.titulo,
+            style: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Chip para período atual
+  Widget _buildChipPeriodo() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: const Color(0xFF6B7280),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.calendar_today,
+            size: 12,
+            color: Colors.white,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            _formatarMesCompacto(),
+            style: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Chip para categoria filtrada
+  Widget _buildChipCategoriaFiltro(CategoriaModel categoria) {
+    Color corCategoria;
+    try {
+      corCategoria = Color(int.parse(categoria.cor.replaceAll('#', '0xFF')));
+    } catch (e) {
+      corCategoria = const Color(0xFF6B7280);
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: corCategoria,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        categoria.nome,
+        style: const TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w500,
+          color: Colors.white,
+        ),
+      ),
+    );
+  }
+
+  /// Chip para cartão filtrado
+  Widget _buildChipCartaoFiltro(CartaoModel cartao) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF97316), // Laranja
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.credit_card,
+            size: 12,
+            color: Colors.white,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            cartao.nome,
+            style: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Chip para conta filtrada
+  Widget _buildChipContaFiltro(ContaModel conta) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: const Color(0xFF3B82F6), // Azul
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.account_balance_wallet,
+            size: 12,
+            color: Colors.white,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            conta.nome,
+            style: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Chip para status filtrado
+  Widget _buildChipStatusFiltro(String status) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: status == 'efetivado' ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        status == 'efetivado' ? 'Efetivado' : 'Pendente',
+        style: const TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w500,
+          color: Colors.white,
+        ),
+      ),
+    );
+  }
+
+  /// Chip para valor mínimo
+  Widget _buildChipValorMinimo(double valor) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: const Color(0xFF8B5CF6), // Roxo
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        'Min: R\$ ${valor.toStringAsFixed(2)}',
+        style: const TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w500,
+          color: Colors.white,
+        ),
+      ),
+    );
+  }
+
+  /// Chip para valor máximo
+  Widget _buildChipValorMaximo(double valor) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: const Color(0xFF8B5CF6), // Roxo
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        'Max: R\$ ${valor.toStringAsFixed(2)}',
+        style: const TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w500,
+          color: Colors.white,
+        ),
+      ),
+    );
+  }
+
+  /// Chip para limpar filtros
+  Widget _buildChipLimparFiltros() {
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _periodoAtivo = null;
+          _visaoAtiva = null;
+          _filtroAtivo = null;
+          _parametrosFiltro.clear();
+          _filtrosPersonalizados.clear();
+        });
+        _carregarDados();
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(
+          color: Colors.grey[400],
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.clear,
+              size: 12,
+              color: Colors.white,
+            ),
+            const SizedBox(width: 4),
+            const Text(
+              'Limpar',
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
+                color: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Chip para período ativo
+  Widget _buildChipPeriodoAtivo(FiltroPeriodo periodo) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: const Color(0xFF6B7280),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            periodo.icone,
+            size: 12,
+            color: Colors.white,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            periodo.titulo,
+            style: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Chip para visão ativa
+  Widget _buildChipVisaoAtiva(VisaoRapida visao) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: Theme.of(context).primaryColor,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            visao.icone,
+            size: 12,
+            color: Colors.white,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            visao.titulo,
+            style: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   String _formatarTipoEspecifico(String tipo) {
     switch (tipo) {
       case 'extra':
@@ -1539,10 +2836,49 @@ class _TransacoesPageState extends State<TransacoesPage>
   
   /// 📅 FORMATO COMPACTO DO MÊS
   String _formatarMesCompacto() {
+    final agora = DateTime.now();
     const meses = [
       'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
       'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
     ];
+
+    // Prioridade: Visão > Período > Filtro Antigo > Data Atual
+    if (_visaoAtiva != null) {
+      return _visaoAtiva!.titulo;
+    }
+
+    if (_periodoAtivo != null) {
+      switch (_periodoAtivo) {
+        case FiltroPeriodo.mesAtual:
+          final mes = meses[agora.month - 1];
+          final ano = agora.year.toString().substring(2);
+          return '$mes/$ano';
+
+        case FiltroPeriodo.anoAtual:
+          return agora.year.toString();
+
+        default:
+          return _periodoAtivo!.titulo;
+      }
+    }
+
+    // Compatibilidade com filtros antigos
+    if (_filtroAtivo != null) {
+      switch (_filtroAtivo) {
+        case FiltroInteligente.mesAtual:
+          final mes = meses[agora.month - 1];
+          final ano = agora.year.toString().substring(2);
+          return '$mes/$ano';
+
+        case FiltroInteligente.anoAtual:
+          return agora.year.toString();
+
+        default:
+          return _filtroAtivo!.titulo;
+      }
+    }
+
+    // Caso padrão: mostra mês/ano atual da navegação
     final mes = meses[_mesAtual.month - 1];
     final ano = _mesAtual.year.toString().substring(2);
     return '$mes/$ano';
@@ -2425,7 +3761,22 @@ class _TransacoesPageState extends State<TransacoesPage>
               tooltip: _modoVisualizacao == 0 ? 'Lista Compacta' : 
                       _modoVisualizacao == 1 ? 'Timeline' : 'Lista Normal',
             ),
-          
+
+          // Botão de Visões Rápidas
+          IconButton(
+            onPressed: () async {
+              final visao = await _mostrarModalVisoesRapidas();
+              if (visao != null) {
+                _aplicarVisaoRapida(visao);
+              }
+            },
+            icon: Icon(
+              Icons.visibility,
+              color: _visaoAtiva != null ? Colors.yellow[300] : Colors.white,
+            ),
+            tooltip: 'Visões Rápidas',
+          ),
+
           // Botão de filtros com indicador
           Stack(
             children: [
@@ -2494,6 +3845,9 @@ class _TransacoesPageState extends State<TransacoesPage>
                       physics: const AlwaysScrollableScrollPhysics(),
                       child: Column(
                         children: [
+                          // Chips de filtros ativos
+                          _buildFiltrosAtivosChips(),
+
                           // Resumo adaptativo - Padrão Device
                           _buildResumoAdaptativo(),
                           
@@ -2547,9 +3901,45 @@ class _TransacoesPageState extends State<TransacoesPage>
   }
 
   List<TransacaoModel> _aplicarFiltrosPersonalizados(List<TransacaoModel> transacoes) {
-    if (!_temFiltrosAtivos()) return transacoes;
+    if (!_temFiltrosAtivos() && _filtroAtivo == null) return transacoes;
 
     return transacoes.where((transacao) {
+      // Aplicar filtros inteligentes primeiro
+      if (_filtroAtivo != null && _parametrosFiltro.isNotEmpty) {
+        // Filtro por efetivado
+        if (_parametrosFiltro.containsKey('efetivado')) {
+          final efetivadoRequerido = _parametrosFiltro['efetivado'] as bool;
+          if (transacao.efetivado != efetivadoRequerido) {
+            return false;
+          }
+        }
+
+        // Filtro por cartão
+        if (_parametrosFiltro.containsKey('cartao')) {
+          final cartaoRequerido = _parametrosFiltro['cartao'] as bool;
+          final temCartao = transacao.cartaoId != null;
+          if (cartaoRequerido != temCartao) {
+            return false;
+          }
+        }
+
+        // Filtro por tipo
+        if (_parametrosFiltro.containsKey('tipo')) {
+          final tipoRequerido = _parametrosFiltro['tipo'] as String;
+          if (transacao.tipo != tipoRequerido) {
+            return false;
+          }
+        }
+
+        // Filtro por vencidas
+        if (_parametrosFiltro.containsKey('vencidas')) {
+          final agora = DateTime.now();
+          final isVencida = !transacao.efetivado && transacao.data.isBefore(agora);
+          if (!isVencida) {
+            return false;
+          }
+        }
+      }
       // Filtro por categoria
       if (_filtrosPersonalizados['categorias']?.isNotEmpty ?? false) {
         if (!_filtrosPersonalizados['categorias'].contains(transacao.categoriaId)) {

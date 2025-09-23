@@ -77,8 +77,8 @@ class ResumoFinanceiroService {
     try {
       final result = await _db.select(
         'transacoes',
-        where: 'usuario_id = ? AND tipo = ? AND DATE(data) BETWEEN DATE(?) AND DATE(?)',
-        whereArgs: [userId, 'receita', inicio.toIso8601String().split('T')[0], fim.toIso8601String().split('T')[0]],
+        where: 'usuario_id = ? AND tipo = ? AND status = ? AND DATE(data) BETWEEN DATE(?) AND DATE(?)',
+        whereArgs: [userId, 'receita', 'confirmada', inicio.toIso8601String().split('T')[0], fim.toIso8601String().split('T')[0]],
       );
       
       double totalReceitas = 0.0;
@@ -98,8 +98,8 @@ class ResumoFinanceiroService {
     try {
       final result = await _db.select(
         'transacoes',
-        where: 'usuario_id = ? AND tipo = ? AND DATE(data) BETWEEN DATE(?) AND DATE(?)',
-        whereArgs: [userId, 'despesa', inicio.toIso8601String().split('T')[0], fim.toIso8601String().split('T')[0]],
+        where: 'usuario_id = ? AND tipo = ? AND status = ? AND DATE(data) BETWEEN DATE(?) AND DATE(?)',
+        whereArgs: [userId, 'despesa', 'confirmada', inicio.toIso8601String().split('T')[0], fim.toIso8601String().split('T')[0]],
       );
       
       double totalDespesas = 0.0;
@@ -131,8 +131,8 @@ class ResumoFinanceiroService {
     try {
       final result = await _db.select(
         'transacoes',
-        where: 'usuario_id = ? AND cartao_id IS NOT NULL AND DATE(data) BETWEEN DATE(?) AND DATE(?)',
-        whereArgs: [userId, inicio.toIso8601String().split('T')[0], fim.toIso8601String().split('T')[0]],
+        where: 'usuario_id = ? AND tipo = ? AND DATE(data) BETWEEN DATE(?) AND DATE(?)',
+        whereArgs: [userId, 'cartao_credito', inicio.toIso8601String().split('T')[0], fim.toIso8601String().split('T')[0]],
       );
       
       double totalCartoes = 0.0;
