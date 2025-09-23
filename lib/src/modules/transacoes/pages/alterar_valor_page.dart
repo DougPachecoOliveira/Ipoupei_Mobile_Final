@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../shared/theme/app_colors.dart';
-import '../components/smart_money_field.dart';
-import '../components/smart_input_field.dart';
 import '../models/transacao_model.dart';
 import '../services/transacao_edit_service.dart' show TransacaoEditService, EscopoEdicao;
 
@@ -144,18 +143,18 @@ class _AlterarValorPageState extends State<AlterarValorPage> {
     }
   }
 
-  /// Parse do valor usando a mesma lógica do SmartMoneyField
+  /// Parse do valor usando formato brasileiro (compatível com MoneyInputFormatter)
   double _parseValue(String text) {
     if (text.isEmpty) return 0.0;
 
-    // Remove tudo exceto números e vírgula
-    String cleaned = text.replaceAll(RegExp(r'[^0-9,.]'), '');
+    // Remove R$ e espaços
+    String cleaned = text.replaceAll('R\$', '').replaceAll(' ', '').trim();
 
     if (cleaned.isEmpty) return 0.0;
 
-    // Se tem vírgula, é formato brasileiro
+    // Formato brasileiro: 123,45
     if (cleaned.contains(',')) {
-      cleaned = cleaned.replaceAll('.', '').replaceAll(',', '.');
+      cleaned = cleaned.replaceAll(',', '.');
     }
 
     return double.tryParse(cleaned) ?? 0.0;
@@ -223,20 +222,6 @@ class _AlterarValorPageState extends State<AlterarValorPage> {
     }
   }
 
-  TransactionContext _getTransactionContext() {
-    switch (widget.transacao.tipo) {
-      case 'receita':
-        return TransactionContext.receita;
-      case 'despesa':
-        return widget.transacao.cartaoId != null
-          ? TransactionContext.cartao
-          : TransactionContext.despesa;
-      case 'transferencia':
-        return TransactionContext.transferencia;
-      default:
-        return TransactionContext.despesa;
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -300,13 +285,28 @@ class _AlterarValorPageState extends State<AlterarValorPage> {
               _buildCardTransacao(),
               const SizedBox(height: 24),
               
-              SmartMoneyField(
+              TextFormField(
                 controller: _valorController,
-                labelText: 'Novo Valor',
-                hintText: 'Digite o novo valor',
-                context: _getTransactionContext(),
+                keyboardType: TextInputType.number,
+                inputFormatters: [MoneyInputFormatter()],
+                textInputAction: TextInputAction.done,
                 autofocus: true,
-                onValueChanged: (value) {
+                decoration: InputDecoration(
+                  labelText: 'Novo Valor',
+                  hintText: 'R\$ 0,00',
+                  prefixIcon: const Icon(Icons.attach_money),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(
+                      color: _getCorHeader(),
+                      width: 2,
+                    ),
+                  ),
+                ),
+                onChanged: (value) {
                   // Callback quando o valor muda
                   setState(() {
                     // Atualiza preview
@@ -753,5 +753,42 @@ class _AlterarValorPageState extends State<AlterarValorPage> {
         ),
       ),
     );
+  }
+}
+
+/// Formatter para valores monetários usando abordagem cents-first
+/// Compatível com despesa_cartao_page.dart
+class MoneyInputFormatter extends TextInputFormatter {
+  final bool allowNegative;
+  MoneyInputFormatter({this.allowNegative = true});
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    if (newValue.text.isEmpty) {
+      return newValue;
+    }
+
+    try {
+      final numbersOnly = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
+
+      if (numbersOnly.isEmpty) {
+        return const TextEditingValue(text: '', selection: TextSelection.collapsed(offset: 0));
+      }
+
+      final value = int.parse(numbersOnly);
+      final formatted = (value / 100).toStringAsFixed(2).replaceAll('.', ',');
+
+      final newText = 'R\$ $formatted';
+
+      return TextEditingValue(
+        text: newText,
+        selection: TextSelection.collapsed(offset: newText.length),
+      );
+    } catch (e) {
+      return oldValue;
+    }
   }
 }

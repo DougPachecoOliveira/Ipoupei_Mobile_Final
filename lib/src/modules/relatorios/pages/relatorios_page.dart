@@ -12,6 +12,7 @@ import '../widgets/resumo_financeiro_widget.dart';
 import '../widgets/faturas_pendentes_widget.dart';
 import '../widgets/transacoes_pendentes_widget.dart';
 import '../models/resumo_financeiro_model.dart';
+import '../services/resumo_financeiro_service.dart';
 import '../../cartoes/models/cartao_model.dart';
 import '../../cartoes/models/fatura_model.dart';
 import '../../cartoes/services/cartao_service.dart';
@@ -22,6 +23,9 @@ import 'evolucao_mensal_page.dart';
 import 'relatorio_categoria_page.dart';
 import 'relatorio_conta_page.dart';
 import '../../diagnostico/widgets/diagnostico_dashboard_widget.dart';
+import '../../../shared/components/sidebar.dart';
+import '../widgets/insights_rapidos_widget.dart';
+import '../widgets/graficos_categoria_widget.dart';
 
 class RelatoriosPage extends StatefulWidget {
   const RelatoriosPage({super.key});
@@ -32,13 +36,17 @@ class RelatoriosPage extends StatefulWidget {
 
 class _RelatoriosPageState extends State<RelatoriosPage> {
   final _relatorioService = RelatorioService.instance;
+  final _resumoFinanceiroService = ResumoFinanceiroService.instance;
   final _cartaoService = CartaoService.instance;
   final _cartaoDataService = CartaoDataService.instance;
-  
-  DateTime _dataInicio = DateTime.now().subtract(const Duration(days: 30));
-  DateTime _dataFim = DateTime.now();
-  
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  // ✅ NOVA ESTRUTURA: Controle por mês como nas categorias
+  DateTime _mesAtual = DateTime.now();
+  bool _modoAno = false; // true = ano, false = mês
+
   Map<String, dynamic>? _resumoExecutivo;
+  ResumoFinanceiroData? _resumoFinanceiro; // Para os insights
   bool _loading = false;
 
   @override
@@ -47,17 +55,40 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
     _carregarResumo();
   }
 
-  /// 🔄 CARREGAR RESUMO
+  /// 🔄 CARREGAR RESUMO BASEADO NO MÊS SELECIONADO
   Future<void> _carregarResumo() async {
     setState(() => _loading = true);
-    
+
     try {
-      final resumo = await _relatorioService.fetchResumoExecutivo(
-        dataInicio: _dataInicio,
-        dataFim: _dataFim,
-      );
-      
-      setState(() => _resumoExecutivo = resumo);
+      // Calcular início e fim baseado no mês/ano atual
+      DateTime dataInicio, dataFim;
+
+      if (_modoAno) {
+        // Modo ano: janeiro a dezembro
+        dataInicio = DateTime(_mesAtual.year, 1, 1);
+        dataFim = DateTime(_mesAtual.year, 12, 31);
+      } else {
+        // Modo mês: primeiro ao último dia do mês
+        dataInicio = DateTime(_mesAtual.year, _mesAtual.month, 1);
+        dataFim = DateTime(_mesAtual.year, _mesAtual.month + 1, 0);
+      }
+
+      // Carregar resumo executivo e dados financeiros em paralelo
+      final results = await Future.wait([
+        _relatorioService.fetchResumoExecutivo(
+          dataInicio: dataInicio,
+          dataFim: dataFim,
+        ),
+        _resumoFinanceiroService.carregarResumo(
+          dataInicio: dataInicio,
+          dataFim: dataFim,
+        ),
+      ]);
+
+      setState(() {
+        _resumoExecutivo = results[0] as Map<String, dynamic>;
+        _resumoFinanceiro = results[1] as ResumoFinanceiroData;
+      });
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -69,23 +100,159 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
     }
   }
 
-  /// 📅 SELETOR DE PERÍODO
-  Future<void> _selecionarPeriodo() async {
-    final DateTimeRange? periodo = await showDateRangePicker(
-      context: context,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now().add(const Duration(days: 30)),
-      initialDateRange: DateTimeRange(start: _dataInicio, end: _dataFim),
-      locale: const Locale('pt', 'BR'),
-    );
-    
-    if (periodo != null) {
-      setState(() {
-        _dataInicio = periodo.start;
-        _dataFim = periodo.end;
-      });
-      _carregarResumo();
+  /// ⬅️ NAVEGAR PARA MÊS/ANO ANTERIOR
+  void _mesAnterior() {
+    setState(() {
+      if (_modoAno) {
+        _mesAtual = DateTime(_mesAtual.year - 1, _mesAtual.month, 1);
+      } else {
+        _mesAtual = DateTime(_mesAtual.year, _mesAtual.month - 1, 1);
+      }
+    });
+    _carregarResumo();
+  }
+
+  /// ➡️ NAVEGAR PARA PRÓXIMO MÊS/ANO
+  void _proximoMes() {
+    setState(() {
+      if (_modoAno) {
+        _mesAtual = DateTime(_mesAtual.year + 1, _mesAtual.month, 1);
+      } else {
+        _mesAtual = DateTime(_mesAtual.year, _mesAtual.month + 1, 1);
+      }
+    });
+    _carregarResumo();
+  }
+
+  /// 📅 ALTERNAR MODO MÊS/ANO
+  void _selecionarAno() async {
+    setState(() {
+      _modoAno = !_modoAno; // Alterna entre modo mês e ano
+    });
+    _carregarResumo(); // Recarrega dados para o novo modo
+  }
+
+  /// 🎯 FORMATAR MÊS E ANO PARA EXIBIÇÃO
+  String _formatarMesAno(DateTime data) {
+    final meses = [
+      'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
+      'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
+    ];
+    return '${meses[data.month - 1]}/${data.year.toString().substring(2)}';
+  }
+
+  /// 📅 CALCULAR DATA INÍCIO BASEADA NO MODO ATUAL
+  DateTime get _dataInicio {
+    if (_modoAno) {
+      return DateTime(_mesAtual.year, 1, 1);
+    } else {
+      return DateTime(_mesAtual.year, _mesAtual.month, 1);
     }
+  }
+
+  /// 📅 CALCULAR DATA FIM BASEADA NO MODO ATUAL
+  DateTime get _dataFim {
+    if (_modoAno) {
+      return DateTime(_mesAtual.year, 12, 31);
+    } else {
+      return DateTime(_mesAtual.year, _mesAtual.month + 1, 0);
+    }
+  }
+
+  /// 🔝 APPBAR COM SELETOR DE MÊS INTEGRADO (ESTILO iPoupei Device)
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      backgroundColor: const Color(0xFF008080), // AppColors.tealPrimary
+      elevation: 0,
+      leading: GestureDetector(
+        onTap: () => _scaffoldKey.currentState?.openDrawer(),
+        child: Container(
+          margin: const EdgeInsets.all(8),
+          child: const CircleAvatar(
+            backgroundColor: Color(0xFF008080), // Mesma cor do AppBar
+            child: Text(
+              'UL', // TODO: Pegar iniciais do usuário logado
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+            ),
+          ),
+        ),
+      ),
+      title: _buildSeletorMesCompacto(),
+      centerTitle: true,
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.more_vert, color: Colors.white),
+          onPressed: () {
+            // TODO: Menu de opções futuras
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Menu de opções em desenvolvimento'),
+                duration: Duration(seconds: 1),
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  /// 📅 SELETOR DE MÊS COMPACTO (IGUAL iPoupei Device)
+  Widget _buildSeletorMesCompacto() {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          icon: const Icon(
+            Icons.chevron_left,
+            color: Colors.white,
+            size: 20,
+          ),
+          onPressed: _mesAnterior,
+          padding: const EdgeInsets.all(8),
+          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+        ),
+        InkWell(
+          onTap: _selecionarAno,
+          borderRadius: BorderRadius.circular(6),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _modoAno ? _mesAtual.year.toString() : _formatarMesAno(_mesAtual),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                const Icon(
+                  Icons.arrow_drop_down,
+                  color: Colors.white,
+                  size: 16,
+                ),
+              ],
+            ),
+          ),
+        ),
+        IconButton(
+          icon: const Icon(
+            Icons.chevron_right,
+            color: Colors.white,
+            size: 20,
+          ),
+          onPressed: _proximoMes,
+          padding: const EdgeInsets.all(8),
+          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+        ),
+      ],
+    );
   }
 
   /// 🎨 WIDGET CARD RESUMO
@@ -430,19 +597,10 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
     final resumo = _resumoExecutivo;
     
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        backgroundColor: Colors.purple[600],
-        foregroundColor: Colors.white,
-        title: const Text('Relatórios'),
-        elevation: 0,
-        actions: [
-          IconButton(
-            onPressed: _carregarResumo,
-            icon: const Icon(Icons.refresh),
-          ),
-        ],
-      ),
+      drawer: const Sidebar(),
+      appBar: _buildAppBar(),
       body: RefreshIndicator(
         onRefresh: _carregarResumo,
         child: SingleChildScrollView(
@@ -451,47 +609,21 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Seletor de período
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      Icon(Icons.date_range, color: Colors.purple[600]),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Período de análise:',
-                              style: TextStyle(fontWeight: FontWeight.w500),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '${DateFormat('dd/MM/yyyy').format(_dataInicio)} - ${DateFormat('dd/MM/yyyy').format(_dataFim)}',
-                              style: TextStyle(color: Colors.grey[600]),
-                            ),
-                          ],
-                        ),
-                      ),
-                      TextButton.icon(
-                        onPressed: _selecionarPeriodo,
-                        icon: const Icon(Icons.edit),
-                        label: const Text('Alterar'),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              
-              const SizedBox(height: 16),
 
               // Widget de Resumo Financeiro (do iPoupeiDevice)
               ResumoFinanceiroWidget(
                 dataInicio: _dataInicio,
                 dataFim: _dataFim,
                 onItemTap: _navegarParaTransacoes,
+              ),
+
+              const SizedBox(height: 12),
+
+              // Widget de Insights Rápidos
+              InsightsRapidosWidget(
+                data: _resumoFinanceiro,
+                dataInicio: _dataInicio,
+                dataFim: _dataFim,
               ),
 
               const SizedBox(height: 12),
@@ -506,6 +638,14 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
               // Widget de Transações Pendentes (só aparece se houver transações vencidas)
               TransacoesPendentesWidget(
                 onTransacoesTap: _navegarParaTransacoesPendentes,
+              ),
+
+              const SizedBox(height: 16),
+
+              // Gráficos de Categoria (Despesas e Receitas)
+              GraficosCategoriaWidget(
+                dataInicio: _dataInicio,
+                dataFim: _dataFim,
               ),
 
               const SizedBox(height: 16),

@@ -34,18 +34,33 @@ class SyncManager {
   /// 🔧 Converte boolean para INTEGER para compatibilidade SQLite
   static Map<String, dynamic> _prepareSQLiteData(Map<String, dynamic> data) {
     final result = <String, dynamic>{};
-    
+
+    // Field mapping from Supabase to SQLite for transactions
+    final fieldMapping = <String, String>{
+      'parcelaUnica': 'parcela_atual',
+      'numeroTotalParcelas': 'total_parcelas',
+      'numeroParcela': 'numero_parcelas',
+    };
+
     for (final entry in data.entries) {
-      final key = entry.key;
+      final originalKey = entry.key;
       final value = entry.value;
-      
+
+      // Skip fields that don't exist in SQLite
+      if (originalKey == 'fatura_id') {
+        continue; // This field doesn't exist in SQLite schema
+      }
+
+      // Map field names from Supabase to SQLite
+      final key = fieldMapping[originalKey] ?? originalKey;
+
       if (value is bool) {
         result[key] = value ? 1 : 0;  // Convert boolean to INTEGER
       } else {
         result[key] = value;
       }
     }
-    
+
     return result;
   }
   
@@ -53,6 +68,7 @@ class SyncManager {
   
   final LocalDatabase _localDB = LocalDatabase.instance;
   final ConnectivityHelper _connectivity = ConnectivityHelper.instance;
+  final _supabase = Supabase.instance.client;
   SyncStatus _status = SyncStatus.idle;
   Timer? _periodicSync;
   StreamSubscription<bool>? _connectivitySubscription;
@@ -2094,6 +2110,131 @@ class SyncManager {
     }
     
     return cleanRecord;
+  }
+
+  // ===== DOWNLOAD ON-DEMAND PARA GRUPOS =====
+
+  /// Baixa todas as transações de um grupo específico para SQLite local
+  /// Usado quando grupo ultrapassa janela local de ±12 meses
+  Future<int> baixarTransacoesGrupo({
+    required String grupoId,
+    required String tipoGrupo, // 'recorrencia' ou 'parcelamento'
+    String? usuarioId,
+  }) async {
+    try {
+      debugPrint('🔄 Baixando grupo $grupoId ($tipoGrupo)...');
+
+      // Usar usuário atual se não fornecido
+      final userId = usuarioId ?? _localDB.currentUserId;
+      if (userId == null) {
+        debugPrint('❌ Usuário não identificado para download');
+        return 0;
+      }
+
+      // Verificar conectividade
+      if (!await _connectivity.isOnline()) {
+        debugPrint('❌ Sem conexão para baixar grupo');
+        return 0;
+      }
+
+      final campo = tipoGrupo == 'recorrencia'
+        ? 'grupo_recorrencia'
+        : 'grupo_parcelamento';
+
+      // Baixar todas as transações do grupo do Supabase
+      final response = await _supabase
+        .from('transacoes')
+        .select()
+        .eq(campo, grupoId)
+        .eq('usuario_id', userId)
+        .order('data', ascending: true);
+
+      int transacoesBaixadas = 0;
+
+      // Salvar cada transação no SQLite local
+      for (final transacaoData in response) {
+        try {
+          // Preparar dados para SQLite
+          final transacaoLocal = _prepareSQLiteData(transacaoData);
+
+          // Inserir ou atualizar no SQLite (usando colunas que existem no schema local)
+          await _localDB.rawQuery('''
+            INSERT OR REPLACE INTO transacoes (
+              id, usuario_id, tipo, categoria_id, subcategoria_id,
+              descricao, valor, data, efetivado, data_efetivacao,
+              conta_id, cartao_id, observacoes,
+              grupo_recorrencia, grupo_parcelamento, parcela_atual,
+              total_parcelas, numero_parcelas, created_at, updated_at,
+              sync_status, last_sync
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ''', [
+            transacaoLocal['id'],
+            transacaoLocal['usuario_id'],
+            transacaoLocal['tipo'],
+            transacaoLocal['categoria_id'],
+            transacaoLocal['subcategoria_id'],
+            transacaoLocal['descricao'],
+            transacaoLocal['valor'],
+            transacaoLocal['data'],
+            transacaoLocal['efetivado'],
+            transacaoLocal['data_efetivacao'],
+            transacaoLocal['conta_id'],
+            transacaoLocal['cartao_id'],
+            transacaoLocal['observacoes'],
+            transacaoLocal['grupo_recorrencia'],
+            transacaoLocal['grupo_parcelamento'],
+            transacaoLocal['parcela_atual'],
+            transacaoLocal['total_parcelas'],
+            transacaoLocal['numero_parcelas'],
+            transacaoLocal['created_at'],
+            transacaoLocal['updated_at'],
+            'synced',
+            DateTime.now().toIso8601String(),
+          ]);
+
+          transacoesBaixadas++;
+
+        } catch (e) {
+          debugPrint('❌ Erro ao salvar transação ${transacaoData['id']}: $e');
+        }
+      }
+
+      debugPrint('✅ Download completo: $transacoesBaixadas transações do grupo $grupoId');
+      return transacoesBaixadas;
+
+    } catch (e) {
+      debugPrint('❌ Erro no download do grupo $grupoId: $e');
+      return 0;
+    }
+  }
+
+  /// Verifica se um grupo precisa de download (ultrapassa janela local)
+  Future<bool> grupoPrecisaDownload({
+    required String grupoId,
+    required String tipoGrupo,
+  }) async {
+    try {
+      final userId = _localDB.currentUserId;
+      if (userId == null) return false;
+
+      // Buscar metadados do grupo
+      final metadados = await _localDB.rawQuery('''
+        SELECT data_ultima FROM grupos_metadados
+        WHERE grupo_id = ? AND usuario_id = ? AND tipo_grupo = ?
+      ''', [grupoId, userId, tipoGrupo]);
+
+      if (metadados.isEmpty) return false;
+
+      final dataUltima = DateTime.parse(metadados.first['data_ultima'] as String);
+      final janelaMaxima = DateTime.now().add(const Duration(days: 365));
+
+      // Se última data > 12 meses à frente, precisa baixar
+      return dataUltima.isAfter(janelaMaxima);
+
+    } catch (e) {
+      debugPrint('❌ Erro ao verificar se grupo precisa download: $e');
+      return false;
+    }
   }
 
   /// 🧹 DISPOSE

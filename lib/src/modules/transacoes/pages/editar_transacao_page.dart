@@ -26,6 +26,9 @@ import 'alterar_categoria_page.dart';
 import 'alterar_observacoes_page.dart';
 import 'alterar_conta_page.dart';
 import 'aplicar_reajuste_page.dart';
+import '../components/transaction_detail_card.dart';
+import '../components/operacao_helper.dart';
+import '../components/escopo_edicao_modal.dart';
 
 
 /// Modos de edição disponíveis
@@ -158,6 +161,7 @@ class _EditarTransacaoPageState extends State<EditarTransacaoPage> {
         : EscopoEdicao.apenasEsta;
     
     _analisarTransacao();
+    _baixarGrupoSeNecessario(); // Download silencioso em background
   }
 
   @override
@@ -573,7 +577,49 @@ class _EditarTransacaoPageState extends State<EditarTransacaoPage> {
       print('❌ [REFRESH] Erro ao recarregar transação: $e');
     }
   }
-  
+
+  /// Baixa silenciosamente todas as transações do grupo se necessário
+  Future<void> _baixarGrupoSeNecessario() async {
+    try {
+      // Verificar se é grupo (recorrência ou parcelamento)
+      final grupoId = widget.transacao.grupoRecorrencia ??
+                     widget.transacao.grupoParcelamento;
+
+      if (grupoId == null) return; // Não é grupo
+
+      final tipoGrupo = widget.transacao.grupoRecorrencia != null
+        ? 'recorrencia'
+        : 'parcelamento';
+
+      // Verificar se precisa baixar dados adicionais
+      final precisaBaixar = await SyncManager.instance.grupoPrecisaDownload(
+        grupoId: grupoId,
+        tipoGrupo: tipoGrupo,
+      );
+
+      if (!precisaBaixar) return; // Já tem tudo local
+
+      debugPrint('🔄 Baixando grupo completo em background: $grupoId');
+
+      // Baixar silenciosamente (sem bloquear UI)
+      final transacoesBaixadas = await SyncManager.instance.baixarTransacoesGrupo(
+        grupoId: grupoId,
+        tipoGrupo: tipoGrupo,
+      );
+
+      if (transacoesBaixadas > 0) {
+        debugPrint('✅ Download completo: $transacoesBaixadas transações baixadas');
+
+        // Opcional: recarregar dados se necessário
+        // await _analisarTransacao();
+      }
+
+    } catch (e) {
+      debugPrint('❌ Erro no download silencioso: $e');
+      // Não interrompe o funcionamento normal
+    }
+  }
+
   Future<void> _carregarDadosRelacionados() async {
     try {
       // Carregar dados da conta
@@ -838,8 +884,12 @@ class _EditarTransacaoPageState extends State<EditarTransacaoPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Card com informações da transação
-              _buildCardTransacao(),
+              // Card com informações completas da transação
+              TransactionDetailCard(
+                transacao: widget.transacao,
+                showMetadata: true,
+                loadDataAutomatically: true,
+              ),
               
               const SizedBox(height: 20),
               
@@ -1888,29 +1938,54 @@ class _EditarTransacaoPageState extends State<EditarTransacaoPage> {
   }
 
   Future<void> _efetivarTransacao() async {
+    try {
+      // Se for transação individual, executa direto
+      if (!_temParcelasOuRecorrencias) {
+        await _executarEfetivacao(EscopoEdicao.apenasEsta);
+        return;
+      }
+
+      // Para grupos, mostrar modal de escopo
+      final escopo = await _mostrarModalEscopoEfetivar();
+      if (escopo == null) return; // Cancelado
+
+      await _executarEfetivacao(escopo);
+
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro: $e')),
+      );
+    }
+  }
+
+  /// Executa a efetivação com o escopo definido
+  Future<void> _executarEfetivacao(EscopoEdicao escopo) async {
     setState(() {
       _processando = true;
     });
 
     try {
-      final resultado = await TransacaoEditService.instance.efetivar(
-        widget.transacao,
-        incluirFuturas: _temParcelasOuRecorrencias,
+      // Usar OperacaoHelper para operação com feedback visual
+      final sucesso = await OperacaoHelper.confirmar(
+        context: context,
+        transacao: widget.transacao,
       );
 
-      if (resultado.sucesso) {
+      if (sucesso) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(resultado.mensagem ?? 'Transação efetivada')),
+          const SnackBar(
+            content: Text('Transação efetivada com sucesso'),
+            backgroundColor: AppColors.verdeSucesso,
+          ),
         );
         Navigator.of(context).pop(true);
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(resultado.erro ?? 'Erro desconhecido')),
-        );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro: $e')),
+        SnackBar(
+          content: Text('Erro ao efetivar: $e'),
+          backgroundColor: AppColors.vermelhoErro,
+        ),
       );
     } finally {
       setState(() {
@@ -1920,6 +1995,22 @@ class _EditarTransacaoPageState extends State<EditarTransacaoPage> {
   }
 
   Future<void> _duplicarTransacao() async {
+    try {
+      // Mostrar confirmação explicativa primeiro
+      final confirmado = await _mostrarConfirmacaoDuplicar();
+      if (!confirmado) return;
+
+      await _executarDuplicacao();
+
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro: $e')),
+      );
+    }
+  }
+
+  /// Executa a duplicação da transação (sempre individual)
+  Future<void> _executarDuplicacao() async {
     setState(() {
       _processando = true;
     });
@@ -1931,17 +2022,26 @@ class _EditarTransacaoPageState extends State<EditarTransacaoPage> {
 
       if (resultado.sucesso) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(resultado.mensagem ?? 'Transação duplicada')),
+          SnackBar(
+            content: Text(resultado.mensagem ?? 'Transação duplicada com sucesso'),
+            backgroundColor: AppColors.verdeSucesso,
+          ),
         );
         Navigator.of(context).pop(true);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(resultado.erro ?? 'Erro desconhecido')),
+          SnackBar(
+            content: Text(resultado.erro ?? 'Erro ao duplicar transação'),
+            backgroundColor: AppColors.vermelhoErro,
+          ),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro: $e')),
+        SnackBar(
+          content: Text('Erro ao duplicar: $e'),
+          backgroundColor: AppColors.vermelhoErro,
+        ),
       );
     } finally {
       setState(() {
@@ -1951,50 +2051,130 @@ class _EditarTransacaoPageState extends State<EditarTransacaoPage> {
   }
 
   Future<void> _excluirTransacao() async {
+    try {
+      EscopoEdicao? escopo;
+
+      // Se for grupo, mostrar modal de escopo primeiro
+      if (_temParcelasOuRecorrencias) {
+        escopo = await _mostrarModalEscopoExcluir();
+        if (escopo == null) return; // Cancelado
+      } else {
+        escopo = EscopoEdicao.apenasEsta;
+      }
+
+      // Depois mostrar confirmação final
+      final confirmado = await _mostrarConfirmacaoExclusao(escopo);
+      if (!confirmado) return;
+
+      await _executarExclusao(escopo);
+
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro: $e')),
+      );
+    }
+  }
+
+  /// Confirmação final para exclusão
+  Future<bool> _mostrarConfirmacaoExclusao(EscopoEdicao escopo) async {
+    final String mensagem = escopo == EscopoEdicao.apenasEsta
+        ? 'Tem certeza que deseja excluir esta transação?'
+        : 'Tem certeza que deseja excluir esta e as transações futuras do grupo?';
+
     final confirmado = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Confirmar Exclusão'),
-        content: const Text('Tem certeza que deseja excluir esta transação?'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.vermelhoErro.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.delete, color: AppColors.vermelhoErro, size: 20),
+            ),
+            const SizedBox(width: 12),
+            const Text('Confirmar Exclusão'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(mensagem, style: const TextStyle(fontSize: 16)),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.vermelhoErro.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.vermelhoErro.withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.warning, color: AppColors.vermelhoErro, size: 16),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      'Esta ação não pode ser desfeita',
+                      style: TextStyle(fontSize: 13),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
             child: const Text('Cancelar'),
           ),
-          TextButton(
+          ElevatedButton(
             onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(foregroundColor: AppColors.vermelhoErro),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.vermelhoErro,
+              foregroundColor: Colors.white,
+            ),
             child: const Text('Excluir'),
           ),
         ],
       ),
     );
 
-    if (confirmado != true) return;
+    return confirmado ?? false;
+  }
 
+  /// Executa a exclusão com o escopo definido
+  Future<void> _executarExclusao(EscopoEdicao escopo) async {
     setState(() {
       _processando = true;
     });
 
     try {
-      final resultado = await TransacaoEditService.instance.excluir(
-        widget.transacao,
-        incluirFuturas: _temParcelasOuRecorrencias,
+      // Usar OperacaoHelper para operação com feedback visual
+      final sucesso = await OperacaoHelper.excluir(
+        context: context,
+        transacao: widget.transacao,
       );
 
-      if (resultado.sucesso) {
+      if (sucesso) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(resultado.mensagem ?? 'Transação excluída')),
+          const SnackBar(
+            content: Text('Transação excluída com sucesso'),
+            backgroundColor: AppColors.verdeSucesso,
+          ),
         );
         Navigator.of(context).pop(true);
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(resultado.erro ?? 'Erro desconhecido')),
-        );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro: $e')),
+        SnackBar(
+          content: Text('Erro ao excluir: $e'),
+          backgroundColor: AppColors.vermelhoErro,
+        ),
       );
     } finally {
       setState(() {
@@ -3243,7 +3423,104 @@ class _EditarTransacaoPageState extends State<EditarTransacaoPage> {
   }
   
   // Nota: Dialog de observações removido - substituído por página inteligente
-  
+
+  // ===== MÉTODOS AUXILIARES PARA MODAIS DE ESCOPO =====
+
+  /// Modal de escopo para efetivação de transações
+  Future<EscopoEdicao?> _mostrarModalEscopoEfetivar() async {
+    return await EscopoEdicaoHelper.mostrar(
+      context: context,
+      tipoOperacao: 'Efetivar Transações',
+      totalTransacoes: 0, // Será calculado pelo service
+      transacoesLocais: 0, // Será calculado pelo service
+      requerConexao: false, // Sempre local agora
+      detalhesOperacao: 'Marcar como efetivadas (pagas/recebidas)',
+    );
+  }
+
+  /// Modal de escopo para exclusão de transações
+  Future<EscopoEdicao?> _mostrarModalEscopoExcluir() async {
+    return await EscopoEdicaoHelper.mostrar(
+      context: context,
+      tipoOperacao: 'Excluir Transações',
+      totalTransacoes: 0, // Será calculado pelo service
+      transacoesLocais: 0, // Será calculado pelo service
+      requerConexao: false, // Sempre local agora
+      detalhesOperacao: 'Esta ação não pode ser desfeita',
+    );
+  }
+
+  /// Confirmação para duplicação de transação (sempre individual)
+  Future<bool> _mostrarConfirmacaoDuplicar() async {
+    final confirmacao = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.azul.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.copy, color: AppColors.azul, size: 20),
+            ),
+            const SizedBox(width: 12),
+            const Text('Duplicar Transação'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Uma nova transação será criada com os mesmos dados desta.',
+              style: TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.azul.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.azul.withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: AppColors.azul, size: 16),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      'A nova transação será individual (não fará parte do grupo)',
+                      style: TextStyle(fontSize: 13),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.azul,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Duplicar'),
+          ),
+        ],
+      ),
+    );
+
+    return confirmacao ?? false;
+  }
+
   /// Formatar data para exibição
   String _formatarData(DateTime data) {
     return '${data.day.toString().padLeft(2, '0')}/${data.month.toString().padLeft(2, '0')}/${data.year}';

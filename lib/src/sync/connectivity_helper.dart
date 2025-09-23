@@ -23,14 +23,19 @@ class ConnectivityHelper {
   Future<bool> isOnline() async {
     try {
       final results = await Connectivity().checkConnectivity();
-      
+
       // Na versão 6.1.5+, sempre retorna List<ConnectivityResult>
       return results.any((result) => result != ConnectivityResult.none);
-      
+
     } catch (e) {
       debugPrint('❌ Erro ao verificar conectividade: $e');
       return false; // Assume offline em caso de erro
     }
+  }
+
+  /// 🌐 ALIAS PARA COMPATIBILIDADE
+  Future<bool> isConnected() async {
+    return await isOnline();
   }
   
   /// 👂 ESCUTA MUDANÇAS DE CONECTIVIDADE

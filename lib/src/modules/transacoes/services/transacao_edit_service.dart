@@ -7,6 +7,7 @@ import '../models/transacao_model.dart';
 import '../../../database/local_database.dart';
 import '../../../sync/connectivity_helper.dart';
 import '../../../sync/sync_manager.dart';
+import '../../../services/grupos_metadados_service.dart';
 
 /// Escopo de edição para transações
 enum EscopoEdicao {
@@ -1537,8 +1538,276 @@ class TransacaoEditService {
     }
   }
 
+  // ===== MÉTODOS DE EXCLUSÃO =====
+
+  /// Exclui uma transação individual
+  Future<ResultadoEdicao<bool>> excluirTransacao(TransacaoModel transacao) async {
+    final resultado = await excluir(transacao, incluirFuturas: false);
+    return ResultadoEdicao(
+      sucesso: resultado.sucesso,
+      mensagem: resultado.mensagem,
+      erro: resultado.erro,
+    );
+  }
+
+  /// Exclui grupo de transações baseado no escopo
+  Future<ResultadoEdicao<bool>> excluirGrupo(
+    TransacaoModel transacao,
+    EscopoEdicao escopo,
+  ) async {
+    switch (escopo) {
+      case EscopoEdicao.apenasEsta:
+        return await excluirTransacao(transacao);
+
+      case EscopoEdicao.estasEFuturas:
+        final resultado = await excluir(transacao, incluirFuturas: true);
+        return ResultadoEdicao(
+          sucesso: resultado.sucesso,
+          mensagem: resultado.mensagem,
+          erro: resultado.erro,
+        );
+
+      case EscopoEdicao.todasRelacionadas:
+        // Para todas relacionadas, buscar todas as transações do grupo
+        try {
+          List<TransacaoModel> todasTransacoes;
+          if (transacao.grupoRecorrencia != null) {
+            todasTransacoes = await _buscarTodasTransacoesRelacionadas(transacao);
+          } else if (transacao.grupoParcelamento != null) {
+            todasTransacoes = await _buscarTodasTransacoesRelacionadas(transacao);
+          } else {
+            return await excluirTransacao(transacao);
+          }
+
+          int excluidas = 0;
+          for (final t in todasTransacoes) {
+            if (!t.efetivado) {
+              try {
+                await _deleteTransacao(t.id!);
+                excluidas++;
+              } catch (e) {
+                log('❌ Erro ao excluir transação ${t.id}: $e');
+              }
+            }
+          }
+
+          if (excluidas > 0) {
+            await SyncManager.instance.syncAll();
+          }
+
+          return ResultadoEdicao.sucesso(
+            mensagem: '$excluidas transações excluídas do grupo',
+          );
+
+        } catch (e) {
+          log('❌ Erro ao excluir grupo: $e');
+          return ResultadoEdicao.erro('Erro ao excluir grupo: $e');
+        }
+    }
+  }
+
+
+  // ===== VALIDAÇÃO DE JANELA DE DADOS =====
+
+  /// Verifica se uma data está dentro da janela de dados locais (±12 meses)
+  static bool _estaDetroDaJanelaLocal(DateTime data) {
+    final agora = DateTime.now();
+    final dozesMesesAtras = agora.subtract(const Duration(days: 365));
+    final dozesMesesAFrente = agora.add(const Duration(days: 365));
+
+    return data.isAfter(dozesMesesAtras) && data.isBefore(dozesMesesAFrente);
+  }
+
+  /// Analisa se uma operação em grupo pode ser feita totalmente local
+  Future<Map<String, dynamic>> analisarEscopoOperacao(
+    TransacaoModel transacao,
+    EscopoEdicao escopo,
+  ) async {
+    try {
+      final userId = LocalDatabase.instance.currentUserId;
+      if (userId == null) {
+        return {
+          'podeUsarLocal': false,
+          'totalTransacoes': 0,
+          'transacoesLocais': 0,
+          'requerConexao': true,
+          'erro': 'Usuário não identificado',
+        };
+      }
+
+      int totalTransacoes = 0;
+      int transacoesLocais = 0;
+      List<Map<String, dynamic>> transacoesAfetadas = [];
+
+      switch (escopo) {
+        case EscopoEdicao.apenasEsta:
+          totalTransacoes = 1;
+          transacoesLocais = 1;
+          break;
+
+        case EscopoEdicao.estasEFuturas:
+          // Busca transações futuras no grupo
+          if (transacao.grupoRecorrencia != null) {
+            final query = '''
+              SELECT * FROM transacoes
+              WHERE usuario_id = ? AND grupo_recorrencia = ? AND data >= ?
+              ORDER BY data ASC
+            ''';
+            transacoesAfetadas = await LocalDatabase.instance.rawQuery(
+              query,
+              [userId, transacao.grupoRecorrencia, transacao.data.toIso8601String()]
+            );
+          } else if (transacao.grupoParcelamento != null) {
+            final query = '''
+              SELECT * FROM transacoes
+              WHERE usuario_id = ? AND grupo_parcelamento = ? AND data >= ?
+              ORDER BY data ASC
+            ''';
+            transacoesAfetadas = await LocalDatabase.instance.rawQuery(
+              query,
+              [userId, transacao.grupoParcelamento, transacao.data.toIso8601String()]
+            );
+          } else {
+            totalTransacoes = 1;
+            transacoesLocais = 1;
+          }
+          break;
+
+        case EscopoEdicao.todasRelacionadas:
+          // Busca todas as transações do grupo
+          if (transacao.grupoRecorrencia != null) {
+            // Primeiro tenta buscar localmente
+            final queryLocal = '''
+              SELECT * FROM transacoes
+              WHERE usuario_id = ? AND grupo_recorrencia = ?
+              ORDER BY data ASC
+            ''';
+            transacoesAfetadas = await LocalDatabase.instance.rawQuery(
+              queryLocal,
+              [userId, transacao.grupoRecorrencia]
+            );
+
+            // Verifica se há metadados do grupo para saber o total real
+            try {
+              final metadadosService = GruposMetadadosService.instance;
+              final metadados = await metadadosService.obterMetadadosGrupo(
+                transacao.grupoRecorrencia!,
+                userId
+              );
+
+              if (metadados != null) {
+                totalTransacoes = metadados.totalItems ?? 0;
+              } else {
+                totalTransacoes = transacoesAfetadas.length;
+              }
+            } catch (e) {
+              totalTransacoes = transacoesAfetadas.length;
+            }
+          } else if (transacao.grupoParcelamento != null) {
+            final queryLocal = '''
+              SELECT * FROM transacoes
+              WHERE usuario_id = ? AND grupo_parcelamento = ?
+              ORDER BY data ASC
+            ''';
+            transacoesAfetadas = await LocalDatabase.instance.rawQuery(
+              queryLocal,
+              [userId, transacao.grupoParcelamento]
+            );
+
+            totalTransacoes = transacoesAfetadas.length;
+          } else {
+            totalTransacoes = 1;
+            transacoesLocais = 1;
+          }
+          break;
+      }
+
+      // Conta quantas transações estão dentro da janela local
+      if (transacoesAfetadas.isNotEmpty) {
+        transacoesLocais = transacoesAfetadas.length;
+
+        // Verifica se todas as datas estão dentro da janela
+        for (final t in transacoesAfetadas) {
+          final data = DateTime.parse(t['data'] as String);
+          if (!_estaDetroDaJanelaLocal(data)) {
+            // Se encontrar uma data fora da janela, significa que há mais transações
+            // que não estão no banco local
+            break;
+          }
+        }
+      }
+
+      final podeUsarLocal = totalTransacoes == transacoesLocais && transacoesLocais > 0;
+      final requerConexao = !podeUsarLocal && totalTransacoes > transacoesLocais;
+
+      return {
+        'podeUsarLocal': podeUsarLocal,
+        'totalTransacoes': totalTransacoes,
+        'transacoesLocais': transacoesLocais,
+        'requerConexao': requerConexao,
+        'transacoesAfetadas': transacoesAfetadas,
+      };
+
+    } catch (e) {
+      log('❌ Erro ao analisar escopo da operação: $e');
+      return {
+        'podeUsarLocal': false,
+        'totalTransacoes': 0,
+        'transacoesLocais': 0,
+        'requerConexao': true,
+        'erro': 'Erro ao analisar operação: $e',
+      };
+    }
+  }
+
+  /// Verifica se todas as transações de um grupo estão dentro da janela local
+  Future<bool> todasTransacoesNaJanelaLocal(
+    String? grupoRecorrencia,
+    String? grupoParcelamento,
+  ) async {
+    if (grupoRecorrencia == null && grupoParcelamento == null) return true;
+
+    try {
+      final userId = LocalDatabase.instance.currentUserId;
+      if (userId == null) return false;
+
+      String query;
+      String grupoId;
+
+      if (grupoRecorrencia != null) {
+        query = '''
+          SELECT MIN(data) as data_min, MAX(data) as data_max
+          FROM transacoes
+          WHERE usuario_id = ? AND grupo_recorrencia = ?
+        ''';
+        grupoId = grupoRecorrencia;
+      } else {
+        query = '''
+          SELECT MIN(data) as data_min, MAX(data) as data_max
+          FROM transacoes
+          WHERE usuario_id = ? AND grupo_parcelamento = ?
+        ''';
+        grupoId = grupoParcelamento!;
+      }
+
+      final result = await LocalDatabase.instance.rawQuery(query, [userId, grupoId]);
+
+      if (result.isNotEmpty && result.first['data_min'] != null) {
+        final dataMin = DateTime.parse(result.first['data_min'] as String);
+        final dataMax = DateTime.parse(result.first['data_max'] as String);
+
+        return _estaDetroDaJanelaLocal(dataMin) && _estaDetroDaJanelaLocal(dataMax);
+      }
+
+      return true;
+    } catch (e) {
+      log('❌ Erro ao verificar janela local: $e');
+      return false;
+    }
+  }
+
   // ===== MÉTODOS PARA COMPATIBILIDADE COM PÁGINAS SEPARADAS =====
-  
+
   /// Método para análise de transação (compatibilidade)
   static Future<Map<String, dynamic>> analisarTransacao(String transacaoId) async {
     // Retorna informações sobre a transação para as páginas separadas

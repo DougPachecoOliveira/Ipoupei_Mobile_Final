@@ -60,21 +60,12 @@ class ResumoFinanceiroService {
     }
   }
 
-  /// 💰 Calcular saldo atual das contas
+  /// 💰 Calcular saldo atual das contas (usando mesmo método do ContaService)
   Future<double> _calcularSaldoContas(String userId) async {
     try {
-      final result = await _db.select(
-        'contas',
-        where: 'usuario_id = ? AND ativo = 1',
-        whereArgs: [userId],
-      );
-      
-      double totalSaldo = 0.0;
-      for (final row in result) {
-        totalSaldo += (row['saldo_atual'] as num?)?.toDouble() ?? 0.0;
-      }
-
-      return totalSaldo;
+      // ✅ Usar método correto que aplica filtro 'incluir_soma_total'
+      await _db.setCurrentUser(userId);
+      return await _db.calcularSaldoTotalLocal();
     } catch (e) {
       debugPrint('❌ Erro ao calcular saldo das contas: $e');
       return 0.0;

@@ -14,7 +14,6 @@ import '../models/transacao_model.dart';
 import '../services/transacao_service.dart';
 import '../services/transacao_edit_service.dart';
 import 'editar_transacao_page.dart';
-import '../../cartoes/pages/despesa_cartao_page.dart';
 import '../../contas/models/conta_model.dart';
 import '../../contas/services/conta_service.dart';
 import '../../cartoes/models/cartao_model.dart';
@@ -25,7 +24,9 @@ import 'transacao_form_page.dart';
 import 'transferencia_form_page.dart';
 import '../components/filtros_transacoes_modal.dart';
 import '../components/timeline_transacoes.dart';
-import '../../cartoes/pages/despesa_cartao_page.dart';
+import '../../../services/grupos_metadados_service.dart';
+import '../../../shared/utils/currency_formatter.dart';
+import '../components/transaction_detail_card.dart';
 
 /// Enum para modos de visualização - Padrão Device
 enum TransacoesPageMode {
@@ -128,6 +129,7 @@ class _TransacoesPageState extends State<TransacoesPage>
   
   // Resumo adaptativo
   Map<String, double> _estatisticas = {};
+
 
   @override
   void initState() {
@@ -1192,6 +1194,7 @@ class _TransacoesPageState extends State<TransacoesPage>
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (context) => Container(
         decoration: const BoxDecoration(
           color: Colors.white,
@@ -1203,199 +1206,121 @@ class _TransacoesPageState extends State<TransacoesPage>
           top: 20,
           bottom: MediaQuery.of(context).padding.bottom + 20,
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Handle visual do modal
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: 20),
-                decoration: BoxDecoration(
-                  color: AppColors.cinzaMedio,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            
-            // Informações da transação
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: _getCorTransacao(transacao).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: _getCorTransacao(transacao).withOpacity(0.3),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: _getCorTransacao(transacao),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(
-                      _getIconeTransacao(transacao),
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          transacao.descricao,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.cinzaEscuro,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          _formatarMoeda(transacao.valor),
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: _getCorTransacao(transacao),
-                          ),
-                        ),
-                        if (transacao.efetivado)
-                          const Text(
-                            'Efetivada',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.verdeSucesso,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            
-            const SizedBox(height: 20),
-            
-            // Opções
-            ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.azul.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(Icons.edit, color: AppColors.azul),
-              ),
-              title: const Text('Editar'),
-              subtitle: const Text('Alterar dados da transação'),
-              onTap: () {
-                Navigator.of(context).pop();
-                _navegarParaEditarAvancado(transacao);
-              },
-            ),
-            
-            // Efetivar (apenas se não efetivada E não for despesa de cartão)
-            if (!transacao.efetivado && transacao.cartaoId == null) ...[
-              ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.85,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Handle visual do modal
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 20),
                   decoration: BoxDecoration(
-                    color: AppColors.verdeSucesso.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
+                    color: AppColors.cinzaMedio,
+                    borderRadius: BorderRadius.circular(2),
                   ),
-                  child: const Icon(Icons.check_circle, color: AppColors.verdeSucesso),
                 ),
-                title: const Text('Efetivar'),
-                subtitle: const Text('Marcar como confirmada'),
+              ),
+
+              // Card completo da transação com todos os detalhes
+              TransactionDetailCard(
+                transacao: transacao,
+                showMetadata: true,
+                loadDataAutomatically: true,
+              ),
+
+              const SizedBox(height: 24),
+
+              const Text(
+                'O que você deseja fazer?',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.cinzaEscuro,
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Editar
+              EditOptionCardModal(
+                titulo: 'Editar',
+                subtitulo: 'Alterar dados da transação',
+                icone: Icons.edit,
+                cor: AppColors.azul,
                 onTap: () {
                   Navigator.of(context).pop();
-                  _efetivarTransacao(transacao);
+                  _navegarParaEditarAvancado(transacao);
                 },
               ),
-            ],
-            
-            // Desefetivar (apenas se efetivada E não for despesa de cartão)
-            if (transacao.efetivado && transacao.cartaoId == null) ...[
-              ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppColors.amareloAlerta10,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(Icons.remove_circle, color: AppColors.amareloAlerta),
+
+              // Efetivar (apenas se não efetivada E não for despesa de cartão)
+              if (!transacao.efetivado && transacao.cartaoId == null)
+                EditOptionCardModal(
+                  titulo: 'Efetivar',
+                  subtitulo: 'Marcar como confirmada',
+                  icone: Icons.check_circle,
+                  cor: AppColors.verdeSucesso,
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _efetivarTransacao(transacao);
+                  },
                 ),
-                title: const Text('Desefetivar'),
-                subtitle: const Text('Marcar como pendente'),
+
+              // Desefetivar (apenas se efetivada E não for despesa de cartão)
+              if (transacao.efetivado && transacao.cartaoId == null)
+                EditOptionCardModal(
+                  titulo: 'Desefetivar',
+                  subtitulo: 'Marcar como pendente',
+                  icone: Icons.remove_circle,
+                  cor: AppColors.amareloAlerta,
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _desefetivarTransacao(transacao);
+                  },
+                ),
+
+              // Duplicar
+              EditOptionCardModal(
+                titulo: 'Duplicar',
+                subtitulo: 'Criar uma cópia desta transação',
+                icone: Icons.copy,
+                cor: AppColors.cinzaMedio,
                 onTap: () {
                   Navigator.of(context).pop();
-                  _desefetivarTransacao(transacao);
+                  _duplicarTransacao(transacao);
                 },
               ),
+
+              // Excluir (apenas se não efetivada)
+              if (!transacao.efetivado)
+                EditOptionCardModal(
+                  titulo: 'Excluir',
+                  subtitulo: 'Remover permanentemente',
+                  icone: Icons.delete,
+                  cor: AppColors.vermelhoErro,
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _excluirTransacao(transacao);
+                  },
+                )
+              else
+                EditOptionCardModal(
+                  titulo: 'Não é possível excluir',
+                  subtitulo: 'Transações efetivadas não podem ser excluídas',
+                  icone: Icons.block,
+                  cor: AppColors.cinzaMedio,
+                  onTap: () {},
+                  habilitado: false,
+                  mensagemDesabilitado: 'Transações efetivadas não podem ser excluídas',
+                ),
             ],
-            
-            // Duplicar
-            ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.cinzaMedio.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(Icons.copy, color: AppColors.cinzaMedio),
-              ),
-              title: const Text('Duplicar'),
-              subtitle: const Text('Criar uma cópia desta transação'),
-              onTap: () {
-                Navigator.of(context).pop();
-                _duplicarTransacao(transacao);
-              },
-            ),
-            
-            // Excluir (apenas se não efetivada)
-            if (!transacao.efetivado) ...[
-              ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppColors.vermelhoErro.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(Icons.delete, color: AppColors.vermelhoErro),
-                ),
-                title: const Text('Excluir', style: TextStyle(color: AppColors.vermelhoErro)),
-                subtitle: const Text('Remover permanentemente'),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  _excluirTransacao(transacao);
-                },
-              ),
-            ] else ...[
-              ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppColors.cinzaClaro,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(Icons.block, color: AppColors.cinzaMedio),
-                ),
-                title: const Text('Não é possível excluir', style: TextStyle(color: AppColors.cinzaMedio)),
-                subtitle: const Text('Transações efetivadas não podem ser excluídas'),
-                enabled: false,
-              ),
-            ],
-          ],
+          ),
         ),
       ),
     );
@@ -1403,7 +1328,7 @@ class _TransacoesPageState extends State<TransacoesPage>
 
   /// 🎨 HELPER FUNCTIONS
   String _formatarMoeda(double valor) {
-    return 'R\$ ${valor.toStringAsFixed(2).replaceAll('.', ',')}';
+    return NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$').format(valor);
   }
 
   String _formatarTipoTransacao(String tipo) {
@@ -1418,6 +1343,156 @@ class _TransacoesPageState extends State<TransacoesPage>
         return tipo;
     }
   }
+
+  /// Obter ícone do tipo de transação (para o modal)
+  IconData _getIconeTipoTransacaoModal(TransacaoModel transacao) {
+    if (transacao.tipo == 'receita') {
+      return Icons.trending_up;
+    } else if (transacao.tipo == 'despesa') {
+      return transacao.cartaoId != null
+        ? Icons.credit_card
+        : Icons.trending_down;
+    } else {
+      return Icons.swap_horiz; // transferência
+    }
+  }
+
+  /// Obter cor do tipo de transação (para o modal)
+  Color _getCorTipoTransacaoModal(TransacaoModel transacao) {
+    if (transacao.tipo == 'receita') {
+      return AppColors.verdeSucesso;
+    } else if (transacao.tipo == 'despesa') {
+      return transacao.cartaoId != null
+        ? AppColors.roxoPrimario
+        : AppColors.vermelhoErro;
+    } else {
+      return AppColors.azul; // transferência
+    }
+  }
+
+  /// Obter texto do tipo de transação (para o modal)
+  String _getTextoTipoTransacaoModal(TransacaoModel transacao) {
+    if (transacao.tipo == 'receita') {
+      return 'RECEITA';
+    } else if (transacao.tipo == 'despesa') {
+      return transacao.cartaoId != null ? 'CARTÃO' : 'DESPESA';
+    } else {
+      return 'TRANSFERÊNCIA';
+    }
+  }
+
+
+  /// EditOptionCard widget (copiado de editar_transacao_page.dart)
+  Widget EditOptionCardModal({
+    required String titulo,
+    required String subtitulo,
+    required IconData icone,
+    required Color cor,
+    required VoidCallback onTap,
+    bool habilitado = true,
+    String? mensagemDesabilitado,
+  }) {
+    return Opacity(
+      opacity: habilitado ? 1.0 : 0.5,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: cor.withOpacity(0.2),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: habilitado ? onTap : null,
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          cor,
+                          cor.withOpacity(0.8),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: cor.withOpacity(0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      icone,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          titulo,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.cinzaEscuro,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          habilitado ? subtitulo : mensagemDesabilitado ?? subtitulo,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: habilitado ? AppColors.cinzaTexto : AppColors.cinzaMedio,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (habilitado)
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: cor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.arrow_forward_ios,
+                        color: cor,
+                        size: 16,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
 
   /// 🎨 SELETOR DE MÊS COMPACTO - Padrão Device
   Widget _buildSeletorMes() {
