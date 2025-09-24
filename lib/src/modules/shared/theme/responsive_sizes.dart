@@ -287,6 +287,73 @@ class ResponsiveSizes {
     return base;
   }
 
+  // === HELPERS PARA AUTOSIZETEXT ===
+
+  /// Classe para armazenar ranges de fonte
+  static FontSizeRange fontRange({
+    required BuildContext context,
+    required double base,
+    double? min,
+    double? max,
+  }) {
+    final scale = MediaQuery.textScalerOf(context).scale(1.0);
+    return FontSizeRange(
+      min: (min ?? base * 0.7),
+      max: (max ?? base * 1.3),
+      base: base,
+      scale: scale,
+    );
+  }
+
+  /// Range para cards (mais restritivo)
+  static FontSizeRange cardFontRange({
+    required BuildContext context,
+    required double base,
+    double? min,
+    double? max,
+  }) {
+    return FontSizeRange(
+      min: min ?? (base * 0.8),
+      max: max ?? (base * 1.1),
+      base: base,
+      scale: MediaQuery.textScalerOf(context).scale(1.0),
+    );
+  }
+
+  /// Range para AppBar
+  static FontSizeRange appBarFontRange({
+    required BuildContext context,
+    required double base,
+  }) {
+    return FontSizeRange(
+      min: base * 0.75,
+      max: base * 1.25,
+      base: base,
+      scale: MediaQuery.textScalerOf(context).scale(1.0),
+    );
+  }
+
+  /// Detectar níveis extremos de acessibilidade
+  static bool isExtremeTextScale(BuildContext context) {
+    final scale = MediaQuery.textScalerOf(context).scale(1.0);
+    return scale > 2.0;
+  }
+
+  /// Detectar modo de acessibilidade
+  static bool isAccessibilityMode(BuildContext context) {
+    final scale = MediaQuery.textScalerOf(context).scale(1.0);
+    return scale > 1.3;
+  }
+
+  /// Retorna nível de acessibilidade como string
+  static String getAccessibilityLevel(BuildContext context) {
+    final scale = MediaQuery.textScalerOf(context).scale(1.0);
+    if (scale <= 1.0) return 'normal';
+    if (scale <= 1.3) return 'large';
+    if (scale <= 2.0) return 'very_large';
+    return 'extreme';
+  }
+
   // === HELPERS ÚTEIS ===
 
   /// Verifica se a tela é considerada pequena
@@ -319,5 +386,34 @@ class ResponsiveSizes {
       return tablet;
     }
     return mobile;
+  }
+}
+
+/// Classe para armazenar ranges de fonte para AutoSizeText
+class FontSizeRange {
+  final double min;
+  final double max;
+  final double base;
+  final double scale;
+
+  const FontSizeRange({
+    required this.min,
+    required this.max,
+    required this.base,
+    required this.scale,
+  });
+
+  /// Tamanho mínimo considerando scale factor
+  double get minScaled => min * scale.clamp(0.8, 1.2);
+
+  /// Tamanho máximo considerando scale factor (limitado)
+  double get maxScaled => max * scale.clamp(0.8, 1.3);
+
+  /// Tamanho base considerando scale factor (limitado)
+  double get baseScaled => base * scale.clamp(0.8, 1.3);
+
+  @override
+  String toString() {
+    return 'FontSizeRange(min: $min, max: $max, base: $base, scale: $scale)';
   }
 }

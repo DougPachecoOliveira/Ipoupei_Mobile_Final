@@ -7,6 +7,8 @@
 
 import 'package:flutter/material.dart';
 import '../../shared/theme/app_colors.dart';
+import '../../shared/theme/app_typography.dart';
+import '../../shared/theme/responsive_sizes.dart';
 import '../../shared/utils/currency_formatter.dart';
 import '../models/transacao_pendente_model.dart';
 import '../services/transacoes_pendentes_service.dart';
@@ -138,116 +140,90 @@ class _TransacoesPendentesWidgetState extends State<TransacoesPendentesWidget> {
     );
   }
 
-  /// 📋 Header compacto com alerta
+  /// 📋 Header profissional redesenhado
   Widget _buildHeader() {
     final totalTransacoes = _resumo?.totalTransacoes ?? 0;
     final totalCriticas = _resumo?.quantidadeCriticas ?? 0;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 12, 18, 6),
-      child: Row(
-        children: [
-          // Ícone de alerta
-          Container(
-            width: 28,
-            height: 28,
-            decoration: BoxDecoration(
-              color: totalCriticas > 0
-                  ? AppColors.vermelhoErro.withAlpha(26)
-                  : AppColors.amareloAlerta.withAlpha(26),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Icon(
-              Icons.schedule,
-              color: totalCriticas > 0 ? AppColors.vermelhoErro : AppColors.amareloAlerta,
-              size: 16,
-            ),
-          ),
-          const SizedBox(width: 10),
-
-          // Título
-          const Text(
-            'Transações Pendentes',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: AppColors.cinzaEscuro,
-            ),
-          ),
-
-          const Spacer(),
-
-          // Contador de pendências
-          if (totalTransacoes > 0)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: totalCriticas > 0
-                    ? AppColors.vermelhoErro.withAlpha(26)
-                    : AppColors.amareloAlerta.withAlpha(26),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(
-                _expandido || totalTransacoes <= _limiteTransacoes
-                    ? '$totalTransacoes vencida${totalTransacoes > 1 ? 's' : ''}'
-                    : '${_limiteTransacoes}+ vencidas',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: totalCriticas > 0 ? AppColors.vermelhoErro : AppColors.amareloAlerta,
-                ),
-              ),
-            ),
-
-          // Botões de ação (minimizar e refresh)
-          const SizedBox(width: 8),
-          if (!_loading) ...[
-            // Botão minimizar/expandir
-            GestureDetector(
-              onTap: () {
-                setState(() {
-                  _minimizado = !_minimizado;
-                  if (_minimizado) {
-                    _expandido = false; // Reset expansão ao minimizar
-                  }
-                });
-              },
-              child: Container(
-                width: 24,
-                height: 24,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: InkWell(
+        onTap: () => setState(() => _expandido = !_expandido),
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Row(
+            children: [
+              // Ícone de alerta usando padrão do app
+              Container(
+                width: ResponsiveSizes.iconSize(context: context, base: 32),
+                height: ResponsiveSizes.iconSize(context: context, base: 32),
                 decoration: BoxDecoration(
-                  color: AppColors.cinzaClaro,
-                  borderRadius: BorderRadius.circular(4),
+                  color: totalCriticas > 0
+                      ? AppColors.vermelhoErro.withAlpha(26)
+                      : AppColors.amareloAlerta.withAlpha(26),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
-                  _minimizado ? Icons.expand_more : Icons.expand_less,
-                  color: AppColors.cinzaMedio,
-                  size: 14,
+                  Icons.schedule,
+                  color: totalCriticas > 0 ? AppColors.vermelhoErro : AppColors.amareloAlerta,
+                  size: ResponsiveSizes.iconSize(context: context, base: 18),
                 ),
               ),
-            ),
 
-            const SizedBox(width: 6),
+              SizedBox(width: ResponsiveSizes.spacing(context: context, base: 12)),
 
-            // Botão refresh
-            GestureDetector(
-              onTap: _carregarTransacoes,
-              child: Container(
-                width: 24,
-                height: 24,
-                decoration: BoxDecoration(
-                  color: AppColors.cinzaClaro,
-                  borderRadius: BorderRadius.circular(4),
+              // Textos
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Título usando tipografia padrão do AppBar
+                    Text(
+                      'Transações Pendentes',
+                      style: AppTypography.appBarTitle(context).copyWith(
+                        fontSize: ResponsiveSizes.fontSizeForCards(
+                          context: context,
+                          base: 14, // 18 * 0.75 = ~14
+                          small: 12,
+                          large: 15,
+                        ),
+                        color: AppColors.cinzaEscuro,
+                      ),
+                    ),
+                    // Quantidade usando tipografia padrão
+                    Text(
+                      '$totalTransacoes ${totalTransacoes == 1 ? 'transação vencida' : 'transações vencidas'}',
+                      style: AppTypography.bodySmall(context),
+                    ),
+                  ],
                 ),
-                child: const Icon(
+              ),
+
+              // Botão atualizar
+              IconButton(
+                onPressed: _carregarTransacoes,
+                icon: Icon(
                   Icons.refresh,
-                  color: AppColors.cinzaMedio,
-                  size: 14,
+                  size: ResponsiveSizes.appBarIconSize(context, base: 21),
+                  color: AppColors.cinzaTexto,
                 ),
+                tooltip: 'Atualizar transações',
               ),
-            ),
-          ],
-        ],
+
+              // Botão expandir/recolher
+              IconButton(
+                onPressed: () => setState(() => _expandido = !_expandido),
+                icon: Icon(
+                  _expandido ? Icons.expand_less : Icons.expand_more,
+                  size: ResponsiveSizes.appBarIconSize(context, base: 21),
+                  color: AppColors.cinzaTexto,
+                ),
+                tooltip: _expandido ? 'Recolher' : 'Expandir',
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

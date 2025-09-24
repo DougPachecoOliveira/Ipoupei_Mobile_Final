@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/conta_model.dart';
 import '../../shared/theme/app_colors.dart';
 import '../../shared/utils/currency_formatter.dart';
+import '../../../shared/components/ui/app_text.dart';
 
 /// 🏦 ContaCard - Inspirado no CartaoCard mas para contas
 /// Mesmo visual moderno com gradiente e informações detalhadas
@@ -142,31 +143,34 @@ class ContaCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              AppText.cardTitle(
                 conta.nome,
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Colors.white,
                 ),
+                color: Colors.white,
+                group: AppTextGroups.cardTitles,
               ),
-              Text(
+              AppText.cardSecondary(
                 conta.banco ?? 'Sem banco',
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 13,
-                  color: Colors.white.withOpacity(0.8),
                 ),
+                color: Colors.white.withOpacity(0.8),
+                group: AppTextGroups.cardSecondary,
               ),
             ],
           ),
         ),
-        Text(
+        AppText.cardValue(
           CurrencyFormatter.format(conta.saldo),
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: _saldoNegativo ? Colors.red.shade300 : Colors.white,
           ),
+          color: _saldoNegativo ? Colors.red.shade300 : Colors.white,
+          group: AppTextGroups.cardValues,
         ),
         // ⭐ ESTRELA + MENU PARA CONTAS
         Row(
@@ -238,20 +242,22 @@ class ContaCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              AppText.cardTitle(
                 conta.nome,
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
                 ),
+                color: Colors.white,
+                group: AppTextGroups.cardTitles,
               ),
-              Text(
+              AppText.cardSecondary(
                 '${conta.banco ?? 'Sem banco'} • ${conta.tipo ?? 'Conta'}',
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 14,
-                  color: Colors.white.withOpacity(0.8),
                 ),
+                color: Colors.white.withOpacity(0.8),
+                group: AppTextGroups.cardSecondary,
               ),
             ],
           ),
@@ -293,13 +299,14 @@ class ContaCard extends StatelessWidget {
   Widget _buildSaldoPrincipal() {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Text(
+      child: AppText.cardValue(
         CurrencyFormatter.format(conta.saldo),
-        style: TextStyle(
+        style: const TextStyle(
           fontSize: 32,
           fontWeight: FontWeight.bold,
-          color: _saldoNegativo ? Colors.red.shade300 : Colors.white,
         ),
+        color: _saldoNegativo ? Colors.red.shade300 : Colors.white,
+        group: AppTextGroups.cardValues,
       ),
     );
   }
@@ -321,20 +328,22 @@ class ContaCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  AppText.cardSecondary(
                     'Entradas',
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 12,
-                      color: Colors.white.withOpacity(0.8),
                     ),
+                    color: Colors.white.withOpacity(0.8),
+                    group: AppTextGroups.cardSecondary,
                   ),
-                  Text(
+                  AppText.cardValue(
                     CurrencyFormatter.format(entradaMensal!),
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: Colors.white,
                     ),
+                    color: Colors.white,
+                    group: AppTextGroups.cardValues,
                   ),
                 ],
               ),
@@ -352,20 +361,22 @@ class ContaCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text(
+                  AppText.cardSecondary(
                     'Saídas',
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 12,
-                      color: Colors.white.withOpacity(0.8),
                     ),
+                    color: Colors.white.withOpacity(0.8),
+                    group: AppTextGroups.cardSecondary,
                   ),
-                  Text(
+                  AppText.cardValue(
                     CurrencyFormatter.format(saidaMensal!),
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: Colors.white,
                     ),
+                    color: Colors.white,
+                    group: AppTextGroups.cardValues,
                   ),
                 ],
               ),
@@ -393,32 +404,35 @@ class ContaCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  AppText.cardSecondary(
                     'Saldo Médio',
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 12,
-                      color: Colors.white.withOpacity(0.8),
                     ),
+                    color: Colors.white.withOpacity(0.8),
+                    group: AppTextGroups.cardSecondary,
                   ),
-                  Text(
+                  AppText.cardValue(
                     CurrencyFormatter.format(saldoMedio!),
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: Colors.white,
                     ),
+                    color: Colors.white,
+                    group: AppTextGroups.cardValues,
                   ),
                 ],
               ),
             ),
           ],
           if (periodoAtual != null) ...[
-            Text(
+            AppText.cardSecondary(
               periodoAtual!,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 12,
-                color: Colors.white.withOpacity(0.7),
               ),
+              color: Colors.white.withOpacity(0.7),
+              group: AppTextGroups.cardSecondary,
             ),
           ],
         ],

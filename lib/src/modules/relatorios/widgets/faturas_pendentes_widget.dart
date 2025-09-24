@@ -7,6 +7,8 @@
 
 import 'package:flutter/material.dart';
 import '../../shared/theme/app_colors.dart';
+import '../../shared/theme/app_typography.dart';
+import '../../shared/theme/responsive_sizes.dart';
 import '../../shared/utils/currency_formatter.dart';
 import '../models/fatura_pendente_model.dart';
 import '../services/faturas_pendentes_service.dart';
@@ -29,6 +31,7 @@ class _FaturasPendentesWidgetState extends State<FaturasPendentesWidget> {
 
   List<FaturaPendente> _faturas = [];
   bool _loading = false;
+  bool _expandido = false; // Controle de expansão
   String? _error;
 
   @override
@@ -90,98 +93,103 @@ class _FaturasPendentesWidgetState extends State<FaturasPendentesWidget> {
         // Header compacto
         _buildHeader(),
 
-        const SizedBox(height: 8),
-
-        // Lista de mini cards de faturas
-        if (_loading)
-          _buildLoadingState()
-        else
-          ..._buildFaturasCards(),
+        // Lista de mini cards de faturas (apenas se expandido)
+        if (_expandido) ...[
+          const SizedBox(height: 8),
+          if (_loading)
+            _buildLoadingState()
+          else
+            ..._buildFaturasCards(),
+        ],
       ],
     );
   }
 
-  /// 📋 Header compacto com alerta
+  /// 📋 Header profissional redesenhado
   Widget _buildHeader() {
     final totalVencidas = _faturas.quantidadeVencidas;
     final totalVencendo = _faturas.quantidadeVencendo3Dias;
+    final totalFaturas = _faturas.length;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16), // Alinhado com cards
-      child: Row(
-        children: [
-          // Ícone de alerta
-          Container(
-            width: 28, // Menor que normal
-            height: 28,
-            decoration: BoxDecoration(
-              color: totalVencidas > 0
-                  ? AppColors.vermelhoErro.withAlpha(26)
-                  : AppColors.amareloAlerta.withAlpha(26),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Icon(
-              Icons.warning_amber_rounded,
-              color: totalVencidas > 0 ? AppColors.vermelhoErro : AppColors.amareloAlerta,
-              size: 16,
-            ),
-          ),
-          const SizedBox(width: 10),
-
-          // Título
-          const Text(
-            'Faturas de Cartão',
-            style: TextStyle(
-              fontSize: 16, // Menor que normal
-              fontWeight: FontWeight.w600,
-              color: AppColors.cinzaEscuro,
-            ),
-          ),
-
-          const Spacer(),
-
-          // Contador de pendências
-          if (_faturas.isNotEmpty)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: totalVencidas > 0
-                    ? AppColors.vermelhoErro.withAlpha(26)
-                    : AppColors.amareloAlerta.withAlpha(26),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(
-                totalVencidas > 0
-                    ? '$totalVencidas vencida${totalVencidas > 1 ? 's' : ''}'
-                    : '$totalVencendo vencendo',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: totalVencidas > 0 ? AppColors.vermelhoErro : AppColors.amareloAlerta,
-                ),
-              ),
-            ),
-
-          // Botão refresh (pequeno)
-          const SizedBox(width: 8),
-          if (!_loading)
-            GestureDetector(
-              onTap: _carregarFaturas,
-              child: Container(
-                width: 24,
-                height: 24,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: InkWell(
+        onTap: () => setState(() => _expandido = !_expandido),
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Row(
+            children: [
+              // Ícone de alerta usando padrão do app
+              Container(
+                width: ResponsiveSizes.iconSize(context: context, base: 32),
+                height: ResponsiveSizes.iconSize(context: context, base: 32),
                 decoration: BoxDecoration(
-                  color: AppColors.cinzaClaro,
-                  borderRadius: BorderRadius.circular(4),
+                  color: totalVencidas > 0
+                      ? AppColors.vermelhoErro.withAlpha(26)
+                      : AppColors.amareloAlerta.withAlpha(26),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(
-                  Icons.refresh,
-                  color: AppColors.cinzaMedio,
-                  size: 14,
+                child: Icon(
+                  Icons.warning_amber_rounded,
+                  color: totalVencidas > 0 ? AppColors.vermelhoErro : AppColors.amareloAlerta,
+                  size: ResponsiveSizes.iconSize(context: context, base: 18),
                 ),
               ),
-            ),
-        ],
+
+              SizedBox(width: ResponsiveSizes.spacing(context: context, base: 12)),
+
+              // Textos
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Título usando tipografia padrão do AppBar
+                    Text(
+                      'Faturas de Cartão',
+                      style: AppTypography.appBarTitle(context).copyWith(
+                        fontSize: ResponsiveSizes.fontSizeForCards(
+                          context: context,
+                          base: 14, // 18 * 0.75 = ~14
+                          small: 12,
+                          large: 15,
+                        ),
+                        color: AppColors.cinzaEscuro,
+                      ),
+                    ),
+                    // Quantidade usando tipografia padrão
+                    Text(
+                      '$totalFaturas ${totalFaturas == 1 ? 'fatura pendente' : 'faturas pendentes'}',
+                      style: AppTypography.bodySmall(context),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Botão atualizar
+              IconButton(
+                onPressed: _carregarFaturas,
+                icon: Icon(
+                  Icons.refresh,
+                  size: ResponsiveSizes.appBarIconSize(context, base: 21),
+                  color: AppColors.cinzaTexto,
+                ),
+                tooltip: 'Atualizar faturas',
+              ),
+
+              // Botão expandir/recolher
+              IconButton(
+                onPressed: () => setState(() => _expandido = !_expandido),
+                icon: Icon(
+                  _expandido ? Icons.expand_less : Icons.expand_more,
+                  size: ResponsiveSizes.appBarIconSize(context, base: 21),
+                  color: AppColors.cinzaTexto,
+                ),
+                tooltip: _expandido ? 'Recolher' : 'Expandir',
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

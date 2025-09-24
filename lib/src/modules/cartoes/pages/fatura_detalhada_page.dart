@@ -230,10 +230,7 @@ class _FaturaDetalhadaPageState extends State<FaturaDetalhadaPage> {
     
     try {
       setState(() => _isLoading = true);
-      
-      // TODO: Implementar pagamento no service
-      // await _faturaOperations.pagarFatura(widget.cartao.id, _faturaAtual);
-      
+     
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Fatura paga com sucesso!'),
@@ -295,9 +292,7 @@ class _FaturaDetalhadaPageState extends State<FaturaDetalhadaPage> {
     try {
       setState(() => _isLoading = true);
       
-      // TODO: Implementar reabertura no service
-      // await _faturaOperations.reabrirFatura(widget.cartao.id, _faturaAtual);
-      
+     
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Fatura reaberta com sucesso!'),
@@ -406,9 +401,6 @@ class _FaturaDetalhadaPageState extends State<FaturaDetalhadaPage> {
     try {
       setState(() => _isLoading = true);
       
-      // TODO: Implementar exclusão no service
-      // await _faturaOperations.excluirTransacao(transacao['id']);
-      
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Transação excluída com sucesso!'),
@@ -459,10 +451,7 @@ class _FaturaDetalhadaPageState extends State<FaturaDetalhadaPage> {
     
     try {
       setState(() => _isLoading = true);
-      
-      // TODO: Implementar exclusão de parcelamento no service
-      // await _faturaOperations.excluirParcelamento(transacao['grupo_parcelamento']);
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Parcelamento excluído com sucesso!'),

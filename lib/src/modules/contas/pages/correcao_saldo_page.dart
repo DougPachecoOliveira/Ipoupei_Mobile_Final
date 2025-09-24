@@ -10,6 +10,7 @@ import '../models/conta_model.dart';
 import '../services/conta_service.dart';
 import '../../auth/components/loading_overlay.dart';
 import '../../shared/theme/app_colors.dart';
+import '../../../shared/components/ui/app_text.dart';
 import 'package:flutter/services.dart';
 
 class CorrecaoSaldoPage extends StatefulWidget {
@@ -151,15 +152,15 @@ class _CorrecaoSaldoPageState extends State<CorrecaoSaldoPage> {
     final resultado = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Confirmar Correção'),
+        title: AppText.cardTitle('Confirmar Correção'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Conta: ${widget.conta.nome}'),
+            AppText.body('Conta: ${widget.conta.nome}'),
             const SizedBox(height: 8),
-            Text('Saldo atual: ${_formatarMoeda(saldoAtual)}'),
-            Text('Novo saldo: ${_formatarMoeda(_novoSaldoValue)}'),
+            AppText.body('Saldo atual: ${_formatarMoeda(saldoAtual)}'),
+            AppText.body('Novo saldo: ${_formatarMoeda(_novoSaldoValue)}'),
             Text(
               'Diferença: ${diferenca > 0 ? "+" : ""}${_formatarMoeda(diferenca)}',
               style: TextStyle(
@@ -265,13 +266,13 @@ class _CorrecaoSaldoPageState extends State<CorrecaoSaldoPage> {
                 color: AppColors.tealPrimary,
               ),
               const SizedBox(width: 8),
-              Text(
+              AppText.cardTitle(
                 widget.conta.banco ?? 'Banco não informado',
                 style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.cinzaEscuro,
                 ),
+                color: AppColors.cinzaEscuro,
               ),
             ],
           ),
@@ -285,21 +286,21 @@ class _CorrecaoSaldoPageState extends State<CorrecaoSaldoPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    AppText.cardSecondary(
                       'Saldo Atual',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 12,
-                        color: AppColors.cinzaTexto,
                         fontWeight: FontWeight.w500,
                       ),
+                      color: AppColors.cinzaTexto,
                     ),
-                    Text(
+                    AppText.cardValue(
                       _formatarMoeda(widget.conta.saldo),
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.tealPrimary,
                       ),
+                      color: AppColors.tealPrimary,
                     ),
                   ],
                 ),
@@ -331,13 +332,13 @@ class _CorrecaoSaldoPageState extends State<CorrecaoSaldoPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        AppText.cardTitle(
           'Como você quer ajustar?',
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: Colors.black87,
           ),
+          color: Colors.black87,
         ),
         const SizedBox(height: 12),
         ...opcoes.map<Widget>((opcao) {
@@ -420,13 +421,13 @@ class _CorrecaoSaldoPageState extends State<CorrecaoSaldoPage> {
           children: [
             const Icon(Icons.attach_money, size: 16, color: AppColors.tealPrimary),
             const SizedBox(width: 8),
-            const Text(
+            AppText.cardTitle(
               'Novo Saldo',
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: Colors.black87,
               ),
+              color: Colors.black87,
             ),
           ],
         ),
@@ -468,13 +469,13 @@ class _CorrecaoSaldoPageState extends State<CorrecaoSaldoPage> {
         ),
         if (_validationError != null) ...[
           const SizedBox(height: 8),
-          Text(
+          AppText.body(
             _validationError!,
             style: const TextStyle(
-              color: Colors.red,
               fontSize: 12,
               fontWeight: FontWeight.w500,
             ),
+            color: Colors.red,
           ),
         ],
       ],
@@ -490,13 +491,13 @@ class _CorrecaoSaldoPageState extends State<CorrecaoSaldoPage> {
           children: [
             const Icon(Icons.note_add, size: 16, color: AppColors.tealPrimary),
             const SizedBox(width: 8),
-            const Text(
+            AppText.cardTitle(
               'Motivo do Ajuste',
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: Colors.black87,
               ),
+              color: Colors.black87,
             ),
           ],
         ),
@@ -570,12 +571,13 @@ class _CorrecaoSaldoPageState extends State<CorrecaoSaldoPage> {
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child: const Text(
+              child: AppText.button(
                 'CANCELAR',
-                style: TextStyle(
+                style: const TextStyle(
                   fontWeight: FontWeight.w600,
                   fontSize: 14,
                 ),
+                color: AppColors.tealPrimary,
               ),
             ),
           ),
@@ -612,12 +614,13 @@ class _CorrecaoSaldoPageState extends State<CorrecaoSaldoPage> {
                       children: [
                         const Icon(Icons.check, size: 18),
                         const SizedBox(width: 8),
-                        const Text(
+                        AppText.button(
                           'CONFIRMAR',
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontWeight: FontWeight.w600,
                             fontSize: 14,
                           ),
+                          color: Colors.white,
                         ),
                       ],
                     ),
@@ -747,24 +750,23 @@ class _CorrecaoSaldoPageState extends State<CorrecaoSaldoPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
+                  AppText.appBarTitle(
                     'Ajustar Saldo',
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 20, // 🔧 TÍTULO MAIOR
                       fontWeight: FontWeight.w700,
-                      color: Colors.white,
                       letterSpacing: -0.5,
                     ),
+                    color: Colors.white,
                   ),
                   const SizedBox(height: 6), // 🔧 MAIS ESPAÇO ENTRE LINHAS
-                  Text(
+                  AppText.cardSecondary(
                     '${widget.conta.banco ?? 'Banco'} • ${widget.conta.nome}', // 🔧 NOME DO BANCO + CONTA
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 15, // 🔧 TEXTO MAIOR
-                      color: Colors.white.withValues(alpha: 0.9),
                       fontWeight: FontWeight.w500,
                     ),
-                    overflow: TextOverflow.ellipsis,
+                    color: Colors.white.withValues(alpha: 0.9),
                   ),
                 ],
               ),

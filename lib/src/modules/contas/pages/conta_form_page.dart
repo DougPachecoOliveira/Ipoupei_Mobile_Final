@@ -17,7 +17,10 @@ import '../models/conta_model.dart';
 import '../services/conta_service.dart';
 import '../../auth/components/loading_overlay.dart';
 import '../../shared/theme/app_colors.dart';
+import '../../shared/theme/responsive_sizes.dart';
+import '../../shared/theme/app_typography.dart';
 import '../../../shared/components/ui/smart_currency_input.dart';
+import '../../../shared/components/ui/app_text.dart';
 import 'correcao_saldo_page.dart';
 
 class ContaFormPage extends StatefulWidget {
@@ -426,13 +429,13 @@ class _ContaFormPageState extends State<ContaFormPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          AppText.cardTitle(
             'Cor da Conta',
-            style: TextStyle(
-              fontSize: 16,
+            style: const TextStyle(
+              fontSize: 14,
               fontWeight: FontWeight.w500,
-              color: Colors.black87,
             ),
+            color: Colors.black87,
           ),
           const SizedBox(height: 12),
           SizedBox(
@@ -567,13 +570,14 @@ class _ContaFormPageState extends State<ContaFormPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      AppText.cardTitle(
                         nome,
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: Colors.black87,
                         ),
+                        color: Colors.black87,
+                        group: AppTextGroups.cardTitles,
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -746,20 +750,22 @@ class _ContaFormPageState extends State<ContaFormPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  AppText.cardValue(
                     'R\$ ${_formatarValorParaExibicao(_converterInputParaDouble(_saldoController.text))}',
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.tealPrimary,
                     ),
+                    color: AppColors.tealPrimary,
+                    group: AppTextGroups.cardValues,
                   ),
-                  const Text(
+                  AppText.cardSecondary(
                     'Toque para ajustar o saldo',
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 12,
-                      color: Colors.grey,
                     ),
+                    color: Colors.grey,
+                    group: AppTextGroups.cardSecondary,
                   ),
                 ],
               ),
@@ -891,13 +897,13 @@ class _ContaFormPageState extends State<ContaFormPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          AppText.cardTitle(
             'Banco',
-            style: TextStyle(
-              fontSize: 16,
+            style: const TextStyle(
+              fontSize: 14,
               fontWeight: FontWeight.w500,
-              color: Colors.black87,
             ),
+            color: Colors.black87,
           ),
           const SizedBox(height: 12),
           
@@ -936,14 +942,13 @@ class _ContaFormPageState extends State<ContaFormPage> {
                           ),
                         ),
                         const SizedBox(height: 4),
-                        Text(
+                        AppText.cardSecondary(
                           banco['nome'],
                           style: TextStyle(
                             fontSize: 11,
-                            color: selecionado ? AppColors.tealPrimary : Colors.grey[600],
                             fontWeight: selecionado ? FontWeight.w600 : FontWeight.w500,
                           ),
-                          textAlign: TextAlign.center,
+                          color: selecionado ? AppColors.tealPrimary : Colors.grey[600],
                         ),
                       ],
                     ),
@@ -961,13 +966,13 @@ class _ContaFormPageState extends State<ContaFormPage> {
               children: [
                 const Icon(Icons.edit, size: 16, color: Colors.grey),
                 const SizedBox(width: 8),
-                const Text(
+                AppText.body(
                   'Nome do Banco',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.black87,
+                  style: const TextStyle(
+                    fontSize: 12,
                     fontWeight: FontWeight.w500,
                   ),
+                  color: Colors.black87,
                 ),
               ],
             ),
@@ -1031,13 +1036,13 @@ class _ContaFormPageState extends State<ContaFormPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          AppText.cardTitle(
             'Ícone da Conta',
-            style: TextStyle(
-              fontSize: 16,
+            style: const TextStyle(
+              fontSize: 14,
               fontWeight: FontWeight.w500,
-              color: Colors.black87,
             ),
+            color: Colors.black87,
           ),
           const SizedBox(height: 12),
           SizedBox(
@@ -1092,13 +1097,13 @@ class _ContaFormPageState extends State<ContaFormPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          AppText.cardTitle(
             'Tipo de Conta',
-            style: TextStyle(
-              fontSize: 16,
+            style: const TextStyle(
+              fontSize: 14,
               fontWeight: FontWeight.w500,
-              color: Colors.black87,
             ),
+            color: Colors.black87,
           ),
           const SizedBox(height: 12),
           Row(
@@ -1161,7 +1166,7 @@ class _ContaFormPageState extends State<ContaFormPage> {
                         size: 24,
                       ),
                       const SizedBox(height: 4),
-                      Text(
+                      AppText.cardSecondary(
                         tipo['valor'] == 'corrente' ? 'Corrente' :
                         tipo['valor'] == 'poupanca' ? 'Poupança' :
                         tipo['valor'] == 'investimento' ? 'Investment' :
@@ -1171,7 +1176,6 @@ class _ContaFormPageState extends State<ContaFormPage> {
                           color: selecionado ? Colors.white : Colors.grey[600],
                           fontWeight: FontWeight.w500,
                         ),
-                        textAlign: TextAlign.center,
                       ),
                     ],
                   ),
@@ -1202,13 +1206,13 @@ class _ContaFormPageState extends State<ContaFormPage> {
                   children: [
                     const Icon(Icons.account_balance, size: 16, color: Colors.grey),
                     const SizedBox(width: 8),
-                    const Text(
+                    AppText.body(
                       'Nome da Conta',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.black87,
+                      style: const TextStyle(
+                        fontSize: 12,
                         fontWeight: FontWeight.w500,
                       ),
+                      color: Colors.black87,
                     ),
                   ],
                 ),
@@ -1258,13 +1262,13 @@ class _ContaFormPageState extends State<ContaFormPage> {
                   children: [
                     const Icon(Icons.monetization_on, size: 16, color: Colors.grey),
                     const SizedBox(width: 8),
-                    Text(
+                    AppText.body(
                       widget.modo == 'editar' ? 'Saldo Atual' : 'Saldo Inicial',
                       style: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.black87,
+                        fontSize: 12,
                         fontWeight: FontWeight.w500,
                       ),
+                      color: Colors.black87,
                     ),
                     if (widget.modo == 'editar') ...[
                       const Spacer(),
@@ -1276,18 +1280,18 @@ class _ContaFormPageState extends State<ContaFormPage> {
                             color: AppColors.tealPrimary.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Row(
+                          child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.tune, size: 14, color: AppColors.tealPrimary),
-                              SizedBox(width: 4),
-                              Text(
+                              const Icon(Icons.tune, size: 14, color: AppColors.tealPrimary),
+                              const SizedBox(width: 4),
+                              AppText.button(
                                 'Ajustar',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: AppColors.tealPrimary,
                                   fontWeight: FontWeight.w500,
                                 ),
+                                color: AppColors.tealPrimary,
                               ),
                             ],
                           ),
@@ -1328,13 +1332,14 @@ class _ContaFormPageState extends State<ContaFormPage> {
                 ),
                 side: const BorderSide(color: AppColors.tealPrimary, width: 1),
               ),
-              child: const Text(
+              child: AppText.button(
                 'Voltar',
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 0.5,
                 ),
+                color: AppColors.tealPrimary,
               ),
             ),
           ),
@@ -1358,13 +1363,14 @@ class _ContaFormPageState extends State<ContaFormPage> {
                 ),
                 elevation: 0,
               ),
-              child: Text(
+              child: AppText.button(
                 widget.modo == 'criar' ? 'Criar' : 'Salvar',
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 0.5,
                 ),
+                color: Colors.white,
               ),
             ),
           ),
@@ -1385,20 +1391,29 @@ class _ContaFormPageState extends State<ContaFormPage> {
         appBar: AppBar(
           backgroundColor: AppColors.tealPrimary,
           foregroundColor: Colors.white,
-          title: Text(titulo),
+          title: Text(titulo, style: AppTypography.appBarTitle(context)),
           elevation: 0,
+          toolbarHeight: ResponsiveSizes.appBarHeight(context, base: 42),
+          leading: IconButton(
+            icon: Icon(
+              Icons.arrow_back,
+              color: Colors.white,
+              size: ResponsiveSizes.appBarIconSize(context, base: 21),
+            ),
+            onPressed: () => Navigator.pop(context),
+          ),
           actions: [
             TextButton(
               onPressed: _temAlteracoes && !_loading ? _salvarConta : null,
-              child: Text(
+              child: AppText.button(
                 'Salvar',
-                style: TextStyle(
-                  color: _temAlteracoes && !_loading 
-                      ? Colors.white      // Branco quando válido
-                      : Colors.white54,   // Transparente quando inválido
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
+                color: _temAlteracoes && !_loading
+                    ? Colors.white      // Branco quando válido
+                    : Colors.white54,   // Transparente quando inválido
               ),
             ),
           ],
@@ -1477,13 +1492,13 @@ class _ContaFormPageState extends State<ContaFormPage> {
                                   color: AppColors.tealPrimary,
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                child: const Text(
+                                child: AppText.cardSecondary(
                                   'PRINCIPAL',
-                                  style: TextStyle(
-                                    color: Colors.white,
+                                  style: const TextStyle(
                                     fontSize: 10,
                                     fontWeight: FontWeight.bold,
                                   ),
+                                  color: Colors.white,
                                 ),
                               ),
                             ),

@@ -12,7 +12,9 @@
       "Read(//c/Projetos Flutter/ipoupeidevice/ipoupei_device/lib/shared/components/layouts/**)",
       "Read(//c/Projetos Flutter/ipoupeidevice/**)",
       "WebSearch",
-      "Read(//c/Projetos Flutter/ipoupei/src/modules/dashboard/store/**)"
+      "Read(//c/Projetos Flutter/ipoupei/src/modules/dashboard/store/**)",
+      "Bash(flutter format:*)",
+      "Bash(dart format:*)"
     ],
     "deny": [],
     "ask": []

@@ -26,6 +26,9 @@ import '../../diagnostico/widgets/diagnostico_dashboard_widget.dart';
 import '../../../shared/components/sidebar.dart';
 import '../widgets/insights_rapidos_widget.dart';
 import '../widgets/graficos_categoria_widget.dart';
+import '../../shared/theme/app_colors.dart';
+import '../../shared/theme/app_typography.dart';
+import '../../shared/theme/responsive_sizes.dart';
 
 class RelatoriosPage extends StatefulWidget {
   const RelatoriosPage({super.key});
@@ -159,24 +162,21 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
     }
   }
 
-  /// 🔝 APPBAR COM SELETOR DE MÊS INTEGRADO (ESTILO iPoupei Device)
+  /// 🔝 APPBAR COMPACTO SEGUINDO PADRÃO DO CONTAS PAGE
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      backgroundColor: const Color(0xFF008080), // AppColors.tealPrimary
+      backgroundColor: AppColors.tealPrimary,
       elevation: 0,
+      toolbarHeight: ResponsiveSizes.appBarHeight(context, base: 42), // 56 * 0.75 = 42
       leading: GestureDetector(
         onTap: () => _scaffoldKey.currentState?.openDrawer(),
         child: Container(
           margin: const EdgeInsets.all(8),
-          child: const CircleAvatar(
-            backgroundColor: Color(0xFF008080), // Mesma cor do AppBar
+          child: CircleAvatar(
+            backgroundColor: AppColors.tealPrimary,
             child: Text(
               'UL', // TODO: Pegar iniciais do usuário logado
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
+              style: AppTypography.onDark(context, AppTypography.bodyMedium(context)),
             ),
           ),
         ),
@@ -185,13 +185,19 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
       centerTitle: true,
       actions: [
         IconButton(
-          icon: const Icon(Icons.more_vert, color: Colors.white),
+          icon: Icon(
+            Icons.more_vert,
+            color: Colors.white,
+            size: ResponsiveSizes.appBarIconSize(context, base: 21),
+          ),
           onPressed: () {
-            // TODO: Menu de opções futuras
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Menu de opções em desenvolvimento'),
-                duration: Duration(seconds: 1),
+              SnackBar(
+                content: Text(
+                  'Menu de opções em desenvolvimento',
+                  style: AppTypography.bodyMedium(context),
+                ),
+                duration: const Duration(seconds: 1),
               ),
             );
           },
@@ -200,16 +206,16 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
     );
   }
 
-  /// 📅 SELETOR DE MÊS COMPACTO (IGUAL iPoupei Device)
+  /// 📅 SELETOR DE MÊS PADRONIZADO
   Widget _buildSeletorMesCompacto() {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         IconButton(
-          icon: const Icon(
+          icon: Icon(
             Icons.chevron_left,
             color: Colors.white,
-            size: 20,
+            size: ResponsiveSizes.appBarIconSize(context, base: 21),
           ),
           onPressed: _mesAnterior,
           padding: const EdgeInsets.all(8),
@@ -225,27 +231,30 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
               children: [
                 Text(
                   _modoAno ? _mesAtual.year.toString() : _formatarMesAno(_mesAtual),
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                  style: AppTypography.appBarTitle(context).copyWith(
+                    fontSize: ResponsiveSizes.fontSizeForCards(
+                      context: context,
+                      base: 14, // 18 * 0.75 = ~14
+                      small: 12,
+                      large: 15,
+                    ),
                   ),
                 ),
-                const SizedBox(width: 4),
-                const Icon(
+                SizedBox(width: ResponsiveSizes.spacing(context: context, base: 4)),
+                Icon(
                   Icons.arrow_drop_down,
                   color: Colors.white,
-                  size: 16,
+                  size: ResponsiveSizes.appBarIconSize(context, base: 16),
                 ),
               ],
             ),
           ),
         ),
         IconButton(
-          icon: const Icon(
+          icon: Icon(
             Icons.chevron_right,
             color: Colors.white,
-            size: 20,
+            size: ResponsiveSizes.appBarIconSize(context, base: 21),
           ),
           onPressed: _proximoMes,
           padding: const EdgeInsets.all(8),
@@ -308,7 +317,7 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
     );
   }
 
-  /// 🎨 WIDGET CARD NAVEGAÇÃO
+  /// 🎨 WIDGET CARD NAVEGAÇÃO PADRONIZADO
   Widget _buildCardNavegacao(String titulo, String descricao, IconData icone, Color cor, VoidCallback onTap) {
     return Card(
       elevation: 1,
@@ -325,32 +334,34 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
                   color: cor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(icone, color: cor, size: 24),
+                child: Icon(
+                  icone,
+                  color: cor,
+                  size: ResponsiveSizes.iconSize(context: context, base: 24),
+                ),
               ),
-              const SizedBox(width: 16),
+              SizedBox(width: ResponsiveSizes.spacing(context: context, base: 16)),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       titulo,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: AppTypography.h3(context),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: ResponsiveSizes.spacing(context: context, base: 4)),
                     Text(
                       descricao,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey[600],
-                      ),
+                      style: AppTypography.bodySmall(context),
                     ),
                   ],
                 ),
               ),
-              Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[400]),
+              Icon(
+                Icons.arrow_forward_ios,
+                size: ResponsiveSizes.iconSize(context: context, base: 16),
+                color: AppColors.cinzaTexto,
+              ),
             ],
           ),
         ),

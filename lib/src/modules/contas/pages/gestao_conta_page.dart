@@ -16,6 +16,11 @@ import '../../shared/theme/app_colors.dart';
 import '../../shared/theme/app_typography.dart';
 import '../../shared/theme/responsive_sizes.dart';
 import '../../shared/utils/currency_formatter.dart';
+import '../../../shared/components/ui/app_text.dart';
+import '../../../shared/components/ui/action_buttons_row.dart';
+import '../../../shared/components/ui/metrics_summary_cards.dart';
+import '../../../shared/components/ui/insights_card.dart';
+import '../../../shared/components/charts/interactive_pie_chart.dart';
 import '../models/conta_model.dart';
 import 'correcao_saldo_page.dart';
 import 'conta_form_page.dart';
@@ -23,6 +28,7 @@ import '../../../shared/models/categoria_valor.dart';
 import '../services/conta_analytics_service.dart';
 import '../services/conta_service.dart';
 import '../widgets/conta_card.dart';
+import '../../relatorios/pages/relatorios_page.dart';
 
 /// Página de gestão completa da conta com insights e métricas
 class GestaoContaPage extends StatefulWidget {
@@ -443,7 +449,7 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
                         color: Colors.grey.shade400,
                       ),
                       const SizedBox(height: 16),
-                      Text(
+                      AppText.body(
                         _erro!,
                         style: TextStyle(
                           fontSize: 16,
@@ -457,7 +463,7 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.tealPrimary,
                         ),
-                        child: const Text('Tentar novamente'),
+                        child: AppText.button('Tentar novamente'),
                       ),
                     ],
                   ),
@@ -487,7 +493,11 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           IconButton(
-            icon: const Icon(Icons.chevron_left, color: Colors.white, size: 28),
+            icon: Icon(
+              Icons.chevron_left,
+              color: Colors.white,
+              size: ResponsiveSizes.appBarIconSize(context, base: 24),
+            ),
             onPressed: _mesAnterior,
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
@@ -508,7 +518,11 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.chevron_right, color: Colors.white, size: 28),
+            icon: Icon(
+              Icons.chevron_right,
+              color: Colors.white,
+              size: ResponsiveSizes.appBarIconSize(context, base: 24),
+            ),
             onPressed: _proximoMes,
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
@@ -523,6 +537,7 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
     return AppBar(
       backgroundColor: AppColors.tealPrimary,
       elevation: 0,
+      toolbarHeight: ResponsiveSizes.appBarHeight(context, base: 42), // Mesmo padrão do contas_page
       automaticallyImplyLeading: false,
       title: Row(
         children: [
@@ -530,7 +545,11 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
           Transform.translate(
             offset: const Offset(-8, 0),
             child: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
+              icon: Icon(
+                Icons.arrow_back,
+                color: Colors.white,
+                size: ResponsiveSizes.appBarIconSize(context, base: 21), // Mesmo padrão
+              ),
               onPressed: () => Navigator.pop(context),
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
@@ -538,13 +557,13 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
           ),
           
           // Título
-          const Text(
+          AppText.appBarTitle(
             'Gestão da Conta',
-            style: TextStyle(
-              color: Colors.white,
+            style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
             ),
+            color: Colors.white,
           ),
           
           const Spacer(),
@@ -553,7 +572,11 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
           Row(
             children: [
               IconButton(
-                icon: const Icon(Icons.chevron_left, color: Colors.white, size: 28),
+                icon: Icon(
+              Icons.chevron_left,
+              color: Colors.white,
+              size: ResponsiveSizes.appBarIconSize(context, base: 24),
+            ),
                 onPressed: _mesAnterior,
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
@@ -564,17 +587,21 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
                   color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: Text(
+                child: AppText.cardSecondary(
                   _formatarMesAno(_mesAtual),
                   style: const TextStyle(
-                    color: Colors.white,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
+                  color: Colors.white,
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.chevron_right, color: Colors.white, size: 28),
+                icon: Icon(
+              Icons.chevron_right,
+              color: Colors.white,
+              size: ResponsiveSizes.appBarIconSize(context, base: 24),
+            ),
                 onPressed: _proximoMes,
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
@@ -596,13 +623,23 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
           
           const SizedBox(height: 12),
           
-          // 3 quadradinhos de resumo
-          _buildResumoMetricas(),
+          // 3 cards de resumo de métricas
+          MetricsSummaryCards(
+            metrics: CommonMetrics.forAccount(
+              averageBalance: CurrencyFormatter.format(_saldoMedio),
+              maxIncome: CurrencyFormatter.format(_maiorEntrada),
+              maxExpense: CurrencyFormatter.format(_maiorSaida),
+            ),
+          ),
           
           const SizedBox(height: 12),
           
           // Card de insights + dicas
-          _buildCardInsights(),
+          InsightsCard(
+            insights: _gerarInsights(),
+            isCollapsible: true,
+            initiallyExpanded: true,
+          ),
           
           const SizedBox(height: 12),
           
@@ -641,10 +678,19 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
             child: _buildCardConta(),
           ),
           
-          // Chips de ações (sem padding lateral)
+          // Botões de ações
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-            child: _buildChipsElegantes(),
+            child: ActionButtonsRow(
+              buttons: AccountActionButtons.getButtons(
+                onEdit: () => _navegarParaAcao('editar_conta'),
+                onAdjustBalance: () => _navegarParaAcao('ajustar_saldo'),
+                onViewReports: () => _navegarParaAcao('ver_relatorios'),
+                onTransactions: () => _navegarParaAcao('ver_transacoes'),
+                onArchive: () => _arquivarConta(),
+                onSettings: () => _navegarParaAcao('configuracoes'),
+              ),
+            ),
           ),
         ],
       ),
@@ -681,7 +727,7 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
         shadowColor: Colors.black.withValues(alpha: 0.1),
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
-          onTap: () => _mostrarMenuConta(),
+          onTap: () => _navegarParaRelatoriosComFiltro(),
           child: Container(
             height: ResponsiveSizes.cardHeight(context, base: 67),
             decoration: BoxDecoration(
@@ -713,7 +759,7 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
                   ),
                 ),
               ),
-              
+
               // Conteúdo principal
               Expanded(
                 child: Padding(
@@ -748,7 +794,7 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
                           ],
                         ),
                       ),
-                      
+
                       // Segunda linha: Banco + Menu
                       Row(
                         children: [
@@ -759,7 +805,7 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          
+
                           // Menu três pontinhos
                           InkWell(
                             borderRadius: BorderRadius.circular(16),
@@ -779,7 +825,8 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
                   ),
                 ),
               ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -1067,31 +1114,7 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
             
             const SizedBox(height: 16),
             
-            // Insights baseados nos dados
-            ...(_generateInsights().map((insight) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    insight['icone'] as IconData,
-                    color: insight['cor'] as Color,
-                    size: 16,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      insight['texto'] as String,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: AppColors.cinzaTexto,
-                        height: 1.4,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ))),
+            // Insights removidos - agora usamos InsightsCard component
           ],
         ),
       ),
@@ -1178,9 +1201,45 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _buildLegendaItem('Saldo Real', AppColors.tealPrimary, isSolid: true),
+                  // Legenda do saldo real
+                  Row(
+                    children: [
+                      Container(
+                        width: 12,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          color: AppColors.tealPrimary,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      AppText.cardSecondary(
+                        'Saldo Real',
+                        style: const TextStyle(fontSize: 12),
+                        color: AppColors.cinzaTexto,
+                      ),
+                    ],
+                  ),
                   const SizedBox(width: 24),
-                  _buildLegendaItem('Projeção', AppColors.tealPrimary.withValues(alpha: 0.6), isSolid: false),
+                  // Legenda da projeção
+                  Row(
+                    children: [
+                      Container(
+                        width: 16,
+                        height: 3,
+                        decoration: BoxDecoration(
+                          color: AppColors.tealPrimary.withValues(alpha: 0.6),
+                          borderRadius: BorderRadius.circular(1),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      AppText.cardSecondary(
+                        'Projeção',
+                        style: const TextStyle(fontSize: 12),
+                        color: AppColors.cinzaTexto,
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -1453,9 +1512,45 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              _buildLegendaItem('Entradas', AppColors.verdeSucesso),
+                              // Legenda Entradas
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 12,
+                                    height: 12,
+                                    decoration: BoxDecoration(
+                                      color: AppColors.verdeSucesso,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  AppText.cardSecondary(
+                                    'Entradas',
+                                    style: const TextStyle(fontSize: 12),
+                                    color: AppColors.cinzaTexto,
+                                  ),
+                                ],
+                              ),
                               const SizedBox(width: 24),
-                              _buildLegendaItem('Saídas', AppColors.vermelhoErro),
+                              // Legenda Saídas
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 12,
+                                    height: 12,
+                                    decoration: BoxDecoration(
+                                      color: AppColors.vermelhoErro,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  AppText.cardSecondary(
+                                    'Saídas',
+                                    style: const TextStyle(fontSize: 12),
+                                    color: AppColors.cinzaTexto,
+                                  ),
+                                ],
+                              ),
                             ],
                           ),
                           
@@ -1500,9 +1595,45 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            _buildLegendaItem('Entradas', AppColors.verdeSucesso),
+                            // Legenda Entradas
+                            Row(
+                              children: [
+                                Container(
+                                  width: 12,
+                                  height: 12,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.verdeSucesso,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                AppText.cardSecondary(
+                                  'Entradas',
+                                  style: const TextStyle(fontSize: 12),
+                                  color: AppColors.cinzaTexto,
+                                ),
+                              ],
+                            ),
                             const SizedBox(width: 24),
-                            _buildLegendaItem('Saídas', AppColors.vermelhoErro),
+                            // Legenda Saídas
+                            Row(
+                              children: [
+                                Container(
+                                  width: 12,
+                                  height: 12,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.vermelhoErro,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                AppText.cardSecondary(
+                                  'Saídas',
+                                  style: const TextStyle(fontSize: 12),
+                                  color: AppColors.cinzaTexto,
+                                ),
+                              ],
+                            ),
                           ],
                         ),
                         
@@ -1634,7 +1765,7 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
     );
   }
 
-  /// 🏷️ GRÁFICO DE CATEGORIAS
+  /// 🏷️ GRÁFICO DE CATEGORIAS - USANDO INTERACTIVE PIE CHART
   Widget _buildGraficoCategorias() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -1670,196 +1801,44 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Expanded(
-                  child: Text(
+                Expanded(
+                  child: AppText.cardTitle(
                     'Movimentações por Categoria',
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.cinzaEscuro,
                     ),
+                    color: AppColors.cinzaEscuro,
                   ),
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 24),
-            
-            // Pizza centralizada + lista de categorias (igual ao device)
-            Center(
-              child: Column(
-                children: [
-                  // Gráfico Pizza Real
-                  SizedBox(
-                    width: 180,
-                    height: 180,
-                    child: _gastosPorCategoria.isEmpty || _gastosPorCategoria.every((cat) => cat.valor == 0.0)
-                        ? Container(
-                            width: 180,
-                            height: 180,
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade50,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.grey.shade200, width: 2),
-                            ),
-                            child: Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.trending_flat,
-                                    size: 32,
-                                    color: Colors.grey.shade400,
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'Sem gastos\neste mês',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: Colors.grey.shade600,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          )
-                        : PieChart(
-                            PieChartData(
-                              sections: _gastosPorCategoria
-                                  .where((cat) => cat.valor > 0)
-                                  .toList()
-                                  .asMap()
-                                  .entries
-                                  .map((entry) {
-                                final categoria = entry.value;
-                                final index = entry.key;
-                                
-                                // 🍎 Cores Apple Health style - suaves e elegantes
-                                final coresApple = [
-                                  const Color(0xFF007AFF), // Apple Blue
-                                  const Color(0xFF34C759), // Apple Green  
-                                  const Color(0xFFFF9500), // Apple Orange
-                                  const Color(0xFFFF3B30), // Apple Red
-                                  const Color(0xFF5856D6), // Apple Purple
-                                  const Color(0xFFFF2D92), // Apple Pink
-                                  const Color(0xFF32D74B), // Apple Mint
-                                  const Color(0xFFFFCC00), // Apple Yellow
-                                ];
-                                final cor = index < coresApple.length 
-                                    ? coresApple[index] 
-                                    : Color(int.parse('0xFF${categoria.color.substring(1)}'));
-                                
-                                return PieChartSectionData(
-                                  value: categoria.valor,
-                                  title: '',  // Sem texto no gráfico - mais clean
-                                  color: cor,
-                                  radius: 65, // Mais fino e elegante
-                                );
-                              }).toList(),
-                              sectionsSpace: 1, // Mínimo espaço
-                              centerSpaceRadius: 45, // Centro maior para elegância
-                              startDegreeOffset: -90,
-                              pieTouchData: PieTouchData(enabled: false), // Sem interação
-                            ),
-                          ),
-                  ),
-                  
-                  const SizedBox(height: 24),
-                  
-                  // Lista de categorias estilo Apple Health
-                  ...(_gastosPorCategoria.where((cat) => cat.valor > 0).map((categoria) {
-                    final index = _gastosPorCategoria.indexOf(categoria);
-                    
-                    // Mesmas cores do gráfico Apple
-                    final coresApple = [
-                      const Color(0xFF007AFF), const Color(0xFF34C759), const Color(0xFFFF9500),
-                      const Color(0xFFFF3B30), const Color(0xFF5856D6), const Color(0xFFFF2D92),
-                      const Color(0xFF32D74B), const Color(0xFFFFCC00),
-                    ];
-                    final cor = index < coresApple.length 
-                        ? coresApple[index] 
-                        : Color(int.parse('0xFF${categoria.color.substring(1)}'));
-                    
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Row(
-                        children: [
-                          // Círculo colorido simples
-                          Container(
-                            width: 12,
-                            height: 12,
-                            decoration: BoxDecoration(
-                              color: cor,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          // Nome da categoria
-                          Expanded(
-                            child: Text(
-                              categoria.nome,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w400,
-                                color: Colors.black87,
-                              ),
-                            ),
-                          ),
-                          // Valor alinhado à direita
-                          Text(
-                            CurrencyFormatter.format(categoria.valor),
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.black87,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }).toList()),
-                ],
+
+            // Gráfico interativo reutilizável
+            InteractivePieChart(
+              data: _convertCategoriasToChartData(),
+              centerTitle: 'Total',
+              centerSubtitle: CurrencyFormatter.format(
+                _gastosPorCategoria.fold(0.0, (sum, cat) => sum + cat.valor.abs())
               ),
+              height: 250,
+              style: const PieChartStyle(
+                radius: 80,
+                touchedRadius: 90,
+                centerSpaceRadius: 60,
+              ),
+              onTap: (item) {
+                // Callback para navegar ou mostrar detalhes da categoria
+                debugPrint('Categoria selecionada: ${item.label}');
+              },
             ),
+
+            const SizedBox(height: 16),
           ],
         ),
       ),
-    );
-  }
-
-  /// 🏷️ ITEM DA LEGENDA
-  Widget _buildLegendaItem(String texto, Color cor, {bool isSolid = true}) {
-    return Row(
-      children: [
-        if (isSolid)
-          Container(
-            width: 12,
-            height: 12,
-            decoration: BoxDecoration(
-              color: cor,
-              shape: BoxShape.circle,
-            ),
-          )
-        else
-          // Linha pontilhada para projeção
-          SizedBox(
-            width: 16,
-            height: 3,
-            child: CustomPaint(
-              painter: DashedLinePainter(color: cor),
-            ),
-          ),
-        const SizedBox(width: 8),
-        Text(
-          texto,
-          style: const TextStyle(
-            fontSize: 12,
-            color: AppColors.cinzaTexto,
-          ),
-        ),
-      ],
     );
   }
 
@@ -1874,45 +1853,79 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
     return '${meses[data.month - 1]}/${data.year.toString().substring(2)}';
   }
 
-
   /// Gerar insights automáticos baseados nos dados
-  List<Map<String, dynamic>> _generateInsights() {
-    List<Map<String, dynamic>> insights = [];
-    
-    final saldo = widget.conta.saldo;
-    final percentualMedio = (_saldoMedio / saldo);
-    
-    if (percentualMedio > 0.9) {
-      insights.add({
-        'icone': Icons.trending_up,
-        'cor': AppColors.verdeSucesso,
-        'texto': 'Seu saldo está ${percentualMedio > 1 ? 'acima' : 'próximo'} da média! Continue mantendo esse controle.',
-      });
+  List<InsightData> _gerarInsights() {
+    List<InsightData> insights = [];
+
+    final saldo = _contaAtual.saldo;
+    final percentualMedio = _saldoMedio > 0 ? (saldo / _saldoMedio) : 1.0;
+
+    if (percentualMedio > 1.1) {
+      insights.add(InsightData(
+        icon: Icons.trending_up,
+        title: 'Saldo acima da média',
+        description: 'Seu saldo está ${((percentualMedio - 1) * 100).toStringAsFixed(0)}% acima da média! Continue mantendo esse controle.',
+        color: AppColors.verdeSucesso,
+      ));
     } else if (percentualMedio < 0.7) {
-      insights.add({
-        'icone': Icons.warning_amber,
-        'cor': Colors.orange,
-        'texto': 'Seu saldo atual está abaixo da média dos últimos meses. Considere revisar seus gastos.',
-      });
+      insights.add(InsightData(
+        icon: Icons.warning_amber,
+        title: 'Saldo abaixo da média',
+        description: 'Seu saldo atual está ${((1 - percentualMedio) * 100).toStringAsFixed(0)}% abaixo da média dos últimos meses. Considere revisar seus gastos.',
+        color: Colors.orange,
+      ));
     }
-    
+
     if (_entradaMesAtual > _saidaMesAtual) {
-      insights.add({
-        'icone': Icons.thumb_up,
-        'cor': AppColors.verdeSucesso,
-        'texto': 'Suas entradas estão superando as saídas este mês. Ótimo controle financeiro!',
-      });
+      insights.add(InsightData(
+        icon: Icons.thumb_up,
+        title: 'Mês positivo',
+        description: 'Suas entradas estão superando as saídas este mês. Ótimo controle financeiro!',
+        color: AppColors.verdeSucesso,
+      ));
     }
-    
+
     if (insights.isEmpty) {
-      insights.add({
-        'icone': Icons.info_outline,
-        'cor': AppColors.tealPrimary,
-        'texto': 'Continue acompanhando sua conta para receber insights personalizados.',
-      });
+      insights.add(InsightData(
+        icon: Icons.info_outline,
+        title: 'Continue acompanhando',
+        description: 'Continue acompanhando sua conta para receber insights personalizados.',
+        color: AppColors.tealPrimary,
+      ));
     }
-    
+
     return insights;
+  }
+
+  /// Converter dados de categorias para o gráfico interativo
+  List<PieChartDataItem> _convertCategoriasToChartData() {
+    if (_gastosPorCategoria.isEmpty) {
+      return [];
+    }
+
+    // Cores vibrantes para as categorias
+    final cores = [
+      Colors.blue.shade400,
+      Colors.red.shade400,
+      Colors.green.shade400,
+      Colors.orange.shade400,
+      Colors.purple.shade400,
+      Colors.teal.shade400,
+      Colors.pink.shade400,
+      Colors.amber.shade400,
+    ];
+
+    return _gastosPorCategoria.asMap().entries.map((entry) {
+      final index = entry.key;
+      final categoria = entry.value;
+
+      return PieChartDataItem(
+        label: categoria.nome,
+        value: categoria.valor.abs(), // Usar valor absoluto
+        color: cores[index % cores.length],
+        data: categoria, // Dados originais para callback
+      );
+    }).toList();
   }
 
   /// Parse de cor da string (copiado de contas_page)
@@ -1929,11 +1942,11 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
     if (slug == null || slug.isEmpty) {
       return Icons.account_balance_wallet_outlined;
     }
-    
+
     switch (slug.toLowerCase()) {
       case 'corrente':
         return Icons.account_balance;
-      case 'poupanca':  
+      case 'poupanca':
         return Icons.savings;
       case 'carteira':
         return Icons.account_balance_wallet;
@@ -1944,6 +1957,16 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
       default:
         return Icons.account_balance_wallet_outlined;
     }
+  }
+
+  /// Navega para relatórios com filtro da conta atual
+  void _navegarParaRelatoriosComFiltro() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const RelatoriosPage(),
+      ),
+    );
   }
 
   /// Menu da conta (igual ao contas_page)
@@ -1960,33 +1983,33 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
+            AppText.cardTitle(
               widget.conta.nome,
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
-            
+
             ListTile(
               leading: const Icon(Icons.edit, color: AppColors.tealPrimary),
-              title: const Text('Editar Conta'),
+              title: AppText.body('Editar Conta'),
               onTap: () {
                 Navigator.pop(context);
                 _navegarParaAcao('editar_conta');
               },
             ),
-            
+
             ListTile(
               leading: const Icon(Icons.account_balance, color: AppColors.tealPrimary),
-              title: const Text('Ajustar Saldo'),
+              title: AppText.body('Ajustar Saldo'),
               onTap: () {
                 Navigator.pop(context);
                 _navegarParaAcao('ajustar_saldo');
               },
             ),
-            
+
             ListTile(
               leading: const Icon(Icons.archive, color: Colors.orange),
-              title: const Text('Arquivar Conta'),
+              title: AppText.body('Arquivar Conta'),
               onTap: () {
                 Navigator.pop(context);
                 _arquivarConta();
@@ -2011,36 +2034,4 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
         return Icons.account_balance;
     }
   }
-}
-
-/// 🎨 CUSTOM PAINTER PARA LINHA PONTILHADA
-class DashedLinePainter extends CustomPainter {
-  final Color color;
-  
-  DashedLinePainter({required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = 2
-      ..style = PaintingStyle.stroke;
-
-    const dashWidth = 3.0;
-    const dashSpace = 2.0;
-    double startX = 0;
-
-    while (startX < size.width) {
-      final endX = (startX + dashWidth < size.width) ? startX + dashWidth : size.width;
-      canvas.drawLine(
-        Offset(startX, size.height / 2),
-        Offset(endX, size.height / 2),
-        paint,
-      );
-      startX += dashWidth + dashSpace;
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

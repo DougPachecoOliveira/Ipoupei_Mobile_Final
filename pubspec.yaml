@@ -55,6 +55,7 @@ dependencies:
   
   # UI - mais recente
   cupertino_icons: ^1.0.8
+  auto_size_text: ^3.0.0
 
   # Charts - para gráficos
   fl_chart: ^0.69.0

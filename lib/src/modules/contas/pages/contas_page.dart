@@ -20,6 +20,7 @@ import '../../shared/utils/currency_formatter.dart';
 import '../../../shared/components/ui/loading_widget.dart';
 import '../../../shared/components/ui/app_error_widget.dart';
 import '../../../shared/components/ui/app_button.dart';
+import '../../../shared/components/ui/app_text.dart';
 import '../../../sync/sync_manager.dart';
 import '../../relatorios/pages/relatorios_page.dart';
 import '../../../routes/main_navigation.dart';
@@ -455,16 +456,9 @@ class _ContasPageState extends State<ContasPage> {
             });
           },
         ) : null, // Sem botão de voltar quando está em contas ativas
-        title: Text(
+        title: AppText.appBarTitle(
           _mostrarArquivadas ? 'Contas Arquivadas' : 'Gerenciar Contas',
-          style: AppTypography.appBarTitle(context).copyWith(
-            fontSize: ResponsiveSizes.fontSizeForCards(
-              context: context,
-              base: 14, // 18 * 0.75 = ~14
-              small: 12,
-              large: 15,
-            ),
-          ),
+          style: AppTypography.appBarTitle(context),
         ),
         actions: _mostrarArquivadas 
           ? [] // AppBar clean sem ícones quando mostrando arquivadas
@@ -603,14 +597,13 @@ class _ContasPageState extends State<ContasPage> {
               const SizedBox(height: 20),
               
               // Título clean
-              const Text(
+              AppText.cardTitle(
                 'Nenhuma conta arquivada',
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w500,
-                  color: Colors.black87,
                 ),
-                textAlign: TextAlign.center,
+                color: Colors.black87,
               ),
               
               const SizedBox(height: 8),
@@ -654,26 +647,25 @@ class _ContasPageState extends State<ContasPage> {
             const SizedBox(height: 24),
 
             // Título
-            const Text(
+            AppText.cardTitle(
               'Nenhuma conta cadastrada',
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: AppColors.cinzaEscuro,
               ),
+              color: AppColors.cinzaEscuro,
             ),
 
             const SizedBox(height: 12),
 
             // Descrição
-            const Text(
+            AppText.body(
               'Comece organizando suas finanças adicionando suas contas bancárias, carteiras e investimentos',
-              textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 16,
-                color: AppColors.cinzaTexto,
                 height: 1.4,
               ),
+              color: AppColors.cinzaTexto,
             ),
 
             const SizedBox(height: 32),
@@ -1032,19 +1024,18 @@ class _ContasPageState extends State<ContasPage> {
                           child: Row(
                             children: [
                               Expanded(
-                                child: Text(
+                                child: AppText.cardTitle(
                                   conta.nome,
                                   style: AppTypography.cardTitle(context),
-                                  overflow: TextOverflow.ellipsis,
+                                  group: AppTextGroups.cardTitles,
                                 ),
                               ),
                               const SizedBox(width: 8),
-                              Text(
+                              AppText.cardValue(
                                 CurrencyFormatter.format(conta.saldo),
-                                style: AppTypography.cardCurrency(
-                                  context,
-                                  color: saldoNegativo ? Colors.red[600] : Colors.green[600],
-                                ),
+                                style: AppTypography.cardCurrency(context),
+                                color: saldoNegativo ? Colors.red[600] : Colors.green[600],
+                                group: AppTextGroups.cardValues,
                               ),
                             ],
                           ),
@@ -1054,10 +1045,10 @@ class _ContasPageState extends State<ContasPage> {
                         Row(
                           children: [
                             Expanded(
-                              child: Text(
+                              child: AppText.cardSecondary(
                                 '${conta.banco ?? 'Sem banco'} • Conta',
                                 style: AppTypography.cardSecondary(context),
-                                overflow: TextOverflow.ellipsis,
+                                group: AppTextGroups.cardSecondary,
                               ),
                             ),
                             
@@ -1154,7 +1145,7 @@ class _ContasPageState extends State<ContasPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(
+                      AppText.cardTitle(
                         conta.nome,
                         style: AppTypography.onDark(
                           context,
@@ -1162,23 +1153,16 @@ class _ContasPageState extends State<ContasPage> {
                             AppTypography.caption(context),
                           ),
                         ),
-                        overflow: TextOverflow.ellipsis,
+                        group: AppTextGroups.miniCards,
                       ),
                       if (conta.banco != null)
-                        Text(
+                        AppText.cardSecondary(
                           conta.banco!,
                           style: AppTypography.onDarkSecondary(
                             context,
-                            AppTypography.caption(context).copyWith(
-                              fontSize: ResponsiveSizes.fontSize(
-                                context: context,
-                                base: 8,
-                                small: 7,
-                                large: 9,
-                              ),
-                            ),
+                            AppTypography.caption(context),
                           ),
-                          overflow: TextOverflow.ellipsis,
+                          group: AppTextGroups.miniCards,
                         ),
                     ],
                   ),
@@ -1190,7 +1174,7 @@ class _ContasPageState extends State<ContasPage> {
                     color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Text(
+                  child: AppText.cardValue(
                     CurrencyFormatter.format(conta.saldo),
                     style: AppTypography.onDark(
                       context,
@@ -1198,6 +1182,7 @@ class _ContasPageState extends State<ContasPage> {
                         AppTypography.caption(context),
                       ),
                     ),
+                    group: AppTextGroups.miniCards,
                   ),
                 ),
               ],
@@ -1223,7 +1208,7 @@ class _ContasPageState extends State<ContasPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
+            AppText.cardTitle(
               conta.nome,
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
@@ -1231,8 +1216,8 @@ class _ContasPageState extends State<ContasPage> {
             
             ListTile(
               leading: const Icon(Icons.dashboard, color: AppColors.tealPrimary),
-              title: const Text('Gestão Completa'),
-              subtitle: const Text('Insights, gráficos e análises'),
+              title: AppText.body('Gestão Completa'),
+              subtitle: AppText.cardSecondary('Insights, gráficos e análises'),
               onTap: () {
                 Navigator.pop(context);
                 _navegarParaGestaoCompleta(conta);
@@ -1241,7 +1226,7 @@ class _ContasPageState extends State<ContasPage> {
             
             ListTile(
               leading: const Icon(Icons.edit, color: AppColors.tealPrimary),
-              title: const Text('Editar Conta'),
+              title: AppText.body('Editar Conta'),
               onTap: () {
                 Navigator.pop(context);
                 _navegarParaEditarConta(conta);
@@ -1250,7 +1235,7 @@ class _ContasPageState extends State<ContasPage> {
             
             ListTile(
               leading: const Icon(Icons.account_balance, color: AppColors.tealPrimary),
-              title: const Text('Ajustar Saldo'),
+              title: AppText.body('Ajustar Saldo'),
               onTap: () {
                 Navigator.pop(context);
                 _navegarParaCorrecaoSaldo(conta);
@@ -1260,7 +1245,7 @@ class _ContasPageState extends State<ContasPage> {
             if (conta.ativo) ...[
               ListTile(
                 leading: const Icon(Icons.archive, color: Colors.orange),
-                title: const Text('Arquivar Conta'),
+                title: AppText.body('Arquivar Conta'),
                 onTap: () {
                   Navigator.pop(context);
                   _arquivarConta(conta);
@@ -1269,7 +1254,7 @@ class _ContasPageState extends State<ContasPage> {
             ] else ...[
               ListTile(
                 leading: const Icon(Icons.unarchive, color: Colors.green),
-                title: const Text('Desarquivar Conta'),
+                title: AppText.body('Desarquivar Conta'),
                 onTap: () {
                   Navigator.pop(context);
                   _desarquivarConta(conta);
@@ -1279,7 +1264,7 @@ class _ContasPageState extends State<ContasPage> {
             
             ListTile(
               leading: const Icon(Icons.delete, color: Colors.red),
-              title: const Text('Excluir Conta'),
+              title: AppText.body('Excluir Conta'),
               onTap: () {
                 Navigator.pop(context);
                 _excluirConta(conta);
@@ -1393,7 +1378,7 @@ class _ContasPageState extends State<ContasPage> {
     return showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(titulo),
+        title: AppText.cardTitle(titulo),
         content: TextField(
           controller: controller,
           decoration: InputDecoration(
@@ -1405,11 +1390,11 @@ class _ContasPageState extends State<ContasPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
+            child: AppText.button('Cancelar'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, controller.text.trim()),
-            child: const Text('Confirmar'),
+            child: AppText.button('Confirmar'),
           ),
         ],
       ),
@@ -1421,17 +1406,17 @@ class _ContasPageState extends State<ContasPage> {
     return await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(titulo),
-        content: Text(mensagem),
+        title: AppText.cardTitle(titulo),
+        content: AppText.body(mensagem),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
+            child: AppText.button('Cancelar'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Confirmar'),
+            child: AppText.button('Confirmar'),
           ),
         ],
       ),
