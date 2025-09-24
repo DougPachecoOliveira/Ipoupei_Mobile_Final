@@ -99,13 +99,6 @@ class _ResumoFinanceiroWidgetState extends State<ResumoFinanceiroWidget> {
       valueExtractor: (data) => data.totalDespesas * -1, // Negativo para exibição
     ),
     ItemResumoFinanceiro(
-      tipo: TipoResumoFinanceiro.transferencias,
-      label: 'Balanço transferências',
-      icon: Icons.swap_horiz,
-      color: AppColors.amareloAlerta,
-      valueExtractor: (data) => data.saldoTransferencias,
-    ),
-    ItemResumoFinanceiro(
       tipo: TipoResumoFinanceiro.cartoes,
       label: 'Cartões de crédito',
       icon: Icons.credit_card,

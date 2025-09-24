@@ -13,6 +13,8 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../shared/theme/app_colors.dart';
+import '../../shared/theme/app_typography.dart';
+import '../../shared/theme/responsive_sizes.dart';
 import '../../shared/utils/currency_formatter.dart';
 import '../models/conta_model.dart';
 import 'correcao_saldo_page.dart';
@@ -669,26 +671,28 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
   Widget _buildCardConta() {
     final cor = _parseColor(_contaAtual.cor ?? '#008080');
     final saldoNegativo = _contaAtual.saldo < 0;
-    
-    return Material(
-      color: AppColors.branco,
-      borderRadius: BorderRadius.circular(12),
-      elevation: 2,
-      shadowColor: Colors.black.withValues(alpha: 0.1),
-      child: InkWell(
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 6),
+      child: Material(
+        color: AppColors.branco,
         borderRadius: BorderRadius.circular(12),
-        onTap: () => _mostrarMenuConta(),
-        child: Container(
-          height: 94, // Altura igual ao contas_page
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            color: AppColors.branco,
-          ),
-          child: Row(
-            children: [
+        elevation: 2,
+        shadowColor: Colors.black.withValues(alpha: 0.1),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () => _mostrarMenuConta(),
+          child: Container(
+            height: ResponsiveSizes.cardHeight(context, base: 67),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              color: AppColors.branco,
+            ),
+            child: Row(
+              children: [
               // 🎨 FAIXA LATERAL COLORIDA (como no contas_page)
               Container(
-                width: 50, // Largura da faixa lateral
+                width: ResponsiveSizes.cardSidebarWidth(context, base: 37),
                 decoration: BoxDecoration(
                   color: cor, // Cor da conta
                   borderRadius: const BorderRadius.only(
@@ -700,7 +704,12 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
                   child: Icon(
                     _iconFromSlug(_contaAtual.tipo),
                     color: Colors.white,
-                    size: 24,
+                    size: ResponsiveSizes.iconSize(
+                      context: context,
+                      base: 17,
+                      small: 15,
+                      large: 19,
+                    ),
                   ),
                 ),
               ),
@@ -708,7 +717,12 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
               // Conteúdo principal
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.all(20),
+                  padding: ResponsiveSizes.padding(
+                    context: context,
+                    base: const EdgeInsets.all(11),
+                    compact: const EdgeInsets.all(9),
+                    expanded: const EdgeInsets.all(13),
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -719,20 +733,15 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
                             Expanded(
                               child: Text(
                                 _contaAtual.nome,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.cinzaEscuro,
-                                ),
+                                style: AppTypography.cardTitle(context),
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            const SizedBox(width: 10),
+                            const SizedBox(width: 8),
                             Text(
                               CurrencyFormatter.format(_contaAtual.saldo),
-                              style: TextStyle(
-                                fontSize: 21,
-                                fontWeight: FontWeight.bold,
+                              style: AppTypography.cardCurrency(
+                                context,
                                 color: saldoNegativo ? Colors.red[600] : Colors.green[600],
                               ),
                             ),
@@ -746,10 +755,7 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
                           Expanded(
                             child: Text(
                               '${_contaAtual.banco ?? 'Sem banco'} • Conta',
-                              style: const TextStyle(
-                                fontSize: 13,
-                                color: AppColors.cinzaTexto,
-                              ),
+                              style: AppTypography.cardSecondary(context),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
@@ -761,7 +767,7 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
                             child: Padding(
                               padding: const EdgeInsets.all(4),
                               child: Icon(
-                                Icons.more_vert,
+                                Icons.more_horiz,
                                 color: AppColors.cinzaTexto,
                                 size: 20,
                               ),

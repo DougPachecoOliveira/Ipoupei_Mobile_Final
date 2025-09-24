@@ -12,6 +12,8 @@
 
 import 'package:flutter/material.dart';
 import '../../../modules/shared/theme/app_colors.dart';
+import '../../../modules/shared/theme/responsive_sizes.dart';
+import '../../../modules/shared/theme/app_typography.dart';
 
 enum AppButtonVariant { primary, secondary, outline, text, danger }
 enum AppButtonSize { small, medium, large }
@@ -120,8 +122,8 @@ class AppButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final buttonStyle = _getButtonStyle(context);
-    final height = _getHeight();
-    final child = _buildChild();
+    final height = _getHeight(context);
+    final child = _buildChild(context);
 
     return SizedBox(
       width: fullWidth ? double.infinity : null,
@@ -151,10 +153,7 @@ class AppButton extends StatelessWidget {
 
   ButtonStyle _getButtonStyle(BuildContext context) {
     final theme = Theme.of(context);
-    final customPadding = padding ?? EdgeInsets.symmetric(
-      horizontal: size == AppButtonSize.small ? 16 : 24,
-      vertical: size == AppButtonSize.small ? 8 : 12,
-    );
+    final customPadding = padding ?? ResponsiveSizes.actionButtonPadding(context);
 
     switch (variant) {
       case AppButtonVariant.primary:
@@ -211,33 +210,35 @@ class AppButton extends StatelessWidget {
     }
   }
 
-  double _getHeight() {
+  double _getHeight(BuildContext context) {
     switch (size) {
       case AppButtonSize.small:
-        return 40.0;
+        return ResponsiveSizes.actionButtonHeight(context, base: 32);
       case AppButtonSize.medium:
-        return 48.0;
+        return ResponsiveSizes.actionButtonHeight(context, base: 38);
       case AppButtonSize.large:
-        return 56.0;
+        return ResponsiveSizes.actionButtonHeight(context, base: 44);
     }
   }
 
-  TextStyle _getTextStyle() {
-    switch (size) {
-      case AppButtonSize.small:
-        return const TextStyle(fontSize: 14, fontWeight: FontWeight.w500);
-      case AppButtonSize.medium:
-        return const TextStyle(fontSize: 16, fontWeight: FontWeight.w500);
-      case AppButtonSize.large:
-        return const TextStyle(fontSize: 18, fontWeight: FontWeight.w600);
+  TextStyle _getTextStyle(BuildContext context) {
+    // Usar tipografia responsiva - mesmo padrão do AppBar
+    switch (variant) {
+      case AppButtonVariant.primary:
+      case AppButtonVariant.secondary:
+      case AppButtonVariant.danger:
+        return AppTypography.actionButton(context);
+      case AppButtonVariant.outline:
+      case AppButtonVariant.text:
+        return AppTypography.actionButtonSecondary(context);
     }
   }
 
-  Widget _buildChild() {
+  Widget _buildChild(BuildContext context) {
     if (isLoading) {
       return SizedBox(
-        height: size == AppButtonSize.small ? 16 : 20,
-        width: size == AppButtonSize.small ? 16 : 20,
+        height: ResponsiveSizes.actionButtonIconSize(context, base: 16),
+        width: ResponsiveSizes.actionButtonIconSize(context, base: 16),
         child: CircularProgressIndicator(
           strokeWidth: 2,
           valueColor: AlwaysStoppedAnimation<Color>(
@@ -255,15 +256,15 @@ class AppButton extends StatelessWidget {
         children: [
           Icon(
             icon,
-            size: size == AppButtonSize.small ? 16 : 20,
+            size: ResponsiveSizes.actionButtonIconSize(context, base: 17),
           ),
           const SizedBox(width: 8),
-          Text(text, style: _getTextStyle()),
+          Text(text, style: _getTextStyle(context)),
         ],
       );
     }
 
-    return Text(text, style: _getTextStyle());
+    return Text(text, style: _getTextStyle(context));
   }
 }
 

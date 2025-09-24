@@ -1448,8 +1448,8 @@ class _TransacoesPageState extends State<TransacoesPage>
   /// 🎨 RESUMO ADAPTATIVO - Padrão Device
   Widget _buildResumoAdaptativo() {
     return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -1468,7 +1468,7 @@ class _TransacoesPageState extends State<TransacoesPage>
         children: [
           // Header com título e valor principal
           _buildHeaderResumo(),
-          const SizedBox(height: 16),
+          const SizedBox(height: 10),
           // Métricas em linha - Padrão Device
           _buildMetricasLinha(),
         ],
@@ -1504,9 +1504,9 @@ class _TransacoesPageState extends State<TransacoesPage>
         Icon(
           _modoAtual.icone,
           color: _modoAtual.corHeader,
-          size: 24,
+          size: 22,
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 8),
         Expanded(
           child: Text(
             titulo,
@@ -1605,12 +1605,12 @@ class _TransacoesPageState extends State<TransacoesPage>
   Widget _buildMetrica(String label, double valor, IconData icone, Color cor, {bool isQuantidade = false}) {
     return Column(
       children: [
-        Icon(icone, size: 16, color: cor),
+        Icon(icone, size: 18, color: cor),
         const SizedBox(height: 4),
         Text(
           label,
           style: TextStyle(
-            fontSize: 11,
+            fontSize: 12,
             color: Colors.grey[600],
             fontWeight: FontWeight.w500,
           ),
@@ -1619,7 +1619,7 @@ class _TransacoesPageState extends State<TransacoesPage>
         Text(
           isQuantidade ? valor.toInt().toString() : _formatarMoeda(valor),
           style: TextStyle(
-            fontSize: 12,
+            fontSize: 14,
             fontWeight: FontWeight.w600,
             color: cor,
           ),

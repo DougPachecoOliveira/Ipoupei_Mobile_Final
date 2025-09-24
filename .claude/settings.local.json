@@ -11,7 +11,8 @@
       "Read(//c/Projetos Flutter/ipoupeidevice/ipoupei_device/lib/modules/dashboard/pages/**)",
       "Read(//c/Projetos Flutter/ipoupeidevice/ipoupei_device/lib/shared/components/layouts/**)",
       "Read(//c/Projetos Flutter/ipoupeidevice/**)",
-      "WebSearch"
+      "WebSearch",
+      "Read(//c/Projetos Flutter/ipoupei/src/modules/dashboard/store/**)"
     ],
     "deny": [],
     "ask": []

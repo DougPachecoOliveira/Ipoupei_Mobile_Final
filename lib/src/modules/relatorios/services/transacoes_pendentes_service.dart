@@ -31,7 +31,7 @@ class TransacoesPendentesService {
 
       debugPrint('📌 Buscando transações pendentes vencidas para usuário: $userId');
 
-      // Query com JOIN para pegar dados da categoria
+      // Query com JOIN para pegar dados da categoria (EXCLUIR CARTÕES)
       final result = await _db.rawQuery('''
         SELECT
           t.id,
@@ -47,8 +47,10 @@ class TransacoesPendentesService {
         LEFT JOIN categorias c ON t.categoria_id = c.id
         WHERE t.usuario_id = ?
           AND t.efetivado = 0
+          AND t.cartao_id IS NULL
+          AND (t.transferencia IS NULL OR t.transferencia = 0 OR t.transferencia = ?)
           AND DATE(t.data) < DATE(?)
-      ''', [userId, hoje.toIso8601String().split('T')[0]]);
+      ''', [userId, false, hoje.toIso8601String().split('T')[0]]);
 
       debugPrint('📌 Transações pendentes encontradas: ${result.length}');
 
@@ -135,10 +137,13 @@ class TransacoesPendentesService {
         LEFT JOIN categorias c ON t.categoria_id = c.id
         WHERE t.usuario_id = ?
           AND t.efetivado = 0
+          AND t.cartao_id IS NULL
+          AND (t.transferencia IS NULL OR t.transferencia = 0 OR t.transferencia = ?)
           AND DATE(t.data) BETWEEN DATE(?) AND DATE(?)
           AND DATE(t.data) < DATE(?)
       ''', [
         userId,
+        false,
         dataInicio.toIso8601String().split('T')[0],
         dataFim.toIso8601String().split('T')[0],
         DateTime.now().toIso8601String().split('T')[0], // Apenas vencidas

@@ -72,19 +72,35 @@ class ResumoFinanceiroService {
     }
   }
 
-  /// 📈 Calcular total de receitas no período
+  /// 📈 Calcular total de receitas no período (IGUAL REACT)
   Future<double> _calcularTotalReceitas(String userId, DateTime inicio, DateTime fim) async {
     try {
-      final result = await _db.select(
+      // 1️⃣ TRANSAÇÕES DE CARTÃO (usar fatura_vencimento)
+      final resultCartao = await _db.select(
         'transacoes',
-        where: 'usuario_id = ? AND tipo = ? AND status = ? AND DATE(data) BETWEEN DATE(?) AND DATE(?)',
-        whereArgs: [userId, 'receita', 'confirmada', inicio.toIso8601String().split('T')[0], fim.toIso8601String().split('T')[0]],
+        where: 'usuario_id = ? AND tipo = ? AND cartao_id IS NOT NULL AND efetivado = ? AND DATE(fatura_vencimento) BETWEEN DATE(?) AND DATE(?)',
+        whereArgs: [userId, 'receita', 1, inicio.toIso8601String().split('T')[0], fim.toIso8601String().split('T')[0]],
       );
-      
+
+      // 2️⃣ TRANSAÇÕES NORMAIS (usar data, EXCLUIR transferências)
+      final resultNormais = await _db.select(
+        'transacoes',
+        where: 'usuario_id = ? AND tipo = ? AND cartao_id IS NULL AND efetivado = ? AND (transferencia IS NULL OR transferencia = 0 OR transferencia = ?) AND DATE(data) BETWEEN DATE(?) AND DATE(?)',
+        whereArgs: [userId, 'receita', 1, false, inicio.toIso8601String().split('T')[0], fim.toIso8601String().split('T')[0]],
+      );
+
+      // 3️⃣ SOMAR TUDO (receitas efetivadas = já recebidas)
       double totalReceitas = 0.0;
-      for (final row in result) {
+
+      for (final row in resultCartao) {
         totalReceitas += (row['valor'] as num?)?.toDouble() ?? 0.0;
       }
+
+      for (final row in resultNormais) {
+        totalReceitas += (row['valor'] as num?)?.toDouble() ?? 0.0;
+      }
+
+      debugPrint('📈 Receitas calculadas: Cartão=${resultCartao.length}, Normais=${resultNormais.length}, Total=R\$${totalReceitas.toStringAsFixed(2)}');
 
       return totalReceitas;
     } catch (e) {
@@ -93,19 +109,35 @@ class ResumoFinanceiroService {
     }
   }
 
-  /// 📉 Calcular total de despesas no período
+  /// 📉 Calcular total de despesas no período (IGUAL REACT - INCLUINDO CARTÕES)
   Future<double> _calcularTotalDespesas(String userId, DateTime inicio, DateTime fim) async {
     try {
-      final result = await _db.select(
+      // 1️⃣ TRANSAÇÕES DE CARTÃO (usar fatura_vencimento)
+      final resultCartao = await _db.select(
         'transacoes',
-        where: 'usuario_id = ? AND tipo = ? AND status = ? AND DATE(data) BETWEEN DATE(?) AND DATE(?)',
-        whereArgs: [userId, 'despesa', 'confirmada', inicio.toIso8601String().split('T')[0], fim.toIso8601String().split('T')[0]],
+        where: 'usuario_id = ? AND tipo = ? AND cartao_id IS NOT NULL AND efetivado = ? AND DATE(fatura_vencimento) BETWEEN DATE(?) AND DATE(?)',
+        whereArgs: [userId, 'despesa', 1, inicio.toIso8601String().split('T')[0], fim.toIso8601String().split('T')[0]],
       );
-      
+
+      // 2️⃣ TRANSAÇÕES NORMAIS (usar data, EXCLUIR transferências)
+      final resultNormais = await _db.select(
+        'transacoes',
+        where: 'usuario_id = ? AND tipo = ? AND cartao_id IS NULL AND efetivado = ? AND (transferencia IS NULL OR transferencia = 0 OR transferencia = ?) AND DATE(data) BETWEEN DATE(?) AND DATE(?)',
+        whereArgs: [userId, 'despesa', 1, false, inicio.toIso8601String().split('T')[0], fim.toIso8601String().split('T')[0]],
+      );
+
+      // 3️⃣ SOMAR TUDO (despesas efetivadas = já gastas, INCLUINDO CARTÕES)
       double totalDespesas = 0.0;
-      for (final row in result) {
+
+      for (final row in resultCartao) {
         totalDespesas += (row['valor'] as num?)?.toDouble() ?? 0.0;
       }
+
+      for (final row in resultNormais) {
+        totalDespesas += (row['valor'] as num?)?.toDouble() ?? 0.0;
+      }
+
+      debugPrint('📉 Despesas calculadas: Cartão=${resultCartao.length}, Normais=${resultNormais.length}, Total=R\$${totalDespesas.toStringAsFixed(2)}');
 
       return totalDespesas;
     } catch (e) {
@@ -126,19 +158,34 @@ class ResumoFinanceiroService {
     }
   }
 
-  /// 💳 Calcular total usado em cartões no período
+  /// 💳 Calcular total em cartões (TODAS as despesas de cartão - PAGAS + PENDENTES)
   Future<double> _calcularTotalCartoes(String userId, DateTime inicio, DateTime fim) async {
     try {
+      // ✅ TODAS as despesas de cartão (efetivado = true E false)
       final result = await _db.select(
         'transacoes',
-        where: 'usuario_id = ? AND tipo = ? AND DATE(data) BETWEEN DATE(?) AND DATE(?)',
-        whereArgs: [userId, 'cartao_credito', inicio.toIso8601String().split('T')[0], fim.toIso8601String().split('T')[0]],
+        where: 'usuario_id = ? AND tipo = ? AND cartao_id IS NOT NULL AND DATE(fatura_vencimento) BETWEEN DATE(?) AND DATE(?)',
+        whereArgs: [userId, 'despesa', inicio.toIso8601String().split('T')[0], fim.toIso8601String().split('T')[0]],
       );
-      
+
       double totalCartoes = 0.0;
+      int pagas = 0;
+      int pendentes = 0;
+
       for (final row in result) {
-        totalCartoes += (row['valor'] as num?)?.toDouble() ?? 0.0;
+        final valor = (row['valor'] as num?)?.toDouble() ?? 0.0;
+        totalCartoes += valor;
+
+        // Contabilizar para debug
+        final efetivado = (row['efetivado'] as int?) == 1;
+        if (efetivado) {
+          pagas++;
+        } else {
+          pendentes++;
+        }
       }
+
+      debugPrint('💳 Cartões TOTAL: ${result.length} transações (${pagas} pagas + ${pendentes} pendentes), Total=R\$${totalCartoes.toStringAsFixed(2)}');
 
       return totalCartoes;
     } catch (e) {

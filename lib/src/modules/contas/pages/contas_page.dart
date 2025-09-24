@@ -14,6 +14,8 @@ import 'conta_form_page.dart';
 import 'correcao_saldo_page.dart';
 import 'gestao_conta_page.dart';
 import '../../shared/theme/app_colors.dart';
+import '../../shared/theme/app_typography.dart';
+import '../../shared/theme/responsive_sizes.dart';
 import '../../shared/utils/currency_formatter.dart';
 import '../../../shared/components/ui/loading_widget.dart';
 import '../../../shared/components/ui/app_error_widget.dart';
@@ -439,8 +441,13 @@ class _ContasPageState extends State<ContasPage> {
       appBar: AppBar(
         backgroundColor: AppColors.tealPrimary,
         elevation: 0,
+        toolbarHeight: ResponsiveSizes.appBarHeight(context, base: 42), // 56 * 0.75 = 42
         leading: _mostrarArquivadas ? IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Colors.white,
+            size: ResponsiveSizes.appBarIconSize(context, base: 21),
+          ),
           onPressed: () {
             // Volta para contas ativas
             setState(() {
@@ -450,17 +457,24 @@ class _ContasPageState extends State<ContasPage> {
         ) : null, // Sem botão de voltar quando está em contas ativas
         title: Text(
           _mostrarArquivadas ? 'Contas Arquivadas' : 'Gerenciar Contas',
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
+          style: AppTypography.appBarTitle(context).copyWith(
+            fontSize: ResponsiveSizes.fontSizeForCards(
+              context: context,
+              base: 14, // 18 * 0.75 = ~14
+              small: 12,
+              large: 15,
+            ),
           ),
         ),
         actions: _mostrarArquivadas 
           ? [] // AppBar clean sem ícones quando mostrando arquivadas
           : [
               IconButton(
-                icon: const Icon(Icons.archive, color: Colors.white),
+                icon: Icon(
+                  Icons.archive,
+                  color: Colors.white,
+                  size: ResponsiveSizes.appBarIconSize(context, base: 21),
+                ),
                 onPressed: _verContasArquivadas,
                 tooltip: 'Ver arquivadas',
               ),
@@ -468,6 +482,7 @@ class _ContasPageState extends State<ContasPage> {
                 icon: Icon(
                   _viewMode == 'consolidado' ? Icons.view_module : Icons.view_list,
                   color: Colors.white,
+                  size: ResponsiveSizes.appBarIconSize(context, base: 21),
                 ),
                 onPressed: () {
                   setState(() {
@@ -477,7 +492,11 @@ class _ContasPageState extends State<ContasPage> {
                 tooltip: _viewMode == 'consolidado' ? 'Mini cards' : 'Cards normais',
               ),
               IconButton(
-                icon: const Icon(Icons.add, color: Colors.white),
+                icon: Icon(
+                  Icons.add,
+                  color: Colors.white,
+                  size: ResponsiveSizes.appBarIconSize(context, base: 21),
+                ),
                 onPressed: _navegarParaCriarConta,
                 tooltip: 'Nova conta',
               ),
@@ -749,7 +768,12 @@ class _ContasPageState extends State<ContasPage> {
   /// Card de resumo (visual da screenshot)
   Widget _buildResumoCard() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: ResponsiveSizes.padding(
+        context: context,
+        base: const EdgeInsets.all(12),
+        compact: const EdgeInsets.all(10),
+        expanded: const EdgeInsets.all(16),
+      ),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [AppColors.tealPrimary, AppColors.tealPrimary.withValues(alpha: 0.9)],
@@ -777,36 +801,39 @@ class _ContasPageState extends State<ContasPage> {
                 child: Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(8),
+                      padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.20),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.account_balance_wallet,
                         color: Colors.white,
-                        size: 18,
+                        size: ResponsiveSizes.iconSize(
+                          context: context,
+                          base: 16,
+                          small: 14,
+                          large: 18,
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 8),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           'Saldo',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.white.withValues(alpha: 0.9),
-                            fontWeight: FontWeight.w500,
+                          style: AppTypography.onDarkSecondary(
+                            context,
+                            AppTypography.label(context),
                           ),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           CurrencyFormatter.format(_saldoTotal), // SALDO REAL!
-                          style: const TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                          style: AppTypography.onDark(
+                            context,
+                            AppTypography.currencyMedium(context),
                           ),
                         ),
                       ],
@@ -821,27 +848,44 @@ class _ContasPageState extends State<ContasPage> {
                 children: [
                   Text(
                     'Contas Ativas',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.white.withValues(alpha: 0.9),
-                      fontWeight: FontWeight.w500,
+                    style: AppTypography.onDarkSecondary(
+                      context,
+                      AppTypography.label(context),
                     ),
                   ),
                   const SizedBox(height: 4),
                   Container(
-                    width: 40,
-                    height: 40,
+                    width: ResponsiveSizes.circularContainer(
+                      context: context,
+                      base: 36,
+                      small: 32,
+                      large: 40,
+                    ),
+                    height: ResponsiveSizes.circularContainer(
+                      context: context,
+                      base: 36,
+                      small: 32,
+                      large: 40,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.20),
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(
+                        ResponsiveSizes.circularContainer(
+                          context: context,
+                          base: 36,
+                          small: 32,
+                          large: 40,
+                        ) / 2,
+                      ),
                     ),
                     child: Center(
                       child: Text(
                         '${_contas.length}', // QUANTIDADE REAL!
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                        style: AppTypography.onDark(
+                          context,
+                          AppTypography.bold(
+                            AppTypography.bodyMedium(context),
+                          ),
                         ),
                       ),
                     ),
@@ -850,9 +894,9 @@ class _ContasPageState extends State<ContasPage> {
               ),
             ],
           ),
-          
-          const SizedBox(height: 16),
-          
+
+          const SizedBox(height: 10),
+
           // Projeção (saldo - pendentes do mês)
           FutureBuilder<double>(
             future: _calcularPendentesDoMes(),
@@ -930,7 +974,7 @@ class _ContasPageState extends State<ContasPage> {
     final saldoNegativo = conta.saldo < 0;
     
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 8),
+      margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 6),
       child: Material(
         color: AppColors.branco,
         borderRadius: BorderRadius.circular(12),
@@ -940,7 +984,7 @@ class _ContasPageState extends State<ContasPage> {
           borderRadius: BorderRadius.circular(12),
           onTap: () => _navegarParaGestaoCompleta(conta),
           child: Container(
-            height: 94, // Altura igual ao offline
+            height: ResponsiveSizes.cardHeight(context, base: 67),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               color: AppColors.branco,
@@ -949,7 +993,7 @@ class _ContasPageState extends State<ContasPage> {
               children: [
                 // 🎨 FAIXA LATERAL COLORIDA (como no offline)
                 Container(
-                  width: 50, // Largura da faixa lateral
+                  width: ResponsiveSizes.cardSidebarWidth(context, base: 37),
                   decoration: BoxDecoration(
                     color: cor, // Cor da conta
                     borderRadius: const BorderRadius.only(
@@ -961,7 +1005,12 @@ class _ContasPageState extends State<ContasPage> {
                     child: Icon(
                       _iconFromSlug(conta.tipo),
                       color: Colors.white,
-                      size: 24,
+                      size: ResponsiveSizes.iconSize(
+                        context: context,
+                        base: 17,
+                        small: 15,
+                        large: 19,
+                      ),
                     ),
                   ),
                 ),
@@ -969,7 +1018,12 @@ class _ContasPageState extends State<ContasPage> {
                 // Conteúdo principal
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.all(20),
+                    padding: ResponsiveSizes.padding(
+                      context: context,
+                      base: const EdgeInsets.all(11),
+                      compact: const EdgeInsets.all(9),
+                      expanded: const EdgeInsets.all(13),
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -980,20 +1034,15 @@ class _ContasPageState extends State<ContasPage> {
                               Expanded(
                                 child: Text(
                                   conta.nome,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.cinzaEscuro,
-                                  ),
+                                  style: AppTypography.cardTitle(context),
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
-                              const SizedBox(width: 10),
+                              const SizedBox(width: 8),
                               Text(
                                 CurrencyFormatter.format(conta.saldo),
-                                style: TextStyle(
-                                  fontSize: 21,
-                                  fontWeight: FontWeight.bold,
+                                style: AppTypography.cardCurrency(
+                                  context,
                                   color: saldoNegativo ? Colors.red[600] : Colors.green[600],
                                 ),
                               ),
@@ -1007,10 +1056,7 @@ class _ContasPageState extends State<ContasPage> {
                             Expanded(
                               child: Text(
                                 '${conta.banco ?? 'Sem banco'} • Conta',
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  color: AppColors.cinzaTexto,
-                                ),
+                                style: AppTypography.cardSecondary(context),
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
@@ -1022,7 +1068,7 @@ class _ContasPageState extends State<ContasPage> {
                               child: Padding(
                                 padding: const EdgeInsets.all(4),
                                 child: Icon(
-                                  Icons.more_vert,
+                                  Icons.more_horiz,
                                   color: AppColors.cinzaTexto,
                                   size: 20,
                                 ),
@@ -1058,8 +1104,13 @@ class _ContasPageState extends State<ContasPage> {
           borderRadius: BorderRadius.circular(8),
           onTap: () => _mostrarMenuConta(conta), // MENU REAL!
           child: Container(
-            height: 50,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            height: ResponsiveSizes.cardHeight(context, base: 50),
+            padding: ResponsiveSizes.padding(
+              context: context,
+              base: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              compact: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              expanded: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            ),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(8),
               gradient: LinearGradient(
@@ -1072,7 +1123,14 @@ class _ContasPageState extends State<ContasPage> {
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(4),
+                  padding: EdgeInsets.all(
+                    ResponsiveSizes.spacing(
+                      context: context,
+                      base: 4,
+                      compact: 3,
+                      expanded: 5,
+                    ),
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(4),
@@ -1080,7 +1138,12 @@ class _ContasPageState extends State<ContasPage> {
                   child: Icon(
                     _iconFromSlug(conta.tipo),
                     color: Colors.white,
-                    size: 14,
+                    size: ResponsiveSizes.iconSize(
+                      context: context,
+                      base: 14,
+                      small: 12,
+                      large: 16,
+                    ),
                   ),
                 ),
                 
@@ -1093,19 +1156,27 @@ class _ContasPageState extends State<ContasPage> {
                     children: [
                       Text(
                         conta.nome,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
+                        style: AppTypography.onDark(
+                          context,
+                          AppTypography.semiBold(
+                            AppTypography.caption(context),
+                          ),
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
                       if (conta.banco != null)
                         Text(
                           conta.banco!,
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.8),
-                            fontSize: 10,
+                          style: AppTypography.onDarkSecondary(
+                            context,
+                            AppTypography.caption(context).copyWith(
+                              fontSize: ResponsiveSizes.fontSize(
+                                context: context,
+                                base: 8,
+                                small: 7,
+                                large: 9,
+                              ),
+                            ),
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -1121,10 +1192,11 @@ class _ContasPageState extends State<ContasPage> {
                   ),
                   child: Text(
                     CurrencyFormatter.format(conta.saldo),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
+                    style: AppTypography.onDark(
+                      context,
+                      AppTypography.bold(
+                        AppTypography.caption(context),
+                      ),
                     ),
                   ),
                 ),
@@ -1225,7 +1297,10 @@ class _ContasPageState extends State<ContasPage> {
       children: [
         // Botão VOLTAR (lado esquerdo)
         Expanded(
-          child: OutlinedButton(
+          child: AppButton.outline(
+            text: 'VOLTAR',
+            icon: Icons.arrow_back,
+            size: AppButtonSize.medium,
             onPressed: () {
               // Se pode voltar (veio de outra página, como diagnóstico), volta
               if (Navigator.canPop(context)) {
@@ -1241,29 +1316,8 @@ class _ContasPageState extends State<ContasPage> {
                 );
               }
             },
-            style: OutlinedButton.styleFrom(
-              side: BorderSide(color: AppColors.tealPrimary, width: 1.5),
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.arrow_back, color: AppColors.tealPrimary, size: 20),
-                SizedBox(width: 8),
-                Text(
-                  'VOLTAR',
-                  style: TextStyle(
-                    color: AppColors.tealPrimary,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ],
-            ),
+            customColor: AppColors.tealPrimary,
+            fullWidth: true,
           ),
         ),
 
@@ -1271,32 +1325,13 @@ class _ContasPageState extends State<ContasPage> {
 
         // Botão NOVA CONTA (lado direito)
         Expanded(
-          child: ElevatedButton(
+          child: AppButton.primary(
+            text: 'NOVA CONTA',
+            icon: Icons.add,
+            size: AppButtonSize.medium,
             onPressed: _navegarParaCriarConta,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.tealPrimary,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              elevation: 0,
-            ),
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.add, color: Colors.white, size: 20),
-                SizedBox(width: 8),
-                Text(
-                  'NOVA CONTA',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ],
-            ),
+            customColor: AppColors.tealPrimary,
+            fullWidth: true,
           ),
         ),
       ],
