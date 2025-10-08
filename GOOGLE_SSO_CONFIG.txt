@@ -1,0 +1,209 @@
+═══════════════════════════════════════════════════════════════════
+🔵 GOOGLE SSO - CONFIGURAÇÃO COMPLETA PARA iPoupei Mobile
+═══════════════════════════════════════════════════════════════════
+
+✅ DADOS DO SEU APP (JÁ COLETADOS):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📦 Package Name (Android):
+   com.example.ipoupei_mobile
+
+🔑 SHA-1 Fingerprint (Debug):
+   B1:AD:28:BA:31:59:F0:25:02:40:AC:18:7C:81:78:38:82:A9:01:E8
+
+🔗 Deep Links Configurados:
+   ipoupei://login-callback
+   ipoupei://reset-password
+
+🌐 Supabase Project URL:
+   https://ykifgrblmicoymavcqnu.supabase.co
+   (Peguei do código, confirme se está correto)
+
+═══════════════════════════════════════════════════════════════════
+📋 PASSO 1: GOOGLE CLOUD CONSOLE
+═══════════════════════════════════════════════════════════════════
+
+1. Acesse: https://console.cloud.google.com/
+
+2. Selecione ou Crie o Projeto "iPoupei"
+   - Canto superior esquerdo → Selecionar projeto
+   - Se não existe, clique em "Novo Projeto"
+
+3. Vá em: APIs & Services → Credentials
+   URL direta: https://console.cloud.google.com/apis/credentials
+
+4. Clique em: + CREATE CREDENTIALS → OAuth client ID
+
+5. Se pedir para configurar "OAuth consent screen":
+   a) Clique em "CONFIGURE CONSENT SCREEN"
+   b) Escolha "External" (para usar com qualquer Gmail)
+   c) Preencha:
+      - App name: iPoupei
+      - User support email: [SEU EMAIL]
+      - Developer contact: [SEU EMAIL]
+   d) SAVE AND CONTINUE (próximas telas pode pular)
+
+6. Criar OAuth Client ID para ANDROID:
+   ═════════════════════════════════════════
+
+   Application type: Android
+
+   Name: iPoupei Mobile Android
+
+   Package name: com.example.ipoupei_mobile
+
+   SHA-1 certificate fingerprint:
+   B1:AD:28:BA:31:59:F0:25:02:40:AC:18:7C:81:78:38:82:A9:01:E8
+
+   Clique em CREATE
+
+7. COPIE E SALVE (você vai usar no Supabase):
+   - Client ID: [SERÁ GERADO ALGO COMO: xxxxx.apps.googleusercontent.com]
+   - Client Secret: [SERÁ GERADO]
+
+═══════════════════════════════════════════════════════════════════
+📋 PASSO 2: SUPABASE DASHBOARD
+═══════════════════════════════════════════════════════════════════
+
+1. Acesse: https://supabase.com/dashboard
+
+2. Selecione seu projeto iPoupei
+
+3. Vá em: Authentication → Providers
+   Ou acesse direto:
+   https://supabase.com/dashboard/project/ykifgrblmicoymavcqnu/auth/providers
+
+4. Procure por "Google" na lista
+
+5. Clique em "Google" e depois "Enable"
+
+6. Cole as credenciais do Google Cloud Console:
+   ═══════════════════════════════════════════════
+
+   ✅ Authorized Client IDs:
+   [Cole o Client ID que copiou do Google Cloud Console]
+   Exemplo: 123456789-abc123.apps.googleusercontent.com
+
+   ⚠️ NÃO precisa do Client Secret no Supabase (apenas o Client ID)
+
+7. COPIE a Callback URL do Supabase:
+   Vai ser algo como:
+   https://ykifgrblmicoymavcqnu.supabase.co/auth/v1/callback
+
+   ⚠️ IMPORTANTE: Você vai precisar dessa URL no próximo passo!
+
+8. Clique em SAVE
+
+═══════════════════════════════════════════════════════════════════
+📋 PASSO 3: VOLTAR AO GOOGLE CLOUD CONSOLE (ADICIONAR REDIRECT URI)
+═══════════════════════════════════════════════════════════════════
+
+1. Volte para: https://console.cloud.google.com/apis/credentials
+
+2. Na lista de "OAuth 2.0 Client IDs", encontre o que você criou:
+   "iPoupei Mobile Android"
+
+3. Clique nele para EDITAR
+
+4. Role até "Authorized redirect URIs"
+
+5. Clique em "+ ADD URI"
+
+6. Cole a Callback URL do Supabase:
+   https://ykifgrblmicoymavcqnu.supabase.co/auth/v1/callback
+
+7. Clique em SAVE
+
+═══════════════════════════════════════════════════════════════════
+📋 PASSO 4: TESTAR NO DISPOSITIVO FÍSICO
+═══════════════════════════════════════════════════════════════════
+
+⚠️ IMPORTANTE: Google SSO NÃO funciona no emulador!
+
+1. Conecte seu celular Android via USB
+
+2. No terminal, execute:
+   cd "C:\Projetos Flutter\ipoupei_mobile"
+   flutter run --release
+
+3. No app, vá na tela de login
+
+4. Clique no botão "Continuar com Google"
+
+5. O que deve acontecer:
+   ✅ Abre o navegador/tela do Google
+   ✅ Você faz login com sua conta Google
+   ✅ Volta para o app automaticamente
+   ✅ Login é realizado e vai para /home
+
+═══════════════════════════════════════════════════════════════════
+🐛 TROUBLESHOOTING
+═══════════════════════════════════════════════════════════════════
+
+❌ Erro: "redirect_uri_mismatch"
+   Solução:
+   - Verifique se adicionou a Callback URL no Google Cloud Console
+   - URL exata: https://ykifgrblmicoymavcqnu.supabase.co/auth/v1/callback
+
+❌ App não volta após login no Google
+   Solução:
+   - Verifique se os deep links estão no AndroidManifest.xml
+   - Teste manual: adb shell am start -a android.intent.action.VIEW \
+     -d "ipoupei://login-callback"
+
+❌ Erro: "invalid_client"
+   Solução:
+   - Verifique se o SHA-1 está correto no Google Cloud Console
+   - Verifique se o Package Name está correto
+
+❌ Botão Google não aparece
+   Solução:
+   - Certifique-se que está usando LoginIpoupeiPage
+   - Verifique se está no modo AuthMode.login
+
+═══════════════════════════════════════════════════════════════════
+✅ CHECKLIST
+═══════════════════════════════════════════════════════════════════
+
+Google Cloud Console:
+[ ] Projeto iPoupei criado/selecionado
+[ ] OAuth consent screen configurado
+[ ] OAuth Client ID Android criado
+[ ] Package name: com.example.ipoupei_mobile
+[ ] SHA-1 fingerprint adicionado
+[ ] Client ID copiado
+
+Supabase:
+[ ] Google provider habilitado
+[ ] Client ID do Google adicionado
+[ ] Callback URL copiada
+
+Google Cloud Console (Parte 2):
+[ ] Callback URL do Supabase adicionada em "Authorized redirect URIs"
+
+Código (JÁ FEITO):
+[✅] Deep links no AndroidManifest.xml
+[✅] signInWithGoogle() implementado
+[✅] resetPassword() implementado
+[✅] LoginIpoupeiPage criada
+[✅] Botão Google SSO adicionado
+
+Teste:
+[ ] Testado em dispositivo físico
+[ ] Login com Google funcionando
+[ ] Redirecionamento de volta ao app OK
+
+═══════════════════════════════════════════════════════════════════
+📞 SUPORTE
+═══════════════════════════════════════════════════════════════════
+
+Se tiver problemas, me avise com:
+- Print do erro (se houver)
+- Logs do console (flutter run)
+- Em que passo travou
+
+Documentação oficial:
+- Google: https://developers.google.com/identity/protocols/oauth2
+- Supabase: https://supabase.com/docs/guides/auth/social-login/auth-google
+
+═══════════════════════════════════════════════════════════════════

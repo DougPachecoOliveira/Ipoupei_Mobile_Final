@@ -1,0 +1,281 @@
+
+
+  5. 🛡️ POLICIES (RLS)
+
+  -- Políticas de segurança
+  SELECT
+    schemaname,
+    tablename,
+    policyname,
+    permissive,
+    roles,
+    cmd,
+    qual,
+    with_check
+  FROM pg_policies
+  WHERE tablename IN ('planejamentos', 'categorias', 'subcategorias', 'transacoes')
+  ORDER BY tablename, policyname;
+
+| schemaname | tablename     | policyname                                  | permissive | roles           | cmd | qual                                                                                                                   | with_check                           |
+| ---------- | ------------- | ------------------------------------------- | ---------- | --------------- | --- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| public     | categorias    | categorias_otimizada                        | PERMISSIVE | {authenticated} | ALL | (usuario_id = get_current_user_id())                                                                                   | (usuario_id = get_current_user_id()) |
+| public     | planejamentos | Usuários podem gerenciar seus planejamentos | PERMISSIVE | {authenticated} | ALL | (usuario_id = auth.uid())                                                                                              | (usuario_id = auth.uid())            |
+| public     | subcategorias | subcategorias_otimizada                     | PERMISSIVE | {authenticated} | ALL | (usuario_id = get_current_user_id())                                                                                   | (usuario_id = get_current_user_id()) |
+| public     | transacoes    | transacoes_otimizada                        | PERMISSIVE | {authenticated} | ALL | ((usuario_id = get_current_user_id()) OR (get_current_user_id() = ANY (COALESCE(compartilhada_com, ARRAY[]::uuid[])))) | (usuario_id = get_current_user_id()) |
+
+  6. 📈 DADOS DE EXEMPLO
+
+  -- Amostra de planejamentos (últimos 10)
+  SELECT * FROM planejamentos
+  ORDER BY created_at DESC
+  LIMIT 10;
+| id                                   | usuario_id                           | ano  | mes | categoria_id                         | subcategoria_id                      | tipo    | valor_planejado | created_at                    | updated_at                    |
+| ------------------------------------ | ------------------------------------ | ---- | --- | ------------------------------------ | ------------------------------------ | ------- | --------------- | ----------------------------- | ----------------------------- |
+| 38129b28-249b-4529-9763-0e5be0110d7d | 85d10a2a-c455-47cd-83c7-f9c71d1271d3 | 2025 | 9   | 48470b62-c754-4ff5-9bef-0b44c47f016d | da7b87c8-fd55-4786-90e1-691b94d45662 | despesa | 0.00            | 2025-09-09 00:22:02.466561+00 | 2025-09-09 00:22:02.466561+00 |
+| e4270846-d189-4032-af3a-904203351dff | 85d10a2a-c455-47cd-83c7-f9c71d1271d3 | 2025 | 9   | dcafcef9-18ad-4d05-9406-472d0a190aa6 | e70e40a8-f072-4dcd-bba6-40f74a55e943 | despesa | 200.00          | 2025-09-09 00:02:54.617679+00 | 2025-09-09 00:33:52.977428+00 |
+| 900c6dfd-332f-4313-bad7-005c8815fade | 85d10a2a-c455-47cd-83c7-f9c71d1271d3 | 2025 | 9   | 0b87210e-1238-4e30-a2bd-7057f9b7cb38 | ac819897-1969-426a-8a2f-29763c1abbf1 | receita | 2500.00         | 2025-09-08 23:52:32.432498+00 | 2025-09-08 23:52:32.432498+00 |
+| 93bf4901-67b0-4147-b053-9117d1181178 | 85d10a2a-c455-47cd-83c7-f9c71d1271d3 | 2025 | 9   | 0b87210e-1238-4e30-a2bd-7057f9b7cb38 | c00c28b0-3b5a-409c-a4b6-9b19bd55bf93 | receita | 1000.00         | 2025-09-08 23:52:32.217547+00 | 2025-09-08 23:52:32.217547+00 |
+| 14e5b2de-3639-4b6d-92b5-7d1037b49e5e | 85d10a2a-c455-47cd-83c7-f9c71d1271d3 | 2025 | 9   | e58f7552-de2e-46ea-b841-d2d6a3c9fa04 | 2aa89b26-e3ba-44fb-8314-d17e76e92ab0 | despesa | 99.00           | 2025-09-08 23:52:31.80241+00  | 2025-09-08 23:52:31.80241+00  |
+| 09b56b29-77c3-4e21-9e55-60c291ae204e | 85d10a2a-c455-47cd-83c7-f9c71d1271d3 | 2025 | 9   | e58f7552-de2e-46ea-b841-d2d6a3c9fa04 | 636446be-d5fe-4523-8d56-82e4fad1682d | despesa | 150.00          | 2025-09-08 23:52:31.56673+00  | 2025-09-08 23:52:31.56673+00  |
+| 8e70bb90-42b7-48aa-9417-bf62f2ebad1d | 85d10a2a-c455-47cd-83c7-f9c71d1271d3 | 2025 | 9   | e58f7552-de2e-46ea-b841-d2d6a3c9fa04 | c2447a48-f81c-440b-8f16-0b28573a4308 | despesa | 250.00          | 2025-09-08 23:52:31.195178+00 | 2025-09-08 23:52:31.195178+00 |
+| 5943f34a-8583-4cdc-8d40-5c227b13d5ff | 85d10a2a-c455-47cd-83c7-f9c71d1271d3 | 2025 | 9   | e58f7552-de2e-46ea-b841-d2d6a3c9fa04 | c9cdfa85-0ad1-449f-b050-465846d3cb5c | despesa | 300.00          | 2025-09-08 23:52:30.775427+00 | 2025-09-09 00:13:19.786112+00 |
+| abd5f24e-edb7-49a2-8050-96fccf351b76 | 85d10a2a-c455-47cd-83c7-f9c71d1271d3 | 2025 | 9   | e58f7552-de2e-46ea-b841-d2d6a3c9fa04 | 50fada60-f1cc-43c1-827b-c8376c5d088a | despesa | 1450.00         | 2025-09-08 23:52:30.370742+00 | 2025-09-08 23:52:30.370742+00 |
+| e39ebc35-fde0-4734-a643-6d894d9ed2af | 85d10a2a-c455-47cd-83c7-f9c71d1271d3 | 2025 | 9   | 48470b62-c754-4ff5-9bef-0b44c47f016d | 4bf4fc59-19f1-4766-887f-c022416f3342 | despesa | 125.00          | 2025-09-08 23:52:30.084072+00 | 2025-09-08 23:52:30.084072+00 |
+
+  -- Amostra de categorias ativas
+  SELECT * FROM categorias
+  WHERE ativo = true
+  ORDER BY nome
+  LIMIT 20;
+| id                                   | usuario_id                           | nome        | tipo    | cor     | icone  | descricao | ativo | ordem | created_at                 | updated_at                    | classificacao_regra |
+| ------------------------------------ | ------------------------------------ | ----------- | ------- | ------- | ------ | --------- | ----- | ----- | -------------------------- | ----------------------------- | ------------------- |
+| 88296280-056d-4a95-be21-cee2e0f01d65 | b9be1e5f-6624-4515-a142-4a24d2d86177 | AAAAAAAAA   | receita | #6366F1 | 📁     | null      | true  | 4     | 2025-08-17 16:14:01.855+00 | 2025-08-17 16:14:01.855+00    | null                |
+| b9b452ff-4302-4eac-89eb-9f9979fe48f2 | 25958ff1-0d21-45d3-b375-90f6f03f0144 | Água        | despesa | #ef4444 | folder | null      | true  | 0     | 2025-07-27 03:13:54.131+00 | 2025-07-27 03:13:54.131+00    | null                |
+| 53681801-4c95-4410-9aef-dd698defdb49 | b9be1e5f-6624-4515-a142-4a24d2d86177 | Alimentação | despesa | #FF6B6B | 🍽️    | null      | true  | 1     | 2025-07-27 21:44:44.016+00 | 2025-07-31 22:57:13.513969+00 | necessidades        |
+| 123b6980-9210-47ff-9590-0168767a8fd4 | 78ba3373-0b4a-49ee-9ba5-d0a79e26d63b | Alimentação | despesa | #FF6B6B | 🍽️    | null      | true  | 1     | 2025-07-28 23:33:43.193+00 | 2025-07-31 22:57:13.513969+00 | necessidades        |
+| 25ea691b-844b-4356-a724-41effa17b292 | 63971c33-b839-4c6c-967e-f3836619d3e0 | Alimentação | despesa | #FF6B6B | 🍽️    | null      | true  | 1     | 2025-07-27 22:12:11.599+00 | 2025-07-31 22:57:13.513969+00 | necessidades        |
+| 44daf1ba-3463-4ec0-863d-c607776815b7 | a488d2e1-cd83-4760-9120-d99472919a72 | Alimentação | despesa | #FF6B6B | 🍽️    | null      | true  | 1     | 2025-07-17 14:15:07.919+00 | 2025-07-31 22:57:13.513969+00 | necessidades        |
+| 29dcf189-3d13-41d7-8724-72fccab42d19 | 2cf1eb8a-80b6-4696-b3dd-b862d901a1bc | Alimentação | despesa | #EF4444 | 🍽️    | null      | true  | 1     | 2025-07-15 03:41:13.367+00 | 2025-07-31 22:57:13.513969+00 | necessidades        |
+| dcafcef9-18ad-4d05-9406-472d0a190aa6 | 85d10a2a-c455-47cd-83c7-f9c71d1271d3 | Alimentação | despesa | #FF6B6B | 🍽️    | null      | true  | 1     | 2025-09-08 23:28:51.234+00 | 2025-09-08 23:28:51.234+00    | null                |
+| 7ed8a8d3-8a47-4d4b-b185-0179dfb2e2c8 | 761bbc12-86cb-4acd-8155-457e3cac8cef | Alimentação | despesa | #FF6B6B | 🍽️    | null      | true  | 1     | 2025-09-02 00:13:58.658+00 | 2025-09-02 00:13:58.658+00    | null                |
+| 66464676-5737-450c-82e4-83a7f7d32aae | 57189eb2-a525-4fdc-88ad-5e644e29e19d | Alimentação | despesa | #FF6B6B | 🍽️    | null      | true  | 1     | 2025-07-25 00:20:23.132+00 | 2025-07-31 22:57:13.513969+00 | necessidades        |
+| 3dd38bd5-c42c-4dea-9f3e-24c010251d59 | 4edfa28b-bea7-450e-ba68-8884a48f8432 | Alimentação | despesa | #EAB308 | 🍽️    | null      | true  | 1     | 2025-07-29 00:05:56.519+00 | 2025-07-31 22:57:13.513969+00 | necessidades        |
+| fe6f7a9d-08d9-4bb9-babf-1c6c4abf21d8 | 2a2c3127-40e2-4b95-8bfe-a5e32ed6ca3b | Alimentação | despesa | #FF6B6B | 🍽️    | null      | true  | 1     | 2025-08-25 15:23:59.662+00 | 2025-08-25 15:23:59.662+00    | null                |
+| c0892398-1660-43e7-a75b-de643ec0a0a2 | bd9b3047-8f6f-4835-bbed-f9591495fa3d | Alimentação | despesa | #FF6B6B | 🍽️    | null      | true  | 1     | 2025-07-26 00:03:46.908+00 | 2025-07-31 22:57:13.513969+00 | necessidades        |
+| 13405c78-2546-406d-a56d-667cd502541d | 0e1b7156-903f-44ad-a3c9-3fc923f4656b | Alimentação | despesa | #FF6B6B | 🍽️    | null      | true  | 1     | 2025-07-24 00:26:49.318+00 | 2025-07-31 22:57:13.513969+00 | necessidades        |
+| eb9c3f80-b7ac-4cce-8d2a-902af54f5955 | fe8188f1-3d72-455a-ba0e-27b6cd62cfb4 | Alimentação | despesa | #008080 | 📁     | null      | true  | 4     | 2025-07-27 23:22:18.603+00 | 2025-07-31 22:57:13.513969+00 | necessidades        |
+| 240ed8f0-6dd7-4ab1-8b7d-4bf8fc2e6e5f | e084031f-6fa9-4782-b04c-8685dc589ddc | Alimentação | despesa | #FF6B6B | 🍽️    | null      | true  | 0     | 2025-07-07 16:59:06.12+00  | 2025-09-24 04:41:06.026129+00 | null                |
+| 53bee2bd-6baf-4e3d-90c6-56ff741dc9ec | 32db9cdf-cb39-45a0-acd8-3d191ec3ea55 | Alimentação | despesa | #FF6B6B | 🍽️    | null      | true  | 1     | 2025-06-30 00:39:13.168+00 | 2025-07-31 22:57:13.513969+00 | necessidades        |
+| bb26d0d0-d6a4-47e4-a23e-cc6b0d7ced99 | 663d9407-1f4b-40d1-ad82-5c2baece0f55 | Alimentação | despesa | #FF6B6B | 🍽️    | null      | true  | 1     | 2025-06-19 00:02:39.095+00 | 2025-07-31 22:57:13.513969+00 | necessidades        |
+| 64e51176-99bb-49f2-8562-b22799decbff | 67ca3349-1780-4e79-ae18-a63913b7852b | Alimentação | despesa | #FF6B6B | 🍽️    | null      | true  | 1     | 2025-08-25 16:29:45.458+00 | 2025-09-02 02:07:23.942599+00 | null                |
+| ca1c49c0-fe06-4a45-b245-c371dfeadafc | e5dd6fd4-8ef8-42fc-a878-4f760a63eeaf | Alimentação | despesa | #FF6B6B | 🍽️    | null      | true  | 2     | 2025-08-25 03:13:12.86+00  | 2025-08-25 03:13:12.86+00     | null                |
+
+  -- Amostra de subcategorias
+  SELECT
+    s.*,
+    c.nome as categoria_nome
+  FROM subcategorias s
+  LEFT JOIN categorias c ON s.categoria_id = c.id
+  WHERE s.ativo = true
+  ORDER BY c.nome, s.nome
+  LIMIT 30;
+| id                                   | usuario_id                           | categoria_id                         | nome                              | descricao | ativo | created_at                 | updated_at                    | categoria_nome |
+| ------------------------------------ | ------------------------------------ | ------------------------------------ | --------------------------------- | --------- | ----- | -------------------------- | ----------------------------- | -------------- |
+| d1c3f429-43fc-4414-b8df-61aa8d1f6bdb | e084031f-6fa9-4782-b04c-8685dc589ddc | 240ed8f0-6dd7-4ab1-8b7d-4bf8fc2e6e5f | Açougue/Feira                     | null      | true  | 2025-07-07 16:59:06.581+00 | 2025-09-24 04:41:08.142448+00 | Alimentação    |
+| df547151-91dc-4bec-ba2e-e082f7445e00 | b9be1e5f-6624-4515-a142-4a24d2d86177 | 53681801-4c95-4410-9aef-dd698defdb49 | Açougue/Feira                     | null      | true  | 2025-07-27 21:44:44.88+00  | 2025-07-27 21:44:44.88+00     | Alimentação    |
+| 994c4eaa-972a-41f5-81bd-076f7cf27105 | 57189eb2-a525-4fdc-88ad-5e644e29e19d | 66464676-5737-450c-82e4-83a7f7d32aae | Açougue/Feira                     | null      | true  | 2025-07-25 00:20:23.511+00 | 2025-07-25 00:20:23.511+00    | Alimentação    |
+| e6c16f76-46b5-4afc-992f-9b0859559508 | e5dd6fd4-8ef8-42fc-a878-4f760a63eeaf | ca1c49c0-fe06-4a45-b245-c371dfeadafc | Açougue/Feira                     | null      | true  | 2025-08-25 03:13:13.413+00 | 2025-08-25 03:13:13.414+00    | Alimentação    |
+| 23a51b51-de2c-4e70-bfc0-45a36735414f | 4edfa28b-bea7-450e-ba68-8884a48f8432 | 3dd38bd5-c42c-4dea-9f3e-24c010251d59 | Açougue/Feira                     | null      | true  | 2025-07-29 00:05:57.171+00 | 2025-07-29 00:05:57.171+00    | Alimentação    |
+| de331824-5e6d-4cd4-bd56-ebc2883654ab | bd9b3047-8f6f-4835-bbed-f9591495fa3d | c0892398-1660-43e7-a75b-de643ec0a0a2 | Açougue/Feira                     | null      | true  | 2025-07-26 00:03:47.158+00 | 2025-07-26 00:03:47.158+00    | Alimentação    |
+| b0abee6b-f289-4426-a484-cb336ae41dae | 663d9407-1f4b-40d1-ad82-5c2baece0f55 | bb26d0d0-d6a4-47e4-a23e-cc6b0d7ced99 | Açougue/Feira                     | null      | true  | 2025-06-19 00:02:39.685+00 | 2025-06-19 00:02:39.685+00    | Alimentação    |
+| 5da2d79c-728d-4ce1-a0ba-c8e5f09bd67d | 761bbc12-86cb-4acd-8155-457e3cac8cef | 7ed8a8d3-8a47-4d4b-b185-0179dfb2e2c8 | Açougue/Feira                     | null      | true  | 2025-09-02 00:13:59.793+00 | 2025-09-02 00:13:59.793+00    | Alimentação    |
+| 23276644-2ead-473c-a475-87bb83d0cc25 | 63971c33-b839-4c6c-967e-f3836619d3e0 | 25ea691b-844b-4356-a724-41effa17b292 | Açougue/Feira                     | null      | true  | 2025-07-27 22:12:11.996+00 | 2025-07-27 22:12:11.996+00    | Alimentação    |
+| 61c0a8b3-b478-42e4-9f4b-6f22fc32ecac | 78ba3373-0b4a-49ee-9ba5-d0a79e26d63b | 123b6980-9210-47ff-9590-0168767a8fd4 | Açougue/Feira                     | null      | true  | 2025-07-28 23:33:43.704+00 | 2025-07-28 23:33:43.704+00    | Alimentação    |
+| 6fce113a-4196-4207-9b2c-c7e221cacc4d | 67ca3349-1780-4e79-ae18-a63913b7852b | 64e51176-99bb-49f2-8562-b22799decbff | Açougue/Feira                     | null      | true  | 2025-08-25 16:29:45.897+00 | 2025-09-02 02:06:55.542993+00 | Alimentação    |
+| d7d521e2-dcc6-44af-848b-649f16613acc | 663d9407-1f4b-40d1-ad82-5c2baece0f55 | bb26d0d0-d6a4-47e4-a23e-cc6b0d7ced99 | Delivery                          | null      | true  | 2025-06-19 00:02:39.604+00 | 2025-06-19 00:02:39.604+00    | Alimentação    |
+| 40f5867b-8174-47e3-941a-ee62cf712c47 | 0e1b7156-903f-44ad-a3c9-3fc923f4656b | 13405c78-2546-406d-a56d-667cd502541d | Delivery                          | null      | true  | 2025-07-24 00:26:49.672+00 | 2025-07-24 00:30:36.764984+00 | Alimentação    |
+| 8a3bb9ce-34ad-429a-8878-683df107b80f | 32db9cdf-cb39-45a0-acd8-3d191ec3ea55 | 53bee2bd-6baf-4e3d-90c6-56ff741dc9ec | Diversas compras do cartão picpay | null      | true  | 2025-07-29 02:42:27.006+00 | 2025-07-29 02:42:27.006+00    | Alimentação    |
+| 093dacef-9e26-4903-b995-679972aa248b | 2a2c3127-40e2-4b95-8bfe-a5e32ed6ca3b | fe6f7a9d-08d9-4bb9-babf-1c6c4abf21d8 | Farmácia                          | null      | true  | 2025-08-25 15:52:47.303+00 | 2025-08-25 15:52:47.303+00    | Alimentação    |
+| 43cb5be8-61ca-4032-a6f4-3b2a8ea9a427 | 663d9407-1f4b-40d1-ad82-5c2baece0f55 | bb26d0d0-d6a4-47e4-a23e-cc6b0d7ced99 | Lanche/Fast Food                  | null      | true  | 2025-06-19 00:02:39.547+00 | 2025-06-19 00:02:39.547+00    | Alimentação    |
+| b9f70cd8-cc60-4142-8094-f40df9ad3100 | bd9b3047-8f6f-4835-bbed-f9591495fa3d | c0892398-1660-43e7-a75b-de643ec0a0a2 | Lanche/Fast Food/Delivery         | null      | true  | 2025-07-26 00:03:47.11+00  | 2025-07-26 00:03:47.11+00     | Alimentação    |
+| 598a05fc-2342-412c-a115-30bba8548ff1 | 63971c33-b839-4c6c-967e-f3836619d3e0 | 25ea691b-844b-4356-a724-41effa17b292 | Lanche/Fast Food/Delivery         | null      | true  | 2025-07-27 22:12:11.917+00 | 2025-07-27 22:12:11.917+00    | Alimentação    |
+| 419cd22e-c2b8-450a-9284-35118423d6b4 | e084031f-6fa9-4782-b04c-8685dc589ddc | 240ed8f0-6dd7-4ab1-8b7d-4bf8fc2e6e5f | Lanche/Fast Food/Delivery         | null      | true  | 2025-07-07 16:59:06.467+00 | 2025-09-24 04:41:10.855381+00 | Alimentação    |
+| b6c7f9f9-c4ac-4eaa-a47d-db1d5e1c5113 | 67ca3349-1780-4e79-ae18-a63913b7852b | 64e51176-99bb-49f2-8562-b22799decbff | Lanche/Fast Food/Delivery         | null      | true  | 2025-08-25 16:29:45.825+00 | 2025-09-02 02:06:55.482173+00 | Alimentação    |
+| 6000c5b9-f9b8-407a-a7b7-596341a4fe71 | 85d10a2a-c455-47cd-83c7-f9c71d1271d3 | dcafcef9-18ad-4d05-9406-472d0a190aa6 | Lanche/Fast Food/Delivery         | null      | true  | 2025-09-08 23:28:51.953+00 | 2025-09-08 23:28:51.953+00    | Alimentação    |
+| 2412c0e7-6fba-47be-9a78-135034d4a481 | b9be1e5f-6624-4515-a142-4a24d2d86177 | 53681801-4c95-4410-9aef-dd698defdb49 | Lanche/Fast Food/Delivery         | null      | true  | 2025-07-27 21:44:44.766+00 | 2025-07-27 21:44:44.766+00    | Alimentação    |
+| 9aae9c12-f7f6-4bef-89df-1bb6bb125a6e | 2a2c3127-40e2-4b95-8bfe-a5e32ed6ca3b | fe6f7a9d-08d9-4bb9-babf-1c6c4abf21d8 | Lanche/Fast Food/Delivery         | null      | true  | 2025-08-25 15:24:00.513+00 | 2025-08-25 15:24:00.513+00    | Alimentação    |
+| 1f6df656-c6d2-4d12-8a09-fb7e928d2131 | e5dd6fd4-8ef8-42fc-a878-4f760a63eeaf | ca1c49c0-fe06-4a45-b245-c371dfeadafc | Lanche/Fast Food/Delivery         | null      | true  | 2025-08-25 03:13:13.341+00 | 2025-08-25 03:13:13.341+00    | Alimentação    |
+| b3a2bb55-aebb-4362-99b4-57eb14ca5932 | a488d2e1-cd83-4760-9120-d99472919a72 | 44daf1ba-3463-4ec0-863d-c607776815b7 | Lanche/Fast Food/Delivery         | null      | true  | 2025-07-17 14:15:08.577+00 | 2025-07-17 14:15:08.577+00    | Alimentação    |
+| 0fd434a9-f42b-44ef-ae01-2097c15fdb3f | 78ba3373-0b4a-49ee-9ba5-d0a79e26d63b | 123b6980-9210-47ff-9590-0168767a8fd4 | Lanche/Fast Food/Delivery         | null      | true  | 2025-07-28 23:33:43.642+00 | 2025-07-28 23:33:43.642+00    | Alimentação    |
+| 2a3d32aa-ebc4-4e19-9dfd-c6a06255873f | 4edfa28b-bea7-450e-ba68-8884a48f8432 | 3dd38bd5-c42c-4dea-9f3e-24c010251d59 | Lanche/Fast Food/Delivery         | null      | true  | 2025-07-29 00:05:57.066+00 | 2025-07-29 00:05:57.066+00    | Alimentação    |
+| c3e25de7-0f95-4623-b640-12fe0248efb1 | 761bbc12-86cb-4acd-8155-457e3cac8cef | 7ed8a8d3-8a47-4d4b-b185-0179dfb2e2c8 | Lanche/Fast Food/Delivery         | null      | true  | 2025-09-02 00:13:59.633+00 | 2025-09-02 00:13:59.633+00    | Alimentação    |
+| aa67f5ca-7231-46c0-a72b-e81822e03371 | 4edfa28b-bea7-450e-ba68-8884a48f8432 | 3dd38bd5-c42c-4dea-9f3e-24c010251d59 | Restaurante                       | null      | true  | 2025-07-29 00:05:56.964+00 | 2025-07-29 00:05:56.964+00    | Alimentação    |
+| 468783ef-ae56-42c6-b2ba-b9da0c995740 | 0e1b7156-903f-44ad-a3c9-3fc923f4656b | 13405c78-2546-406d-a56d-667cd502541d | Restaurante                       | null      | true  | 2025-07-24 00:26:49.6+00   | 2025-07-24 00:26:49.6+00      | Alimentação    |
+
+  7. 🔧 TRIGGERS
+
+  -- Triggers das tabelas
+  SELECT
+    event_object_table AS table_name,
+    trigger_name,
+    event_manipulation,
+    action_timing,
+    action_statement
+  FROM information_schema.triggers
+  WHERE event_object_table IN ('planejamentos', 'categorias', 'subcategorias', 'transacoes')
+  ORDER BY event_object_table, trigger_name;
+| table_name    | trigger_name                       | event_manipulation | action_timing | action_statement                            |
+| ------------- | ---------------------------------- | ------------------ | ------------- | ------------------------------------------- |
+| categorias    | handle_updated_at                  | UPDATE             | BEFORE        | EXECUTE FUNCTION handle_updated_at()        |
+| planejamentos | tr_planejamentos_updated_at        | UPDATE             | BEFORE        | EXECUTE FUNCTION update_updated_at_column() |
+| subcategorias | handle_updated_at                  | UPDATE             | BEFORE        | EXECUTE FUNCTION handle_updated_at()        |
+| transacoes    | handle_updated_at                  | UPDATE             | BEFORE        | EXECUTE FUNCTION handle_updated_at()        |
+| transacoes    | trigger_transacoes_atualizar_saldo | INSERT             | AFTER         | EXECUTE FUNCTION trigger_atualizar_saldo()  |
+| transacoes    | trigger_transacoes_atualizar_saldo | DELETE             | AFTER         | EXECUTE FUNCTION trigger_atualizar_saldo()  |
+| transacoes    | trigger_transacoes_atualizar_saldo | UPDATE             | AFTER         | EXECUTE FUNCTION trigger_atualizar_saldo()  |
+| transacoes    | update_transacoes_modtime          | UPDATE             | BEFORE        | EXECUTE FUNCTION update_updated_at_column() |
+| transacoes    | update_transacoes_updated_at       | UPDATE             | BEFORE        | EXECUTE FUNCTION update_updated_at_column() |
+
+  8. 📝 COMENTÁRIOS E DESCRIÇÕES
+
+  -- Comentários das tabelas
+  SELECT
+    pgd.objoid,
+    pgc.relname as table_name,
+    pgd.description
+  FROM pg_description pgd
+  JOIN pg_class pgc ON pgc.oid = pgd.objoid
+  WHERE pgc.relname IN ('planejamentos', 'categorias', 'subcategorias', 'transacoes')
+    AND pgd.objsubid = 0;
+Success. No rows returned
+
+  9. ⭐ QUERY COMPLETA PARA DUMP
+
+  -- Schema completo em uma query
+  SELECT
+    'TABLE' as object_type,
+    table_name,
+    column_name,
+    data_type,
+    is_nullable,
+    column_default
+  FROM information_schema.columns
+  WHERE table_name IN ('planejamentos', 'categorias', 'subcategorias', 'transacoes')
+    AND table_schema = 'public'
+  UNION ALL
+  SELECT
+    'CONSTRAINT' as object_type,
+    tc.table_name,
+    tc.constraint_name,
+    tc.constraint_type,
+    kcu.column_name,
+    ccu.table_name
+  FROM information_schema.table_constraints tc
+  JOIN information_schema.key_column_usage kcu
+    ON tc.constraint_name = kcu.constraint_name
+  LEFT JOIN information_schema.constraint_column_usage ccu
+    ON tc.constraint_name = ccu.constraint_name
+  WHERE tc.table_name IN ('planejamentos', 'categorias', 'subcategorias', 'transacoes')
+  ORDER BY object_type, table_name;
+| object_type | table_name    | column_name                               | data_type                | is_nullable      | column_default               |
+| ----------- | ------------- | ----------------------------------------- | ------------------------ | ---------------- | ---------------------------- |
+| CONSTRAINT  | categorias    | categorias_usuario_id_nome_tipo_key       | UNIQUE                   | tipo             | categorias                   |
+| CONSTRAINT  | categorias    | categorias_usuario_id_nome_tipo_key       | UNIQUE                   | tipo             | categorias                   |
+| CONSTRAINT  | categorias    | categorias_usuario_id_nome_tipo_key       | UNIQUE                   | tipo             | categorias                   |
+| CONSTRAINT  | categorias    | categorias_pkey                           | PRIMARY KEY              | id               | categorias                   |
+| CONSTRAINT  | categorias    | categorias_usuario_id_nome_tipo_key       | UNIQUE                   | usuario_id       | categorias                   |
+| CONSTRAINT  | categorias    | categorias_usuario_id_nome_tipo_key       | UNIQUE                   | usuario_id       | categorias                   |
+| CONSTRAINT  | categorias    | categorias_usuario_id_nome_tipo_key       | UNIQUE                   | usuario_id       | categorias                   |
+| CONSTRAINT  | categorias    | categorias_usuario_id_nome_tipo_key       | UNIQUE                   | nome             | categorias                   |
+| CONSTRAINT  | categorias    | categorias_usuario_id_nome_tipo_key       | UNIQUE                   | nome             | categorias                   |
+| CONSTRAINT  | categorias    | categorias_usuario_id_nome_tipo_key       | UNIQUE                   | nome             | categorias                   |
+| CONSTRAINT  | categorias    | categorias_usuario_id_fkey                | FOREIGN KEY              | usuario_id       | null                         |
+| CONSTRAINT  | planejamentos | uk_planejamento_usuario_periodo_categoria | UNIQUE                   | ano              | planejamentos                |
+| CONSTRAINT  | planejamentos | planejamentos_usuario_id_fkey             | FOREIGN KEY              | usuario_id       | null                         |
+| CONSTRAINT  | planejamentos | uk_planejamento_usuario_periodo_categoria | UNIQUE                   | subcategoria_id  | planejamentos                |
+| CONSTRAINT  | planejamentos | uk_planejamento_usuario_periodo_categoria | UNIQUE                   | subcategoria_id  | planejamentos                |
+| CONSTRAINT  | planejamentos | uk_planejamento_usuario_periodo_categoria | UNIQUE                   | subcategoria_id  | planejamentos                |
+| CONSTRAINT  | planejamentos | uk_planejamento_usuario_periodo_categoria | UNIQUE                   | subcategoria_id  | planejamentos                |
+| CONSTRAINT  | planejamentos | uk_planejamento_usuario_periodo_categoria | UNIQUE                   | subcategoria_id  | planejamentos                |
+| CONSTRAINT  | planejamentos | uk_planejamento_usuario_periodo_categoria | UNIQUE                   | categoria_id     | planejamentos                |
+| CONSTRAINT  | planejamentos | uk_planejamento_usuario_periodo_categoria | UNIQUE                   | categoria_id     | planejamentos                |
+| CONSTRAINT  | planejamentos | uk_planejamento_usuario_periodo_categoria | UNIQUE                   | categoria_id     | planejamentos                |
+| CONSTRAINT  | planejamentos | uk_planejamento_usuario_periodo_categoria | UNIQUE                   | categoria_id     | planejamentos                |
+| CONSTRAINT  | planejamentos | uk_planejamento_usuario_periodo_categoria | UNIQUE                   | categoria_id     | planejamentos                |
+| CONSTRAINT  | planejamentos | uk_planejamento_usuario_periodo_categoria | UNIQUE                   | mes              | planejamentos                |
+| CONSTRAINT  | planejamentos | uk_planejamento_usuario_periodo_categoria | UNIQUE                   | mes              | planejamentos                |
+| CONSTRAINT  | planejamentos | uk_planejamento_usuario_periodo_categoria | UNIQUE                   | mes              | planejamentos                |
+| CONSTRAINT  | planejamentos | uk_planejamento_usuario_periodo_categoria | UNIQUE                   | mes              | planejamentos                |
+| CONSTRAINT  | planejamentos | uk_planejamento_usuario_periodo_categoria | UNIQUE                   | mes              | planejamentos                |
+| CONSTRAINT  | planejamentos | uk_planejamento_usuario_periodo_categoria | UNIQUE                   | ano              | planejamentos                |
+| CONSTRAINT  | planejamentos | uk_planejamento_usuario_periodo_categoria | UNIQUE                   | ano              | planejamentos                |
+| CONSTRAINT  | planejamentos | uk_planejamento_usuario_periodo_categoria | UNIQUE                   | ano              | planejamentos                |
+| CONSTRAINT  | planejamentos | uk_planejamento_usuario_periodo_categoria | UNIQUE                   | ano              | planejamentos                |
+| CONSTRAINT  | planejamentos | uk_planejamento_usuario_periodo_categoria | UNIQUE                   | usuario_id       | planejamentos                |
+| CONSTRAINT  | planejamentos | uk_planejamento_usuario_periodo_categoria | UNIQUE                   | usuario_id       | planejamentos                |
+| CONSTRAINT  | planejamentos | uk_planejamento_usuario_periodo_categoria | UNIQUE                   | usuario_id       | planejamentos                |
+| CONSTRAINT  | planejamentos | uk_planejamento_usuario_periodo_categoria | UNIQUE                   | usuario_id       | planejamentos                |
+| CONSTRAINT  | planejamentos | uk_planejamento_usuario_periodo_categoria | UNIQUE                   | usuario_id       | planejamentos                |
+| CONSTRAINT  | planejamentos | planejamentos_pkey                        | PRIMARY KEY              | id               | planejamentos                |
+| CONSTRAINT  | planejamentos | planejamentos_subcategoria_id_fkey        | FOREIGN KEY              | subcategoria_id  | subcategorias                |
+| CONSTRAINT  | planejamentos | planejamentos_categoria_id_fkey           | FOREIGN KEY              | categoria_id     | categorias                   |
+| CONSTRAINT  | subcategorias | subcategorias_categoria_id_nome_key       | UNIQUE                   | categoria_id     | subcategorias                |
+| CONSTRAINT  | subcategorias | subcategorias_pkey                        | PRIMARY KEY              | id               | subcategorias                |
+| CONSTRAINT  | subcategorias | subcategorias_categoria_id_fkey           | FOREIGN KEY              | categoria_id     | categorias                   |
+| CONSTRAINT  | subcategorias | subcategorias_usuario_id_fkey             | FOREIGN KEY              | usuario_id       | null                         |
+| CONSTRAINT  | subcategorias | subcategorias_categoria_id_nome_key       | UNIQUE                   | nome             | subcategorias                |
+| CONSTRAINT  | subcategorias | subcategorias_categoria_id_nome_key       | UNIQUE                   | nome             | subcategorias                |
+| CONSTRAINT  | subcategorias | subcategorias_categoria_id_nome_key       | UNIQUE                   | categoria_id     | subcategorias                |
+| CONSTRAINT  | transacoes    | transacoes_conta_destino_id_fkey          | FOREIGN KEY              | conta_destino_id | contas                       |
+| CONSTRAINT  | transacoes    | transacoes_conta_id_fkey                  | FOREIGN KEY              | conta_id         | contas                       |
+| CONSTRAINT  | transacoes    | transacoes_pkey                           | PRIMARY KEY              | id               | transacoes                   |
+| CONSTRAINT  | transacoes    | transacoes_usuario_id_fkey                | FOREIGN KEY              | usuario_id       | null                         |
+| CONSTRAINT  | transacoes    | transacoes_subcategoria_id_fkey           | FOREIGN KEY              | subcategoria_id  | subcategorias                |
+| CONSTRAINT  | transacoes    | transacoes_categoria_id_fkey              | FOREIGN KEY              | categoria_id     | categorias                   |
+| CONSTRAINT  | transacoes    | transacoes_cartao_id_fkey                 | FOREIGN KEY              | cartao_id        | cartoes                      |
+| TABLE       | categorias    | updated_at                                | timestamp with time zone | NO               | timezone('utc'::text, now()) |
+| TABLE       | categorias    | nome                                      | character varying        | NO               | null                         |
+| TABLE       | categorias    | tipo                                      | character varying        | NO               | null                         |
+| TABLE       | categorias    | id                                        | uuid                     | NO               | uuid_generate_v4()           |
+| TABLE       | categorias    | cor                                       | character varying        | YES              | '#6B7280'::character varying |
+| TABLE       | categorias    | icone                                     | character varying        | YES              | 'folder'::character varying  |
+| TABLE       | categorias    | descricao                                 | text                     | YES              | null                         |
+| TABLE       | categorias    | ativo                                     | boolean                  | YES              | true                         |
+| TABLE       | categorias    | ordem                                     | integer                  | YES              | 0                            |
+| TABLE       | categorias    | created_at                                | timestamp with time zone | NO               | timezone('utc'::text, now()) |
+| TABLE       | categorias    | classificacao_regra                       | character varying        | YES              | null                         |
+| TABLE       | categorias    | usuario_id                                | uuid                     | NO               | null                         |
+| TABLE       | planejamentos | mes                                       | integer                  | NO               | null                         |
+| TABLE       | planejamentos | id                                        | uuid                     | NO               | uuid_generate_v4()           |
+| TABLE       | planejamentos | usuario_id                                | uuid                     | NO               | null                         |
+| TABLE       | planejamentos | ano                                       | integer                  | NO               | null                         |
+| TABLE       | planejamentos | categoria_id                              | uuid                     | NO               | null                         |
+| TABLE       | planejamentos | subcategoria_id                           | uuid                     | YES              | null                         |
+| TABLE       | planejamentos | tipo                                      | character varying        | NO               | null                         |
+| TABLE       | planejamentos | valor_planejado                           | numeric                  | NO               | 0                            |
+| TABLE       | planejamentos | created_at                                | timestamp with time zone | NO               | now()                        |
+| TABLE       | planejamentos | updated_at                                | timestamp with time zone | NO               | now()                        |
+| TABLE       | subcategorias | updated_at                                | timestamp with time zone | NO               | timezone('utc'::text, now()) |
+| TABLE       | subcategorias | created_at                                | timestamp with time zone | NO               | timezone('utc'::text, now()) |
+| TABLE       | subcategorias | ativo                                     | boolean                  | YES              | true                         |
+| TABLE       | subcategorias | descricao                                 | text                     | YES              | null                         |
+| TABLE       | subcategorias | nome                                      | character varying        | NO               | null                         |
+| TABLE       | subcategorias | categoria_id                              | uuid                     | NO               | null                         |
+| TABLE       | subcategorias | usuario_id                                | uuid                     | NO               | null                         |
+| TABLE       | subcategorias | id                                        | uuid                     | NO               | uuid_generate_v4()           |
+| TABLE       | transacoes    | tipo_recorrencia                          | character varying        | YES              | null                         |
+| TABLE       | transacoes    | eh_recorrente                             | boolean                  | YES              | false                        |
+| TABLE       | transacoes    | grupo_recorrencia                         | uuid                     | YES              | null                         |
+| TABLE       | transacoes    | fatura_vencimento                         | date                     | YES              | null                         |
+| TABLE       | transacoes    | numero_parcelas                           | integer                  | YES              | 1                            |
+| TABLE       | transacoes    | valor_parcela                             | numeric                  | YES              | null                         |
+| TABLE       | transacoes    | updated_at                                | timestamp with time zone | NO               | timezone('utc'::text, now()) |
+| TABLE       | transacoes    | created_at                                | timestamp with time zone | NO               | timezone('utc'::text, now()) |
+| TABLE       | transacoes    | sincronizado                              | boolean                  | YES              | true                         |
+| TABLE       | transacoes    | origem_diagnostico                        | boolean                  | YES              | false                        |
+| TABLE       | transacoes    | localizacao                               | jsonb                    | YES              | null                         |
+| TABLE       | transacoes    | tags                                      | ARRAY                    | YES              | null                         |
+| TABLE       | transacoes    | observacoes                               | text                     | YES              | null                         |
+| TABLE       | transacoes    | grupo_parcelamento                        | uuid                     | YES              | null                         |
+| TABLE       | transacoes    | total_parcelas                            | integer                  | YES              | null                         |
+| TABLE       | transacoes    | parcela_atual                             | integer                  | YES              | null                         |

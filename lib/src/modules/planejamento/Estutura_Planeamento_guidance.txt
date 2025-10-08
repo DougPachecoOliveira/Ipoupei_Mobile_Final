@@ -1,0 +1,834 @@
+# 📊 Mapa das Operações de Planejamento
+
+Este documento resume como as ações do frontend (Zustand Store) se conectam às funções SQL do Supabase e o que cada uma faz.
+
+---
+
+## 🔹 Tabela de referência
+
+| **Ação no Frontend (Zustand Store)** | **Função RPC no Supabase**             | **O que faz (lógica resumida)** |
+|--------------------------------------|-----------------------------------------|---------------------------------|
+| `fetchDadosComparativos`             | `planejamento_mensal_ipoupei_2025`     | Junta `planejamentos` (metas) + `transacoes` (realizado/pendente) + `categorias`/`subcategorias`. Retorna comparativo do mês (`meta`, `efetivado`, `pendente`, `total_mes`). |
+| `savePlanejamento`                   | `salvar_planejamento`                  | Insere/atualiza um item em `planejamentos` (`usuario_id`, `ano`, `mes`, `categoria_id`, `subcategoria_id`, `tipo`, `valor_planejado`). Usa `ON CONFLICT` para não duplicar. |
+| `updateValorPlanejado`               | `ip_prod_upsert_planejamento`          | Variante mais direta do `salvar_planejamento`: faz um **upsert** (insert ou update) de um único item de planejamento. |
+| `copiarMesAnterior`                  | `ip_prod_copiar_planejamento_mes_anterior` | Duplica os registros de `planejamentos` do mês anterior (`ano/mes - 1`) para o mês atual, mantendo categorias/subcategorias e valores. |
+| `repetirPeloAno`                     | (usa internamente `salvar_planejamento`) | Pega os planejamentos do mês atual e replica para os meses seguintes até dezembro (`mes+1 ... 12`). |
+| `sugerirPorMedia`                    | `economia_categorias_ipoupei_2025`     | Calcula a **média histórica (últimos 3 meses)** de despesas/receitas por categoria. Sugere valores para metas (`valor_planejado`) de categorias sem planejamento. |
+| *(auxiliar)*                         | `projecoes_mensais_ipoupei_2025`       | Gera **projeções** (baseadas em metas ou médias) para meses futuros, usado em dashboards/estatísticas. |
+
+---
+
+## 🔹 Como investigar no Supabase
+
+1. **Ver parâmetros da função**
+   ```sql
+   SELECT proname, proargnames, proargtypes
+   FROM pg_proc
+   JOIN pg_namespace n ON n.oid = pg_proc.pronamespace
+   WHERE n.nspname = 'public'
+     AND proname = 'planejamento_mensal_ipoupei_2025';
+
+
+  1. 📋 ESTRUTURA DAS TABELAS
+
+  -- Tabela planejamentos
+  SELECT
+    column_name,
+    data_type,
+    is_nullable,
+    column_default,
+    character_maximum_length
+  FROM information_schema.columns
+  WHERE table_name = 'planejamentos'
+    AND table_schema = 'public'
+  ORDER BY ordinal_position;
+
+| column_name     | data_type                | is_nullable | column_default     | character_maximum_length |
+| --------------- | ------------------------ | ----------- | ------------------ | ------------------------ |
+| id              | uuid                     | NO          | uuid_generate_v4() | null                     |
+| usuario_id      | uuid                     | NO          | null               | null                     |
+| ano             | integer                  | NO          | null               | null                     |
+| mes             | integer                  | NO          | null               | null                     |
+| categoria_id    | uuid                     | NO          | null               | null                     |
+| subcategoria_id | uuid                     | YES         | null               | null                     |
+| tipo            | character varying        | NO          | null               | 20                       |
+| valor_planejado | numeric                  | NO          | 0                  | null                     |
+| created_at      | timestamp with time zone | NO          | now()              | null                     |
+| updated_at      | timestamp with time zone | NO          | now()              | null                     |
+
+  -- Tabela categorias
+  SELECT
+    column_name,
+    data_type,
+    is_nullable,
+    column_default,
+    character_maximum_length
+  FROM information_schema.columns
+  WHERE table_name = 'categorias'
+    AND table_schema = 'public'
+  ORDER BY ordinal_position;
+
+| column_name         | data_type                | is_nullable | column_default               | character_maximum_length |
+| ------------------- | ------------------------ | ----------- | ---------------------------- | ------------------------ |
+| id                  | uuid                     | NO          | uuid_generate_v4()           | null                     |
+| usuario_id          | uuid                     | NO          | null                         | null                     |
+| nome                | character varying        | NO          | null                         | 100                      |
+| tipo                | character varying        | NO          | null                         | 10                       |
+| cor                 | character varying        | YES         | '#6B7280'::character varying | 7                        |
+| icone               | character varying        | YES         | 'folder'::character varying  | 50                       |
+| descricao           | text                     | YES         | null                         | null                     |
+| ativo               | boolean                  | YES         | true                         | null                     |
+| ordem               | integer                  | YES         | 0                            | null                     |
+| created_at          | timestamp with time zone | NO          | timezone('utc'::text, now()) | null                     |
+| updated_at          | timestamp with time zone | NO          | timezone('utc'::text, now()) | null                     |
+| classificacao_regra | character varying        | YES         | null                         | 20                       |
+
+  -- Tabela subcategorias
+  SELECT
+    column_name,
+    data_type,
+    is_nullable,
+    column_default,
+    character_maximum_length
+  FROM information_schema.columns
+  WHERE table_name = 'subcategorias'
+    AND table_schema = 'public'
+  ORDER BY ordinal_position;
+
+| column_name  | data_type                | is_nullable | column_default               | character_maximum_length |
+| ------------ | ------------------------ | ----------- | ---------------------------- | ------------------------ |
+| id           | uuid                     | NO          | uuid_generate_v4()           | null                     |
+| usuario_id   | uuid                     | NO          | null                         | null                     |
+| categoria_id | uuid                     | NO          | null                         | null                     |
+| nome         | character varying        | NO          | null                         | 100                      |
+| descricao    | text                     | YES         | null                         | null                     |
+| ativo        | boolean                  | YES         | true                         | null                     |
+| created_at   | timestamp with time zone | NO          | timezone('utc'::text, now()) | null                     |
+| updated_at   | timestamp with time zone | NO          | timezone('utc'::text, now()) | null                     |
+
+  -- Tabela transacoes
+  SELECT
+    column_name,
+    data_type,
+    is_nullable,
+    column_default,
+    character_maximum_length
+  FROM information_schema.columns
+  WHERE table_name = 'transacoes'
+    AND table_schema = 'public'
+  ORDER BY ordinal_position;
+
+| column_name              | data_type                   | is_nullable | column_default               | character_maximum_length |
+| ------------------------ | --------------------------- | ----------- | ---------------------------- | ------------------------ |
+| id                       | uuid                        | NO          | uuid_generate_v4()           | null                     |
+| usuario_id               | uuid                        | NO          | null                         | null                     |
+| descricao                | character varying           | NO          | null                         | 255                      |
+| valor                    | numeric                     | NO          | null                         | null                     |
+| tipo                     | character varying           | NO          | null                         | 10                       |
+| data                     | timestamp with time zone    | NO          | null                         | null                     |
+| conta_id                 | uuid                        | YES         | null                         | null                     |
+| cartao_id                | uuid                        | YES         | null                         | null                     |
+| categoria_id             | uuid                        | YES         | null                         | null                     |
+| subcategoria_id          | uuid                        | YES         | null                         | null                     |
+| efetivado                | boolean                     | YES         | true                         | null                     |
+| recorrente               | boolean                     | YES         | false                        | null                     |
+| transferencia            | boolean                     | YES         | false                        | null                     |
+| conta_destino_id         | uuid                        | YES         | null                         | null                     |
+| compartilhada_com        | ARRAY                       | YES         | null                         | null                     |
+| parcela_atual            | integer                     | YES         | null                         | null                     |
+| total_parcelas           | integer                     | YES         | null                         | null                     |
+| grupo_parcelamento       | uuid                        | YES         | null                         | null                     |
+| observacoes              | text                        | YES         | null                         | null                     |
+| tags                     | ARRAY                       | YES         | null                         | null                     |
+| localizacao              | jsonb                       | YES         | null                         | null                     |
+| origem_diagnostico       | boolean                     | YES         | false                        | null                     |
+| sincronizado             | boolean                     | YES         | true                         | null                     |
+| created_at               | timestamp with time zone    | NO          | timezone('utc'::text, now()) | null                     |
+| updated_at               | timestamp with time zone    | NO          | timezone('utc'::text, now()) | null                     |
+| valor_parcela            | numeric                     | YES         | null                         | null                     |
+| numero_parcelas          | integer                     | YES         | 1                            | null                     |
+| fatura_vencimento        | date                        | YES         | null                         | null                     |
+| grupo_recorrencia        | uuid                        | YES         | null                         | null                     |
+| eh_recorrente            | boolean                     | YES         | false                        | null                     |
+| tipo_recorrencia         | character varying           | YES         | null                         | 20                       |
+| numero_recorrencia       | integer                     | YES         | null                         | null                     |
+| total_recorrencias       | integer                     | YES         | null                         | null                     |
+| data_proxima_recorrencia | date                        | YES         | null                         | null                     |
+| ajuste_manual            | boolean                     | YES         | false                        | null                     |
+| motivo_ajuste            | text                        | YES         | null                         | null                     |
+| tipo_receita             | character varying           | YES         | null                         | 20                       |
+| tipo_despesa             | character varying           | YES         | null                         | 20                       |
+| data_efetivacao          | timestamp without time zone | YES         | null                         | null                     |
+
+  2. 🔗 CONSTRAINTS E RELACIONAMENTOS
+
+  -- Primary Keys e Foreign Keys
+  SELECT
+    tc.table_name,
+    tc.constraint_name,
+    tc.constraint_type,
+    kcu.column_name,
+    ccu.table_name AS foreign_table_name,
+    ccu.column_name AS foreign_column_name
+  FROM information_schema.table_constraints tc
+  JOIN information_schema.key_column_usage kcu
+    ON tc.constraint_name = kcu.constraint_name
+  LEFT JOIN information_schema.constraint_column_usage ccu
+    ON tc.constraint_name = ccu.constraint_name
+  WHERE tc.table_name IN ('planejamentos', 'categorias', 'subcategorias', 'transacoes')
+    AND tc.table_schema = 'public'
+  ORDER BY tc.table_name, tc.constraint_type;
+
+| table_name    | constraint_name                           | constraint_type | column_name      | foreign_table_name | foreign_column_name |
+| ------------- | ----------------------------------------- | --------------- | ---------------- | ------------------ | ------------------- |
+| categorias    | categorias_usuario_id_fkey                | FOREIGN KEY     | usuario_id       | null               | null                |
+| categorias    | categorias_pkey                           | PRIMARY KEY     | id               | categorias         | id                  |
+| categorias    | categorias_usuario_id_nome_tipo_key       | UNIQUE          | usuario_id       | categorias         | nome                |
+| categorias    | categorias_usuario_id_nome_tipo_key       | UNIQUE          | usuario_id       | categorias         | tipo                |
+| categorias    | categorias_usuario_id_nome_tipo_key       | UNIQUE          | nome             | categorias         | usuario_id          |
+| categorias    | categorias_usuario_id_nome_tipo_key       | UNIQUE          | nome             | categorias         | nome                |
+| categorias    | categorias_usuario_id_nome_tipo_key       | UNIQUE          | nome             | categorias         | tipo                |
+| categorias    | categorias_usuario_id_nome_tipo_key       | UNIQUE          | tipo             | categorias         | nome                |
+| categorias    | categorias_usuario_id_nome_tipo_key       | UNIQUE          | tipo             | categorias         | tipo                |
+| categorias    | categorias_usuario_id_nome_tipo_key       | UNIQUE          | tipo             | categorias         | usuario_id          |
+| categorias    | categorias_usuario_id_nome_tipo_key       | UNIQUE          | usuario_id       | categorias         | usuario_id          |
+| planejamentos | planejamentos_categoria_id_fkey           | FOREIGN KEY     | categoria_id     | categorias         | id                  |
+| planejamentos | planejamentos_usuario_id_fkey             | FOREIGN KEY     | usuario_id       | null               | null                |
+| planejamentos | planejamentos_subcategoria_id_fkey        | FOREIGN KEY     | subcategoria_id  | subcategorias      | id                  |
+| planejamentos | planejamentos_pkey                        | PRIMARY KEY     | id               | planejamentos      | id                  |
+| planejamentos | uk_planejamento_usuario_periodo_categoria | UNIQUE          | subcategoria_id  | planejamentos      | ano                 |
+| planejamentos | uk_planejamento_usuario_periodo_categoria | UNIQUE          | mes              | planejamentos      | usuario_id          |
+| planejamentos | uk_planejamento_usuario_periodo_categoria | UNIQUE          | mes              | planejamentos      | ano                 |
+| planejamentos | uk_planejamento_usuario_periodo_categoria | UNIQUE          | mes              | planejamentos      | mes                 |
+| planejamentos | uk_planejamento_usuario_periodo_categoria | UNIQUE          | mes              | planejamentos      | categoria_id        |
+| planejamentos | uk_planejamento_usuario_periodo_categoria | UNIQUE          | mes              | planejamentos      | subcategoria_id     |
+| planejamentos | uk_planejamento_usuario_periodo_categoria | UNIQUE          | categoria_id     | planejamentos      | usuario_id          |
+| planejamentos | uk_planejamento_usuario_periodo_categoria | UNIQUE          | categoria_id     | planejamentos      | ano                 |
+| planejamentos | uk_planejamento_usuario_periodo_categoria | UNIQUE          | categoria_id     | planejamentos      | mes                 |
+| planejamentos | uk_planejamento_usuario_periodo_categoria | UNIQUE          | categoria_id     | planejamentos      | categoria_id        |
+| planejamentos | uk_planejamento_usuario_periodo_categoria | UNIQUE          | categoria_id     | planejamentos      | subcategoria_id     |
+| planejamentos | uk_planejamento_usuario_periodo_categoria | UNIQUE          | subcategoria_id  | planejamentos      | usuario_id          |
+| planejamentos | uk_planejamento_usuario_periodo_categoria | UNIQUE          | subcategoria_id  | planejamentos      | mes                 |
+| planejamentos | uk_planejamento_usuario_periodo_categoria | UNIQUE          | subcategoria_id  | planejamentos      | categoria_id        |
+| planejamentos | uk_planejamento_usuario_periodo_categoria | UNIQUE          | subcategoria_id  | planejamentos      | subcategoria_id     |
+| planejamentos | uk_planejamento_usuario_periodo_categoria | UNIQUE          | usuario_id       | planejamentos      | usuario_id          |
+| planejamentos | uk_planejamento_usuario_periodo_categoria | UNIQUE          | usuario_id       | planejamentos      | ano                 |
+| planejamentos | uk_planejamento_usuario_periodo_categoria | UNIQUE          | usuario_id       | planejamentos      | mes                 |
+| planejamentos | uk_planejamento_usuario_periodo_categoria | UNIQUE          | usuario_id       | planejamentos      | categoria_id        |
+| planejamentos | uk_planejamento_usuario_periodo_categoria | UNIQUE          | usuario_id       | planejamentos      | subcategoria_id     |
+| planejamentos | uk_planejamento_usuario_periodo_categoria | UNIQUE          | ano              | planejamentos      | usuario_id          |
+| planejamentos | uk_planejamento_usuario_periodo_categoria | UNIQUE          | ano              | planejamentos      | ano                 |
+| planejamentos | uk_planejamento_usuario_periodo_categoria | UNIQUE          | ano              | planejamentos      | mes                 |
+| planejamentos | uk_planejamento_usuario_periodo_categoria | UNIQUE          | ano              | planejamentos      | categoria_id        |
+| planejamentos | uk_planejamento_usuario_periodo_categoria | UNIQUE          | ano              | planejamentos      | subcategoria_id     |
+| subcategorias | subcategorias_categoria_id_fkey           | FOREIGN KEY     | categoria_id     | categorias         | id                  |
+| subcategorias | subcategorias_usuario_id_fkey             | FOREIGN KEY     | usuario_id       | null               | null                |
+| subcategorias | subcategorias_pkey                        | PRIMARY KEY     | id               | subcategorias      | id                  |
+| subcategorias | subcategorias_categoria_id_nome_key       | UNIQUE          | categoria_id     | subcategorias      | categoria_id        |
+| subcategorias | subcategorias_categoria_id_nome_key       | UNIQUE          | nome             | subcategorias      | nome                |
+| subcategorias | subcategorias_categoria_id_nome_key       | UNIQUE          | nome             | subcategorias      | categoria_id        |
+| subcategorias | subcategorias_categoria_id_nome_key       | UNIQUE          | categoria_id     | subcategorias      | nome                |
+| transacoes    | transacoes_conta_id_fkey                  | FOREIGN KEY     | conta_id         | contas             | id                  |
+| transacoes    | transacoes_usuario_id_fkey                | FOREIGN KEY     | usuario_id       | null               | null                |
+| transacoes    | transacoes_categoria_id_fkey              | FOREIGN KEY     | categoria_id     | categorias         | id                  |
+| transacoes    | transacoes_cartao_id_fkey                 | FOREIGN KEY     | cartao_id        | cartoes            | id                  |
+| transacoes    | transacoes_subcategoria_id_fkey           | FOREIGN KEY     | subcategoria_id  | subcategorias      | id                  |
+| transacoes    | transacoes_conta_destino_id_fkey          | FOREIGN KEY     | conta_destino_id | contas             | id                  |
+| transacoes    | transacoes_pkey                           | PRIMARY KEY     | id               | transacoes         | id                  |
+
+  3. 📊 ÍNDICES
+
+  -- Índices das tabelas
+  SELECT
+    schemaname,
+    tablename,
+    indexname,
+    indexdef
+  FROM pg_indexes
+  WHERE tablename IN ('planejamentos', 'categorias', 'subcategorias', 'transacoes')
+    AND schemaname = 'public'
+  ORDER BY tablename, indexname;
+
+| schemaname | tablename     | indexname                                 | indexdef                                                                                                                                                |
+| ---------- | ------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| public     | categorias    | categorias_pkey                           | CREATE UNIQUE INDEX categorias_pkey ON public.categorias USING btree (id)                                                                               |
+| public     | categorias    | categorias_usuario_id_nome_tipo_key       | CREATE UNIQUE INDEX categorias_usuario_id_nome_tipo_key ON public.categorias USING btree (usuario_id, nome, tipo)                                       |
+| public     | categorias    | idx_categorias_usuario_id                 | CREATE INDEX idx_categorias_usuario_id ON public.categorias USING btree (usuario_id)                                                                    |
+| public     | categorias    | idx_categorias_usuario_tipo               | CREATE INDEX idx_categorias_usuario_tipo ON public.categorias USING btree (usuario_id, tipo)                                                            |
+| public     | planejamentos | idx_planejamentos_categoria               | CREATE INDEX idx_planejamentos_categoria ON public.planejamentos USING btree (categoria_id)                                                             |
+| public     | planejamentos | idx_planejamentos_usuario_periodo         | CREATE INDEX idx_planejamentos_usuario_periodo ON public.planejamentos USING btree (usuario_id, ano, mes)                                               |
+| public     | planejamentos | planejamentos_pkey                        | CREATE UNIQUE INDEX planejamentos_pkey ON public.planejamentos USING btree (id)                                                                         |
+| public     | planejamentos | uk_planejamento_usuario_periodo_categoria | CREATE UNIQUE INDEX uk_planejamento_usuario_periodo_categoria ON public.planejamentos USING btree (usuario_id, ano, mes, categoria_id, subcategoria_id) |
+| public     | subcategorias | idx_subcategorias_usuario_id              | CREATE INDEX idx_subcategorias_usuario_id ON public.subcategorias USING btree (usuario_id)                                                              |
+| public     | subcategorias | subcategorias_categoria_id_nome_key       | CREATE UNIQUE INDEX subcategorias_categoria_id_nome_key ON public.subcategorias USING btree (categoria_id, nome)                                        |
+| public     | subcategorias | subcategorias_pkey                        | CREATE UNIQUE INDEX subcategorias_pkey ON public.subcategorias USING btree (id)                                                                         |
+| public     | transacoes    | idx_transacoes_cartao_fatura              | CREATE INDEX idx_transacoes_cartao_fatura ON public.transacoes USING btree (cartao_id, fatura_vencimento)                                               |
+| public     | transacoes    | idx_transacoes_cartao_id                  | CREATE INDEX idx_transacoes_cartao_id ON public.transacoes USING btree (cartao_id)                                                                      |
+| public     | transacoes    | idx_transacoes_categoria                  | CREATE INDEX idx_transacoes_categoria ON public.transacoes USING btree (categoria_id)                                                                   |
+| public     | transacoes    | idx_transacoes_compartilhadas             | CREATE INDEX idx_transacoes_compartilhadas ON public.transacoes USING gin (compartilhada_com)                                                           |
+| public     | transacoes    | idx_transacoes_conta                      | CREATE INDEX idx_transacoes_conta ON public.transacoes USING btree (conta_id)                                                                           |
+| public     | transacoes    | idx_transacoes_fatura_vencimento          | CREATE INDEX idx_transacoes_fatura_vencimento ON public.transacoes USING btree (fatura_vencimento)                                                      |
+| public     | transacoes    | idx_transacoes_grupo_parcelamento         | CREATE INDEX idx_transacoes_grupo_parcelamento ON public.transacoes USING btree (grupo_parcelamento)                                                    |
+| public     | transacoes    | idx_transacoes_grupo_recorrencia          | CREATE INDEX idx_transacoes_grupo_recorrencia ON public.transacoes USING btree (grupo_recorrencia)                                                      |
+| public     | transacoes    | idx_transacoes_proxima_recorrencia        | CREATE INDEX idx_transacoes_proxima_recorrencia ON public.transacoes USING btree (data_proxima_recorrencia)                                             |
+| public     | transacoes    | idx_transacoes_recorrente                 | CREATE INDEX idx_transacoes_recorrente ON public.transacoes USING btree (eh_recorrente)                                                                 |
+| public     | transacoes    | idx_transacoes_usuario_categoria          | CREATE INDEX idx_transacoes_usuario_categoria ON public.transacoes USING btree (usuario_id, categoria_id)                                               |
+| public     | transacoes    | idx_transacoes_usuario_data               | CREATE INDEX idx_transacoes_usuario_data ON public.transacoes USING btree (usuario_id, data DESC)                                                       |
+| public     | transacoes    | idx_transacoes_usuario_id                 | CREATE INDEX idx_transacoes_usuario_id ON public.transacoes USING btree (usuario_id)                                                                    |
+| public     | transacoes    | idx_transacoes_usuario_tipo               | CREATE INDEX idx_transacoes_usuario_tipo ON public.transacoes USING btree (usuario_id, tipo)                                                            |
+| public     | transacoes    | transacoes_pkey                           | CREATE UNIQUE INDEX transacoes_pkey ON public.transacoes USING btree (id)                                                                               |
+
+  4. ⚙️ FUNÇÕES RPC
+
+  -- Função ip_prod_upsert_planejamento
+  SELECT
+    routine_name,
+    routine_definition,
+    data_type,
+    type_udt_name
+  FROM information_schema.routines
+  WHERE routine_name LIKE '%planejamento%'
+    AND routine_schema = 'public';
+
+| routine_name                             | routine_definition                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | data_type | type_udt_name |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------- | ------------- |
+| ip_prod_buscar_planejamento_mes          | 
+BEGIN
+    IF p_usuario_id != auth.uid() THEN
+        RAISE EXCEPTION 'Acesso negado';
+    END IF;
+    
+    RETURN QUERY
+    SELECT 
+        p.id,
+        p.categoria_id,
+        c.nome::TEXT,
+        c.cor::TEXT,
+        c.icone::TEXT,
+        p.subcategoria_id,
+        s.nome::TEXT,
+        p.tipo,
+        p.valor_planejado,
+        p.created_at,
+        p.updated_at
+    FROM public.planejamentos p
+    JOIN public.categorias c ON c.id = p.categoria_id
+    LEFT JOIN public.subcategorias s ON s.id = p.subcategoria_id
+    WHERE p.usuario_id = p_usuario_id
+        AND p.ano = p_ano
+        AND p.mes = p_mes
+    ORDER BY c.nome, s.nome NULLS FIRST;
+END;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | record    | record        |
+| ip_prod_upsert_planejamento              | 
+BEGIN
+    IF p_usuario_id != auth.uid() THEN
+        RAISE EXCEPTION 'Acesso negado';
+    END IF;
+    
+    -- Validações básicas
+    IF p_valor_planejado < 0 THEN
+        RAISE EXCEPTION 'Valor não pode ser negativo';
+    END IF;
+    
+    -- UPSERT
+    INSERT INTO public.planejamentos (
+        usuario_id, ano, mes, categoria_id, subcategoria_id, 
+        tipo, valor_planejado
+    ) VALUES (
+        p_usuario_id, p_ano, p_mes, p_categoria_id, p_subcategoria_id,
+        p_tipo, p_valor_planejado
+    )
+    ON CONFLICT (usuario_id, ano, mes, categoria_id, subcategoria_id)
+    DO UPDATE SET
+        valor_planejado = EXCLUDED.valor_planejado,
+        updated_at = NOW();
+    
+    RETURN JSON_BUILD_OBJECT('success', TRUE, 'message', 'Planejamento salvo');
+END;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | json      | json          |
+| ip_prod_copiar_planejamento_mes_anterior | 
+DECLARE
+    v_ano_origem INTEGER;
+    v_mes_origem INTEGER;
+    v_count INTEGER;
+BEGIN
+    IF p_usuario_id != auth.uid() THEN
+        RAISE EXCEPTION 'Acesso negado';
+    END IF;
+    
+    -- Calcular mês anterior
+    IF p_mes_destino = 1 THEN
+        v_ano_origem := p_ano_destino - 1;
+        v_mes_origem := 12;
+    ELSE
+        v_ano_origem := p_ano_destino;
+        v_mes_origem := p_mes_destino - 1;
+    END IF;
+    
+    -- Limpar destino e copiar origem
+    DELETE FROM public.planejamentos 
+    WHERE usuario_id = p_usuario_id 
+        AND ano = p_ano_destino 
+        AND mes = p_mes_destino;
+    
+    INSERT INTO public.planejamentos (
+        usuario_id, ano, mes, categoria_id, subcategoria_id, tipo, valor_planejado
+    )
+    SELECT 
+        usuario_id, p_ano_destino, p_mes_destino, categoria_id, subcategoria_id, tipo, valor_planejado
+    FROM public.planejamentos
+    WHERE usuario_id = p_usuario_id
+        AND ano = v_ano_origem
+        AND mes = v_mes_origem;
+    
+    GET DIAGNOSTICS v_count = ROW_COUNT;
+    
+    RETURN JSON_BUILD_OBJECT(
+        'success', TRUE, 
+        'message', FORMAT('Copiados %s itens', v_count),
+        'itens_copiados', v_count
+    );
+END;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | json      | json          |
+| salvar_planejamento                      | 
+DECLARE
+    v_usuario_id UUID;
+    v_planejamento_id UUID;
+    v_resultado JSON;
+BEGIN
+    -- Validar autenticação
+    v_usuario_id := auth.uid();
+    IF v_usuario_id IS NULL THEN
+        RAISE EXCEPTION 'Usuário não autenticado';
+    END IF;
+    
+    -- Validações de entrada
+    IF p_mes_ano IS NULL OR p_mes_ano !~ '^\d{4}-\d{2}$' THEN
+        RAISE EXCEPTION 'Formato de mês inválido. Use YYYY-MM';
+    END IF;
+    
+    IF p_categoria_id IS NULL THEN
+        RAISE EXCEPTION 'Categoria é obrigatória';
+    END IF;
+    
+    IF p_valor_planejado < 0 THEN
+        RAISE EXCEPTION 'Valor planejado deve ser positivo';
+    END IF;
+    
+    -- Verificar se categoria existe e pertence ao usuário
+    IF NOT EXISTS (
+        SELECT 1 FROM public.categorias c 
+        WHERE c.id = p_categoria_id AND c.usuario_id = v_usuario_id
+    ) THEN
+        RAISE EXCEPTION 'Categoria não encontrada';
+    END IF;
+    
+    -- Verificar subcategoria se informada
+    IF p_subcategoria_id IS NOT NULL AND NOT EXISTS (
+        SELECT 1 FROM public.subcategorias s 
+        WHERE s.id = p_subcategoria_id 
+          AND s.categoria_id = p_categoria_id
+          AND s.usuario_id = v_usuario_id
+    ) THEN
+        RAISE EXCEPTION 'Subcategoria não encontrada';
+    END IF;
+    
+    -- Inserir ou atualizar planejamento
+    INSERT INTO public.planejamento_mensal (
+        usuario_id, mes_ano, categoria_id, subcategoria_id, valor_planejado
+    ) VALUES (
+        v_usuario_id, p_mes_ano, p_categoria_id, p_subcategoria_id, p_valor_planejado
+    )
+    ON CONFLICT (usuario_id, mes_ano, categoria_id, subcategoria_id)
+    DO UPDATE SET 
+        valor_planejado = EXCLUDED.valor_planejado,
+        updated_at = NOW()
+    RETURNING id INTO v_planejamento_id;
+    
+    -- Retornar resultado
+    v_resultado := json_build_object(
+        'success', true,
+        'message', 'Planejamento salvo com sucesso',
+        'planejamento_id', v_planejamento_id
+    );
+    
+    -- Log de auditoria (se função existir)
+    BEGIN
+        PERFORM public.registrar_auditoria(
+            'salvar_planejamento',
+            'SUCCESS',
+            json_build_object(
+                'mes_ano', p_mes_ano,
+                'categoria_id', p_categoria_id,
+                'subcategoria_id', p_subcategoria_id,
+                'valor_planejado', p_valor_planejado
+            )
+        );
+    EXCEPTION WHEN OTHERS THEN
+        -- Ignora erro de auditoria se função não existir
+        NULL;
+    END;
+    
+    RETURN v_resultado;
+    
+EXCEPTION
+    WHEN OTHERS THEN
+        -- Log de erro (se função existir)
+        BEGIN
+            PERFORM public.registrar_auditoria(
+                'salvar_planejamento',
+                'ERROR',
+                json_build_object('error', SQLERRM)
+            );
+        EXCEPTION WHEN OTHERS THEN
+            NULL;
+        END;
+        
+        RETURN json_build_object(
+            'success', false,
+            'error', SQLERRM
+        );
+END;
+ | json      | json          |
+| planejamento_mensal_ipoupei_2025         | 
+DECLARE
+    v_usuario_id UUID;
+    v_ano INTEGER;
+    v_mes INTEGER;
+    v_data_inicio DATE;
+    v_data_fim DATE;
+BEGIN
+    v_usuario_id := auth.uid();
+    IF v_usuario_id IS NULL THEN
+        RAISE EXCEPTION 'Usuário não autenticado';
+    END IF;
+
+    v_ano := CAST(SPLIT_PART(p_mes_ano, '-', 1) AS INTEGER);
+    v_mes := CAST(SPLIT_PART(p_mes_ano, '-', 2) AS INTEGER);
+    v_data_inicio := MAKE_DATE(v_ano, v_mes, 1);
+    v_data_fim := (v_data_inicio + INTERVAL '1 month' - INTERVAL '1 day')::DATE;
+
+    RETURN QUERY
+    WITH transacoes_mes AS (
+        SELECT 
+            t.categoria_id,
+            t.subcategoria_id,
+            SUM(t.valor) as valor_executado_periodo
+        FROM public.transacoes t
+        WHERE t.usuario_id = v_usuario_id
+            AND t.data BETWEEN v_data_inicio AND v_data_fim
+            AND t.efetivado = true
+        GROUP BY t.categoria_id, t.subcategoria_id
+    )
+    SELECT 
+        COALESCE(p.categoria_id, tm.categoria_id) as categoria_id,
+        COALESCE(p.subcategoria_id, tm.subcategoria_id) as subcategoria_id,
+        c.nome as categoria_nome,
+        sc.nome as subcategoria_nome,
+        COALESCE(p.valor_planejado, 0::NUMERIC(10,2)) as valor_planejado,
+        COALESCE(tm.valor_executado_periodo, 0::NUMERIC(10,2)) as valor_executado,
+        c.tipo as tipo_categoria,
+        COALESCE(c.classificacao_regra, 'outros') as classificacao_regra
+    FROM public.planejamento_mensal p
+    FULL OUTER JOIN transacoes_mes tm 
+        ON p.categoria_id = tm.categoria_id 
+        AND (p.subcategoria_id = tm.subcategoria_id OR (p.subcategoria_id IS NULL AND tm.subcategoria_id IS NULL))
+    INNER JOIN public.categorias c ON c.id = COALESCE(p.categoria_id, tm.categoria_id)
+    LEFT JOIN public.subcategorias sc ON sc.id = COALESCE(p.subcategoria_id, tm.subcategoria_id)
+    WHERE c.usuario_id = v_usuario_id
+        AND (p.mes_ano = p_mes_ano OR p.mes_ano IS NULL)
+    ORDER BY c.tipo DESC, c.nome, sc.nome NULLS FIRST;
+END;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | record    | record        |
+
+  -- Código completo das funções
+  SELECT
+    p.proname AS function_name,
+    pg_get_functiondef(p.oid) AS function_definition
+  FROM pg_proc p
+  JOIN pg_namespace n ON n.oid = p.pronamespace
+  WHERE n.nspname = 'public'
+    AND p.proname LIKE '%planejamento%';
+
+| function_name                            | function_definition                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ip_prod_buscar_planejamento_mes          | CREATE OR REPLACE FUNCTION public.ip_prod_buscar_planejamento_mes(p_usuario_id uuid, p_ano integer, p_mes integer)
+ RETURNS TABLE(id uuid, categoria_id uuid, categoria_nome text, categoria_cor text, categoria_icone text, subcategoria_id uuid, subcategoria_nome text, tipo character varying, valor_planejado numeric, created_at timestamp with time zone, updated_at timestamp with time zone)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+BEGIN
+    IF p_usuario_id != auth.uid() THEN
+        RAISE EXCEPTION 'Acesso negado';
+    END IF;
+    
+    RETURN QUERY
+    SELECT 
+        p.id,
+        p.categoria_id,
+        c.nome::TEXT,
+        c.cor::TEXT,
+        c.icone::TEXT,
+        p.subcategoria_id,
+        s.nome::TEXT,
+        p.tipo,
+        p.valor_planejado,
+        p.created_at,
+        p.updated_at
+    FROM public.planejamentos p
+    JOIN public.categorias c ON c.id = p.categoria_id
+    LEFT JOIN public.subcategorias s ON s.id = p.subcategoria_id
+    WHERE p.usuario_id = p_usuario_id
+        AND p.ano = p_ano
+        AND p.mes = p_mes
+    ORDER BY c.nome, s.nome NULLS FIRST;
+END;
+$function$
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| ip_prod_upsert_planejamento              | CREATE OR REPLACE FUNCTION public.ip_prod_upsert_planejamento(p_usuario_id uuid, p_ano integer, p_mes integer, p_categoria_id uuid, p_subcategoria_id uuid, p_tipo character varying, p_valor_planejado numeric)
+ RETURNS json
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+BEGIN
+    IF p_usuario_id != auth.uid() THEN
+        RAISE EXCEPTION 'Acesso negado';
+    END IF;
+    
+    -- Validações básicas
+    IF p_valor_planejado < 0 THEN
+        RAISE EXCEPTION 'Valor não pode ser negativo';
+    END IF;
+    
+    -- UPSERT
+    INSERT INTO public.planejamentos (
+        usuario_id, ano, mes, categoria_id, subcategoria_id, 
+        tipo, valor_planejado
+    ) VALUES (
+        p_usuario_id, p_ano, p_mes, p_categoria_id, p_subcategoria_id,
+        p_tipo, p_valor_planejado
+    )
+    ON CONFLICT (usuario_id, ano, mes, categoria_id, subcategoria_id)
+    DO UPDATE SET
+        valor_planejado = EXCLUDED.valor_planejado,
+        updated_at = NOW();
+    
+    RETURN JSON_BUILD_OBJECT('success', TRUE, 'message', 'Planejamento salvo');
+END;
+$function$
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| ip_prod_copiar_planejamento_mes_anterior | CREATE OR REPLACE FUNCTION public.ip_prod_copiar_planejamento_mes_anterior(p_usuario_id uuid, p_ano_destino integer, p_mes_destino integer)
+ RETURNS json
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+DECLARE
+    v_ano_origem INTEGER;
+    v_mes_origem INTEGER;
+    v_count INTEGER;
+BEGIN
+    IF p_usuario_id != auth.uid() THEN
+        RAISE EXCEPTION 'Acesso negado';
+    END IF;
+    
+    -- Calcular mês anterior
+    IF p_mes_destino = 1 THEN
+        v_ano_origem := p_ano_destino - 1;
+        v_mes_origem := 12;
+    ELSE
+        v_ano_origem := p_ano_destino;
+        v_mes_origem := p_mes_destino - 1;
+    END IF;
+    
+    -- Limpar destino e copiar origem
+    DELETE FROM public.planejamentos 
+    WHERE usuario_id = p_usuario_id 
+        AND ano = p_ano_destino 
+        AND mes = p_mes_destino;
+    
+    INSERT INTO public.planejamentos (
+        usuario_id, ano, mes, categoria_id, subcategoria_id, tipo, valor_planejado
+    )
+    SELECT 
+        usuario_id, p_ano_destino, p_mes_destino, categoria_id, subcategoria_id, tipo, valor_planejado
+    FROM public.planejamentos
+    WHERE usuario_id = p_usuario_id
+        AND ano = v_ano_origem
+        AND mes = v_mes_origem;
+    
+    GET DIAGNOSTICS v_count = ROW_COUNT;
+    
+    RETURN JSON_BUILD_OBJECT(
+        'success', TRUE, 
+        'message', FORMAT('Copiados %s itens', v_count),
+        'itens_copiados', v_count
+    );
+END;
+$function$
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| salvar_planejamento                      | CREATE OR REPLACE FUNCTION public.salvar_planejamento(p_mes_ano character varying, p_categoria_id uuid, p_valor_planejado numeric, p_subcategoria_id uuid DEFAULT NULL::uuid)
+ RETURNS json
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+DECLARE
+    v_usuario_id UUID;
+    v_planejamento_id UUID;
+    v_resultado JSON;
+BEGIN
+    -- Validar autenticação
+    v_usuario_id := auth.uid();
+    IF v_usuario_id IS NULL THEN
+        RAISE EXCEPTION 'Usuário não autenticado';
+    END IF;
+    
+    -- Validações de entrada
+    IF p_mes_ano IS NULL OR p_mes_ano !~ '^\d{4}-\d{2}$' THEN
+        RAISE EXCEPTION 'Formato de mês inválido. Use YYYY-MM';
+    END IF;
+    
+    IF p_categoria_id IS NULL THEN
+        RAISE EXCEPTION 'Categoria é obrigatória';
+    END IF;
+    
+    IF p_valor_planejado < 0 THEN
+        RAISE EXCEPTION 'Valor planejado deve ser positivo';
+    END IF;
+    
+    -- Verificar se categoria existe e pertence ao usuário
+    IF NOT EXISTS (
+        SELECT 1 FROM public.categorias c 
+        WHERE c.id = p_categoria_id AND c.usuario_id = v_usuario_id
+    ) THEN
+        RAISE EXCEPTION 'Categoria não encontrada';
+    END IF;
+    
+    -- Verificar subcategoria se informada
+    IF p_subcategoria_id IS NOT NULL AND NOT EXISTS (
+        SELECT 1 FROM public.subcategorias s 
+        WHERE s.id = p_subcategoria_id 
+          AND s.categoria_id = p_categoria_id
+          AND s.usuario_id = v_usuario_id
+    ) THEN
+        RAISE EXCEPTION 'Subcategoria não encontrada';
+    END IF;
+    
+    -- Inserir ou atualizar planejamento
+    INSERT INTO public.planejamento_mensal (
+        usuario_id, mes_ano, categoria_id, subcategoria_id, valor_planejado
+    ) VALUES (
+        v_usuario_id, p_mes_ano, p_categoria_id, p_subcategoria_id, p_valor_planejado
+    )
+    ON CONFLICT (usuario_id, mes_ano, categoria_id, subcategoria_id)
+    DO UPDATE SET 
+        valor_planejado = EXCLUDED.valor_planejado,
+        updated_at = NOW()
+    RETURNING id INTO v_planejamento_id;
+    
+    -- Retornar resultado
+    v_resultado := json_build_object(
+        'success', true,
+        'message', 'Planejamento salvo com sucesso',
+        'planejamento_id', v_planejamento_id
+    );
+    
+    -- Log de auditoria (se função existir)
+    BEGIN
+        PERFORM public.registrar_auditoria(
+            'salvar_planejamento',
+            'SUCCESS',
+            json_build_object(
+                'mes_ano', p_mes_ano,
+                'categoria_id', p_categoria_id,
+                'subcategoria_id', p_subcategoria_id,
+                'valor_planejado', p_valor_planejado
+            )
+        );
+    EXCEPTION WHEN OTHERS THEN
+        -- Ignora erro de auditoria se função não existir
+        NULL;
+    END;
+    
+    RETURN v_resultado;
+    
+EXCEPTION
+    WHEN OTHERS THEN
+        -- Log de erro (se função existir)
+        BEGIN
+            PERFORM public.registrar_auditoria(
+                'salvar_planejamento',
+                'ERROR',
+                json_build_object('error', SQLERRM)
+            );
+        EXCEPTION WHEN OTHERS THEN
+            NULL;
+        END;
+        
+        RETURN json_build_object(
+            'success', false,
+            'error', SQLERRM
+        );
+END;
+$function$
+ |
+| planejamento_mensal_ipoupei_2025         | CREATE OR REPLACE FUNCTION public.planejamento_mensal_ipoupei_2025(p_mes_ano text)
+ RETURNS TABLE(categoria_id bigint, subcategoria_id bigint, categoria_nome text, subcategoria_nome text, valor_planejado numeric, valor_executado numeric, tipo_categoria text, classificacao_regra text)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+DECLARE
+    v_usuario_id UUID;
+    v_ano INTEGER;
+    v_mes INTEGER;
+    v_data_inicio DATE;
+    v_data_fim DATE;
+BEGIN
+    v_usuario_id := auth.uid();
+    IF v_usuario_id IS NULL THEN
+        RAISE EXCEPTION 'Usuário não autenticado';
+    END IF;
+
+    v_ano := CAST(SPLIT_PART(p_mes_ano, '-', 1) AS INTEGER);
+    v_mes := CAST(SPLIT_PART(p_mes_ano, '-', 2) AS INTEGER);
+    v_data_inicio := MAKE_DATE(v_ano, v_mes, 1);
+    v_data_fim := (v_data_inicio + INTERVAL '1 month' - INTERVAL '1 day')::DATE;
+
+    RETURN QUERY
+    WITH transacoes_mes AS (
+        SELECT 
+            t.categoria_id,
+            t.subcategoria_id,
+            SUM(t.valor) as valor_executado_periodo
+        FROM public.transacoes t
+        WHERE t.usuario_id = v_usuario_id
+            AND t.data BETWEEN v_data_inicio AND v_data_fim
+            AND t.efetivado = true
+        GROUP BY t.categoria_id, t.subcategoria_id
+    )
+    SELECT 
+        COALESCE(p.categoria_id, tm.categoria_id) as categoria_id,
+        COALESCE(p.subcategoria_id, tm.subcategoria_id) as subcategoria_id,
+        c.nome as categoria_nome,
+        sc.nome as subcategoria_nome,
+        COALESCE(p.valor_planejado, 0::NUMERIC(10,2)) as valor_planejado,
+        COALESCE(tm.valor_executado_periodo, 0::NUMERIC(10,2)) as valor_executado,
+        c.tipo as tipo_categoria,
+        COALESCE(c.classificacao_regra, 'outros') as classificacao_regra
+    FROM public.planejamento_mensal p
+    FULL OUTER JOIN transacoes_mes tm 
+        ON p.categoria_id = tm.categoria_id 
+        AND (p.subcategoria_id = tm.subcategoria_id OR (p.subcategoria_id IS NULL AND tm.subcategoria_id IS NULL))
+    INNER JOIN public.categorias c ON c.id = COALESCE(p.categoria_id, tm.categoria_id)
+    LEFT JOIN public.subcategorias sc ON sc.id = COALESCE(p.subcategoria_id, tm.subcategoria_id)
+    WHERE c.usuario_id = v_usuario_id
+        AND (p.mes_ano = p_mes_ano OR p.mes_ano IS NULL)
+    ORDER BY c.tipo DESC, c.nome, sc.nome NULLS FIRST;
+END;
+$function$
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               

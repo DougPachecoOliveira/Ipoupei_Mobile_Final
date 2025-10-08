@@ -1,0 +1,1009 @@
+Analyzing ipoupei_mobile...                                     
+
+warning - Unused import: 'package:sqflite/sqflite.dart' - lib\fix_database_categorias.dart:4:8 - unused_import
+   info - Don't invoke 'print' in production code - lib\fix_database_categorias.dart:8:3 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fix_database_categorias.dart:12:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fix_database_categorias.dart:98:11 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fix_database_categorias.dart:114:11 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fix_database_categorias.dart:118:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fix_database_categorias.dart:123:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fix_database_categorias.dart:124:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fix_database_categorias.dart:125:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fix_database_categorias.dart:126:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fix_database_categorias.dart:127:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fix_database_categorias.dart:128:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fix_database_categorias.dart:131:5 - avoid_print
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\auth\pages\login_ipoupei_page.dart:297:22 - use_build_context_synchronously
+   info - Constructors for public widgets should have a named 'key' parameter - lib\src\modules\cartoes\examples\cartao_feedback_example.dart:8:7 - use_key_in_widget_constructors
+   info - Invalid use of a private type in a public API - lib\src\modules\cartoes\examples\cartao_feedback_example.dart:10:3 - library_private_types_in_public_api
+warning - The declaration '_parseBool' isn't referenced - lib\src\modules\cartoes\models\fatura_model.dart:43:15 - unused_element
+warning - The receiver can't be null, so the null-aware operator '?.' is unnecessary - lib\src\modules\cartoes\pages\cartao_form_page.dart:207:59 - invalid_null_aware_operator
+warning - The receiver can't be null, so the null-aware operator '?.' is unnecessary - lib\src\modules\cartoes\pages\cartao_form_page.dart:208:59 - invalid_null_aware_operator
+warning - The left operand can't be null, so the right operand is never executed - lib\src\modules\cartoes\pages\cartao_form_page.dart:256:91 - dead_null_aware_expression
+warning - The left operand can't be null, so the right operand is never executed - lib\src\modules\cartoes\pages\cartao_form_page.dart:257:91 - dead_null_aware_expression
+   info - Don't invoke 'print' in production code - lib\src\modules\cartoes\pages\cartao_form_page.dart:265:7 - avoid_print
+warning - The declaration '_buildBandeiraDropdown' isn't referenced - lib\src\modules\cartoes\pages\cartao_form_page.dart:753:10 - unused_element
+   info - Unnecessary use of 'toList' in a spread - lib\src\modules\cartoes\pages\cartao_form_page.dart:927:16 - unnecessary_to_list_in_spreads
+warning - The receiver can't be 'null' because of short-circuiting, so the null-aware operator '?.' can't be used - lib\src\modules\cartoes\pages\cartao_form_page.dart:976:40 - invalid_null_aware_operator
+warning - The receiver can't be 'null' because of short-circuiting, so the null-aware operator '?.' can't be used - lib\src\modules\cartoes\pages\cartao_form_page.dart:980:40 - invalid_null_aware_operator
+   info - Unnecessary use of 'toList' in a spread - lib\src\modules\cartoes\pages\cartao_form_page.dart:1239:14 - unnecessary_to_list_in_spreads
+   info - Unnecessary use of 'toList' in a spread - lib\src\modules\cartoes\pages\cartao_form_page.dart:1345:24 - unnecessary_to_list_in_spreads
+   info - Unnecessary use of 'toList' in a spread - lib\src\modules\cartoes\pages\cartao_form_page.dart:1453:24 - unnecessary_to_list_in_spreads
+warning - The value of the local variable 'nomeColor' isn't used - lib\src\modules\cartoes\pages\cartao_form_page.dart:1590:35 - unused_local_variable
+warning - Unused import: '../widgets/fatura_selector.dart' - lib\src\modules\cartoes\pages\cartoes_consolidado_page.dart:9:8 - unused_import
+warning - Unused import: '../../../shared/components/ui/app_button.dart' - lib\src\modules\cartoes\pages\cartoes_consolidado_page.dart:22:8 - unused_import
+   info - The private field _touchedIndex could be 'final' - lib\src\modules\cartoes\pages\cartoes_consolidado_page.dart:59:7 - prefer_final_fields
+warning - The declaration '_buildPieChartSections' isn't referenced - lib\src\modules\cartoes\pages\cartoes_consolidado_page.dart:235:29 - unused_element
+warning - The declaration '_navegarParaTransacoesComFiltroCategoria' isn't referenced - lib\src\modules\cartoes\pages\cartoes_consolidado_page.dart:272:16 - unused_element
+warning - The declaration '_buildHeaderComSeletor' isn't referenced - lib\src\modules\cartoes\pages\cartoes_consolidado_page.dart:309:10 - unused_element
+warning - The declaration '_buildResumoItem' isn't referenced - lib\src\modules\cartoes\pages\cartoes_consolidado_page.dart:553:10 - unused_element
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\cartoes\pages\cartoes_consolidado_page.dart:1259:21 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\cartoes\pages\cartoes_consolidado_page.dart:1262:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\cartoes\pages\cartoes_consolidado_page.dart:1273:9 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\cartoes\pages\cartoes_consolidado_page.dart:1288:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\cartoes\pages\cartoes_consolidado_page.dart:1289:23 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\cartoes\pages\cartoes_consolidado_page.dart:1293:28 - use_build_context_synchronously
+warning - The declaration '_mostrarModalPagamento' isn't referenced - lib\src\modules\cartoes\pages\cartoes_consolidado_page.dart:1302:16 - unused_element
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\cartoes\pages\cartoes_consolidado_page.dart:1386:21 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\cartoes\pages\cartoes_consolidado_page.dart:1392:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\cartoes\pages\cartoes_consolidado_page.dart:1406:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\cartoes\pages\cartoes_consolidado_page.dart:1422:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\cartoes\pages\cartoes_consolidado_page.dart:1423:23 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\cartoes\pages\cartoes_consolidado_page.dart:1426:28 - use_build_context_synchronously
+warning - The declaration '_navegarParaRelatorios' isn't referenced - lib\src\modules\cartoes\pages\cartoes_consolidado_page.dart:1582:8 - unused_element
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\cartoes\pages\cartoes_consolidado_page.dart:1635:28 - use_build_context_synchronously
+   info - Uses 'await' on an instance of 'Database?', which is not a subtype of 'Future' - lib\src\modules\cartoes\pages\cartoes_consolidado_page.dart:1777:18 - await_only_futures
+   info - Unnecessary braces in a string interpolation - lib\src\modules\cartoes\pages\cartoes_consolidado_page.dart:1783:26 - unnecessary_brace_in_string_interps
+   info - Unnecessary braces in a string interpolation - lib\src\modules\cartoes\pages\cartoes_consolidado_page.dart:1784:23 - unnecessary_brace_in_string_interps
+   info - Uses 'await' on an instance of 'Database?', which is not a subtype of 'Future' - lib\src\modules\cartoes\pages\cartoes_consolidado_page.dart:1811:18 - await_only_futures
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\cartoes\pages\cartoes_consolidado_page.dart:1862:30 - use_build_context_synchronously
+   info - Parameter 'key' could be a super parameter - lib\src\modules\cartoes\pages\cartoes_modal_page.dart:63:9 - use_super_parameters
+   info - The private field _alteracoesDetectadas could be 'final' - lib\src\modules\cartoes\pages\cartoes_modal_page.dart:91:24 - prefer_final_fields
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\src\modules\cartoes\pages\cartoes_modal_page.dart:643:45 - deprecated_member_use
+warning - The declaration '_buildAlteracoesDetectadas' isn't referenced - lib\src\modules\cartoes\pages\cartoes_modal_page.dart:889:10 - unused_element
+warning - The operand can't be 'null', so the condition is always 'true' - lib\src\modules\cartoes\pages\cartoes_modal_page.dart:985:30 - unnecessary_null_comparison
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\cartoes\pages\cartoes_modal_page.dart:989:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\cartoes\pages\cartoes_modal_page.dart:997:23 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\cartoes\pages\cartoes_modal_page.dart:1002:28 - use_build_context_synchronously
+warning - The declaration '_confirmarExclusao' isn't referenced - lib\src\modules\cartoes\pages\cartoes_modal_page.dart:1013:8 - unused_element
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\cartoes\pages\cartoes_modal_page.dart:1049:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\cartoes\pages\cartoes_modal_page.dart:1055:23 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\cartoes\pages\cartoes_modal_page.dart:1060:28 - use_build_context_synchronously
+warning - Unused import: '../../../shared/components/ui/app_button.dart' - lib\src\modules\cartoes\pages\despesa_cartao_page.dart:5:8 - unused_import
+   info - Parameter 'key' could be a super parameter - lib\src\modules\cartoes\pages\despesa_cartao_page.dart:59:9 - use_super_parameters
+warning - The value of the field '_faturaManualmenteSelecionada' isn't used - lib\src\modules\cartoes\pages\despesa_cartao_page.dart:105:8 - unused_field
+warning - The operand can't be 'null', so the condition is always 'false' - lib\src\modules\cartoes\pages\despesa_cartao_page.dart:296:24 - unnecessary_null_comparison
+warning - The operand can't be 'null', so the condition is always 'true' - lib\src\modules\cartoes\pages\despesa_cartao_page.dart:339:54 - unnecessary_null_comparison
+warning - The operand can't be 'null', so the condition is always 'true' - lib\src\modules\cartoes\pages\despesa_cartao_page.dart:716:67 - unnecessary_null_comparison
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\cartoes\pages\despesa_cartao_page.dart:716:102 - unnecessary_non_null_assertion
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\cartoes\pages\despesa_cartao_page.dart:717:83 - unnecessary_non_null_assertion
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\cartoes\pages\despesa_cartao_page.dart:727:77 - unnecessary_non_null_assertion
+warning - The operand can't be 'null', so the condition is always 'true' - lib\src\modules\cartoes\pages\despesa_cartao_page.dart:750:67 - unnecessary_null_comparison
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\cartoes\pages\despesa_cartao_page.dart:750:102 - unnecessary_non_null_assertion
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\cartoes\pages\despesa_cartao_page.dart:751:83 - unnecessary_non_null_assertion
+warning - The operand can't be 'null', so the condition is always 'true' - lib\src\modules\cartoes\pages\despesa_cartao_page.dart:1337:48 - unnecessary_null_comparison
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\cartoes\pages\despesa_cartao_page.dart:1337:72 - unnecessary_non_null_assertion
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\cartoes\pages\despesa_cartao_page.dart:1338:62 - unnecessary_non_null_assertion
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\cartoes\pages\despesa_cartao_page.dart:1448:94 - unnecessary_non_null_assertion
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\cartoes\pages\despesa_cartao_page.dart:1449:73 - unnecessary_non_null_assertion
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\cartoes\pages\despesa_cartao_page.dart:2056:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\cartoes\pages\despesa_cartao_page.dart:2063:23 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\cartoes\pages\despesa_cartao_page.dart:2068:28 - use_build_context_synchronously
+   info - Unnecessary braces in a string interpolation - lib\src\modules\cartoes\pages\despesa_cartao_page.dart:2271:20 - unnecessary_brace_in_string_interps
+   info - Unnecessary braces in a string interpolation - lib\src\modules\cartoes\pages\despesa_cartao_page.dart:2327:20 - unnecessary_brace_in_string_interps
+warning - Unused import: '../models/fatura_model.dart' - lib\src\modules\cartoes\pages\fatura_detalhada_page.dart:19:8 - unused_import
+warning - The value of the field '_faturaOperations' isn't used - lib\src\modules\cartoes\pages\fatura_detalhada_page.dart:45:33 - unused_field
+warning - The value of the field '_statusFatura' isn't used - lib\src\modules\cartoes\pages\fatura_detalhada_page.dart:55:24 - unused_field
+   info - The private field _faturasDisponiveis could be 'final' - lib\src\modules\cartoes\pages\fatura_detalhada_page.dart:61:16 - prefer_final_fields
+warning - The value of the field '_faturasDisponiveis' isn't used - lib\src\modules\cartoes\pages\fatura_detalhada_page.dart:61:16 - unused_field
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\cartoes\pages\fatura_detalhada_page.dart:234:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\cartoes\pages\fatura_detalhada_page.dart:245:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\cartoes\pages\fatura_detalhada_page.dart:296:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\cartoes\pages\fatura_detalhada_page.dart:307:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\cartoes\pages\fatura_detalhada_page.dart:404:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\cartoes\pages\fatura_detalhada_page.dart:415:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\cartoes\pages\fatura_detalhada_page.dart:455:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\cartoes\pages\fatura_detalhada_page.dart:466:28 - use_build_context_synchronously
+  error - A value of type 'List<TransacaoModel>' can't be assigned to a variable of type 'List<Map<String, dynamic>>' - lib\src\modules\cartoes\pages\fatura_detalhada_page.dart:742:54 - invalid_assignment
+  error - A value of type 'List<TransacaoModel>' can't be assigned to a variable of type 'List<Map<String, dynamic>>' - lib\src\modules\cartoes\pages\fatura_detalhada_page.dart:744:29 - invalid_assignment
+  error - The operator '[]' isn't defined for the type 'TransacaoModel' - lib\src\modules\cartoes\pages\fatura_detalhada_page.dart:745:27 - undefined_operator
+  error - The element type 'PopupMenuItem<Object>' can't be assigned to the list type 'PopupMenuEntry<String>' - lib\src\modules\cartoes\pages\fatura_detalhada_page.dart:941:20 - list_element_type_not_assignable
+   info - Unnecessary use of 'toList' in a spread - lib\src\modules\cartoes\pages\fatura_detalhada_page.dart:951:24 - unnecessary_to_list_in_spreads
+   info - The 'child' argument should be last in widget constructor invocations - lib\src\modules\cartoes\pages\fatura_detalhada_page.dart:953:15 - sort_child_properties_last
+warning - Unused import: '../models/fatura_model.dart' - lib\src\modules\cartoes\pages\faturas_list_page.dart:9:8 - unused_import
+   info - Parameter 'key' could be a super parameter - lib\src\modules\cartoes\pages\faturas_list_page.dart:17:9 - use_super_parameters
+   info - The private field _faturasPorMes could be 'final' - lib\src\modules\cartoes\pages\faturas_list_page.dart:31:34 - prefer_final_fields
+warning - The value of the field '_diasParaVencimento' isn't used - lib\src\modules\cartoes\pages\gestao_cartoes_mobile.dart:47:7 - unused_field
+warning - The value of the field '_cartaoService' isn't used - lib\src\modules\cartoes\pages\gestao_cartoes_mobile.dart:55:23 - unused_field
+warning - The value of the field '_faturaService' isn't used - lib\src\modules\cartoes\pages\gestao_cartoes_mobile.dart:56:23 - unused_field
+warning - The value of the field '_transacaoService' isn't used - lib\src\modules\cartoes\pages\gestao_cartoes_mobile.dart:57:26 - unused_field
+warning - The value of the field '_faturaDetectionService' isn't used - lib\src\modules\cartoes\pages\gestao_cartoes_mobile.dart:59:32 - unused_field
+warning - The value of the field '_pagamentoService' isn't used - lib\src\modules\cartoes\pages\gestao_cartoes_mobile.dart:60:32 - unused_field
+warning - The left operand can't be null, so the right operand is never executed - lib\src\modules\cartoes\pages\gestao_cartoes_mobile.dart:115:46 - dead_null_aware_expression
+warning - The left operand can't be null, so the right operand is never executed - lib\src\modules\cartoes\pages\gestao_cartoes_mobile.dart:170:62 - dead_null_aware_expression
+warning - The left operand can't be null, so the right operand is never executed - lib\src\modules\cartoes\pages\gestao_cartoes_mobile.dart:187:44 - dead_null_aware_expression
+warning - The left operand can't be null, so the right operand is never executed - lib\src\modules\cartoes\pages\gestao_cartoes_mobile.dart:198:93 - dead_null_aware_expression
+warning - The left operand can't be null, so the right operand is never executed - lib\src\modules\cartoes\pages\gestao_cartoes_mobile.dart:270:123 - dead_null_aware_expression
+warning - The declaration '_obterFaturaExibicao' isn't referenced - lib\src\modules\cartoes\pages\gestao_cartoes_mobile.dart:734:16 - unused_element
+warning - The declaration '_temFaturaParaPagar' isn't referenced - lib\src\modules\cartoes\pages\gestao_cartoes_mobile.dart:766:8 - unused_element
+warning - The declaration '_temFaturaParaReabrir' isn't referenced - lib\src\modules\cartoes\pages\gestao_cartoes_mobile.dart:802:8 - unused_element
+warning - The left operand can't be null, so the right operand is never executed - lib\src\modules\cartoes\pages\gestao_cartoes_mobile.dart:879:44 - dead_null_aware_expression
+warning - The value of the local variable 'disponivel' isn't used - lib\src\modules\cartoes\pages\gestao_cartoes_mobile.dart:880:11 - unused_local_variable
+warning - The left operand can't be null, so the right operand is never executed - lib\src\modules\cartoes\pages\gestao_cartoes_mobile.dart:1019:44 - dead_null_aware_expression
+   info - 'swapAnimationDuration' is deprecated and shouldn't be used. Please use [duration] instead - lib\src\modules\cartoes\pages\gestao_cartoes_mobile.dart:1430:23 - deprecated_member_use
+   info - 'swapAnimationCurve' is deprecated and shouldn't be used. Please use [curve] instead - lib\src\modules\cartoes\pages\gestao_cartoes_mobile.dart:1431:23 - deprecated_member_use
+   info - Unnecessary use of 'toList' in a spread - lib\src\modules\cartoes\pages\gestao_cartoes_mobile.dart:1487:26 - unnecessary_to_list_in_spreads
+   info - 'swapAnimationDuration' is deprecated and shouldn't be used. Please use [duration] instead - lib\src\modules\cartoes\pages\gestao_cartoes_mobile.dart:1578:17 - deprecated_member_use
+   info - 'swapAnimationCurve' is deprecated and shouldn't be used. Please use [curve] instead - lib\src\modules\cartoes\pages\gestao_cartoes_mobile.dart:1579:17 - deprecated_member_use
+   info - Unnecessary braces in a string interpolation - lib\src\modules\cartoes\pages\gestao_cartoes_mobile.dart:1731:60 - unnecessary_brace_in_string_interps
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\cartoes\pages\gestao_cartoes_mobile.dart:1910:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\cartoes\pages\gestao_cartoes_mobile.dart:1940:9 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\cartoes\pages\gestao_cartoes_mobile.dart:1954:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\cartoes\pages\gestao_cartoes_mobile.dart:1981:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\cartoes\pages\gestao_cartoes_mobile.dart:2091:9 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\cartoes\pages\gestao_cartoes_mobile.dart:2107:21 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\cartoes\pages\gestao_cartoes_mobile.dart:2111:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\cartoes\pages\gestao_cartoes_mobile.dart:2163:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\cartoes\pages\gestao_cartoes_mobile.dart:2164:23 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\cartoes\pages\gestao_cartoes_mobile.dart:2174:30 - use_build_context_synchronously
+warning - Unused import: '../../../shared/components/ui/smart_currency_input.dart' - lib\src\modules\cartoes\pages\pagamento_fatura_page.dart:21:8 - unused_import
+warning - The declaration '_getCorTipo' isn't referenced - lib\src\modules\cartoes\pages\pagamento_fatura_page.dart:678:9 - unused_element
+  error - Unterminated multi-line comment - lib\src\modules\cartoes\pages\pagar_fatura_page.dart:929:4 - unterminated_multi_line_comment
+warning - Unused import: 'package:supabase_flutter/supabase_flutter.dart' - lib\src\modules\cartoes\services\cartao_analysis_service.dart:2:8 - unused_import
+warning - Unused import: '../../../sync/sync_manager.dart' - lib\src\modules\cartoes\services\cartao_data_service.dart:10:8 - unused_import
+   info - Unnecessary braces in a string interpolation - lib\src\modules\cartoes\services\cartao_data_service.dart:103:27 - unnecessary_brace_in_string_interps
+   info - Use 'isNotEmpty' instead of 'length' to test whether the collection is empty - lib\src\modules\cartoes\services\cartao_data_service.dart:158:11 - prefer_is_empty
+warning - The value of the local variable 'gastoAtual' isn't used - lib\src\modules\cartoes\services\cartao_data_service.dart:194:15 - unused_local_variable
+warning - The value of the local variable 'proximaFatura' isn't used - lib\src\modules\cartoes\services\cartao_data_service.dart:200:15 - unused_local_variable
+warning - The value of the local variable 'transacoes' isn't used - lib\src\modules\cartoes\services\cartao_data_service.dart:1289:13 - unused_local_variable
+   info - Use interpolation to compose strings and values - lib\src\modules\cartoes\services\cartao_data_service.dart:1458:42 - prefer_interpolation_to_compose_strings
+warning - The declaration '_calcularDataRecorrencia' isn't referenced - lib\src\modules\cartoes\services\cartao_data_service.dart:1708:10 - unused_element
+   info - Use 'isNotEmpty' instead of 'length' to test whether the collection is empty - lib\src\modules\cartoes\services\cartao_data_service.dart:1785:11 - prefer_is_empty
+warning - The value of the local variable 'mesAtual' isn't used - lib\src\modules\cartoes\services\cartao_data_service.dart:1791:13 - unused_local_variable
+   info - Unnecessary braces in a string interpolation - lib\src\modules\cartoes\services\cartao_service.dart:716:29 - unnecessary_brace_in_string_interps
+   info - Unnecessary braces in a string interpolation - lib\src\modules\cartoes\services\cartao_service.dart:731:26 - unnecessary_brace_in_string_interps
+warning - The declaration '_buscarTransacoesPendentesCartao' isn't referenced - lib\src\modules\cartoes\services\fatura_detection_service.dart:155:38 - unused_element
+warning - The declaration '_buscarTransacoesPendentesCartaoMes' isn't referenced - lib\src\modules\cartoes\services\fatura_detection_service.dart:201:38 - unused_element
+warning - The declaration '_encontrarFaturaAtual' isn't referenced - lib\src\modules\cartoes\services\fatura_detection_service.dart:265:25 - unused_element
+warning - The declaration '_diasAteVencimento' isn't referenced - lib\src\modules\cartoes\services\fatura_detection_service.dart:311:7 - unused_element
+warning - The declaration '_calcularFaturaVencimentoAlvo' isn't referenced - lib\src\modules\cartoes\services\fatura_detection_service.dart:339:10 - unused_element
+warning - The left operand can't be null, so the right operand is never executed - lib\src\modules\cartoes\services\fatura_detection_service.dart:341:53 - dead_null_aware_expression
+warning - The left operand can't be null, so the right operand is never executed - lib\src\modules\cartoes\services\fatura_detection_service.dart:342:53 - dead_null_aware_expression
+warning - The left operand can't be null, so the right operand is never executed - lib\src\modules\cartoes\services\fatura_detection_service.dart:373:106 - dead_null_aware_expression
+warning - The left operand can't be null, so the right operand is never executed - lib\src\modules\cartoes\services\fatura_detection_service.dart:382:53 - dead_null_aware_expression
+   info - Unnecessary assignment of 'null' - lib\src\modules\cartoes\services\fatura_detection_service.dart:537:9 - unnecessary_null_aware_assignments
+warning - The value of the local variable 'dataFormatada' isn't used - lib\src\modules\cartoes\services\fatura_operations_service.dart:668:13 - unused_local_variable
+warning - The value of the local variable 'mesAnoOriginal' isn't used - lib\src\modules\cartoes\services\fatura_operations_service.dart:813:13 - unused_local_variable
+   info - Use 'rethrow' to rethrow a caught exception - lib\src\modules\cartoes\services\fatura_operations_service.dart:994:9 - use_rethrow_when_possible
+   info - Use 'rethrow' to rethrow a caught exception - lib\src\modules\cartoes\services\fatura_operations_service.dart:1044:13 - use_rethrow_when_possible
+   info - Use 'rethrow' to rethrow a caught exception - lib\src\modules\cartoes\services\fatura_operations_service.dart:1049:9 - use_rethrow_when_possible
+warning - The declaration '_validarOperacao' isn't referenced - lib\src\modules\cartoes\services\fatura_operations_service.dart:1261:8 - unused_element
+warning - Unused import: '../models/fatura_model.dart' - lib\src\modules\cartoes\services\pagamento_fatura_service.dart:10:8 - unused_import
+warning - The value of the local variable 'result' isn't used - lib\src\modules\cartoes\services\pagamento_fatura_service.dart:43:13 - unused_local_variable
+   info - Parameter 'key' could be a super parameter - lib\src\modules\cartoes\widgets\cartao_card.dart:21:9 - use_super_parameters
+warning - The operand can't be 'null', so the condition is always 'false' - lib\src\modules\cartoes\widgets\cartao_card.dart:49:49 - unnecessary_null_comparison
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\cartoes\widgets\cartao_card.dart:49:73 - unnecessary_non_null_assertion
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\cartoes\widgets\cartao_card.dart:52:44 - unnecessary_non_null_assertion
+warning - The declaration '_valorDisponivel' isn't referenced - lib\src\modules\cartoes\widgets\cartao_card.dart:55:14 - unused_element
+warning - The operand can't be 'null', so the condition is always 'false' - lib\src\modules\cartoes\widgets\cartao_card.dart:56:49 - unnecessary_null_comparison
+warning - The left operand can't be null, so the right operand is never executed - lib\src\modules\cartoes\widgets\cartao_card.dart:57:31 - dead_null_aware_expression
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\cartoes\widgets\cartao_card.dart:59:25 - unnecessary_non_null_assertion
+warning - The declaration '_corUtilizacao' isn't referenced - lib\src\modules\cartoes\widgets\cartao_card.dart:62:13 - unused_element
+warning - The value of the local variable 'utilizacao' isn't used - lib\src\modules\cartoes\widgets\cartao_card.dart:72:11 - unused_local_variable
+warning - The left operand can't be null, so the right operand is never executed - lib\src\modules\cartoes\widgets\cartao_card.dart:197:59 - dead_null_aware_expression
+   info - Don't invoke 'print' in production code - lib\src\modules\cartoes\widgets\cartao_card.dart:327:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\cartoes\widgets\cartao_card.dart:330:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\cartoes\widgets\cartao_card.dart:334:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\cartoes\widgets\cartao_card.dart:335:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\cartoes\widgets\cartao_card.dart:336:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\cartoes\widgets\cartao_card.dart:337:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\cartoes\widgets\cartao_card.dart:338:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\cartoes\widgets\cartao_card.dart:339:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\cartoes\widgets\cartao_card.dart:340:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\cartoes\widgets\cartao_card.dart:341:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\cartoes\widgets\cartao_card.dart:345:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\cartoes\widgets\cartao_card.dart:351:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\cartoes\widgets\cartao_card.dart:359:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\cartoes\widgets\cartao_card.dart:367:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\cartoes\widgets\cartao_card.dart:373:5 - avoid_print
+warning - The operand can't be 'null', so the condition is always 'true' - lib\src\modules\cartoes\widgets\cartao_card.dart:480:37 - unnecessary_null_comparison
+warning - The operand can't be 'null', so the condition is always 'true' - lib\src\modules\cartoes\widgets\cartao_card.dart:481:37 - unnecessary_null_comparison
+warning - The left operand can't be null, so the right operand is never executed - lib\src\modules\cartoes\widgets\cartao_card.dart:504:27 - dead_null_aware_expression
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\cartoes\widgets\cartao_card.dart:505:50 - unnecessary_non_null_assertion
+   info - Unnecessary braces in a string interpolation - lib\src\modules\cartoes\widgets\cartao_card.dart:588:26 - unnecessary_brace_in_string_interps
+warning - Unused import: '../../transacoes/components/smart_field.dart' - lib\src\modules\cartoes\widgets\cartao_form_modal.dart:7:8 - unused_import
+   info - Parameter 'key' could be a super parameter - lib\src\modules\cartoes\widgets\cartao_form_modal.dart:50:9 - use_super_parameters
+warning - The value of the field '_bancoSelecionado' isn't used - lib\src\modules\cartoes\widgets\cartao_form_modal.dart:83:11 - unused_field
+warning - The receiver can't be 'null' because of short-circuiting, so the null-aware operator '?.' can't be used - lib\src\modules\cartoes\widgets\cartao_form_modal.dart:121:34 - invalid_null_aware_operator
+warning - The receiver can't be 'null' because of short-circuiting, so the null-aware operator '?.' can't be used - lib\src\modules\cartoes\widgets\cartao_form_modal.dart:124:34 - invalid_null_aware_operator
+   info - Parameter 'key' could be a super parameter - lib\src\modules\cartoes\widgets\confirmacao_modal.dart:11:9 - use_super_parameters
+warning - Unused import: '../../shared/utils/currency_formatter.dart' - lib\src\modules\cartoes\widgets\fatura_selector.dart:3:8 - unused_import
+   info - Parameter 'key' could be a super parameter - lib\src\modules\cartoes\widgets\modal_confirmacao_parcelamento.dart:11:9 - use_super_parameters
+   info - Parameter 'key' could be a super parameter - lib\src\modules\cartoes\widgets\modal_estorno_fatura.dart:13:9 - use_super_parameters
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\cartoes\widgets\modal_estorno_fatura.dart:262:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\cartoes\widgets\modal_estorno_fatura.dart:271:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\cartoes\widgets\modal_estorno_fatura.dart:279:28 - use_build_context_synchronously
+   info - Parameter 'key' could be a super parameter - lib\src\modules\cartoes\widgets\modal_pagamento_fatura.dart:13:9 - use_super_parameters
+  error - The named parameter 'valorPago' isn't defined - lib\src\modules\cartoes\widgets\modal_pagamento_fatura.dart:237:9 - undefined_named_parameter
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\cartoes\widgets\modal_pagamento_fatura.dart:242:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\cartoes\widgets\modal_pagamento_fatura.dart:251:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\cartoes\widgets\modal_pagamento_fatura.dart:259:28 - use_build_context_synchronously
+   info - Parameter 'key' could be a super parameter - lib\src\modules\cartoes\widgets\modal_reabrir_fatura.dart:13:9 - use_super_parameters
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\cartoes\widgets\modal_reabrir_fatura.dart:157:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\cartoes\widgets\modal_reabrir_fatura.dart:166:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\cartoes\widgets\modal_reabrir_fatura.dart:174:28 - use_build_context_synchronously
+warning - Unused import: '../models/fatura_model.dart' - lib\src\modules\cartoes\widgets\payment_preview_widget.dart:5:8 - unused_import
+   info - Parameter 'key' could be a super parameter - lib\src\modules\cartoes\widgets\visualizacao_consolidada_widget.dart:13:9 - use_super_parameters
+   info - Parameter 'key' could be a super parameter - lib\src\modules\cartoes\widgets\visualizacao_detalhada_widget.dart:22:9 - use_super_parameters
+warning - The left operand can't be null, so the right operand is never executed - lib\src\modules\categorias\components\criar_categoria_modal.dart:106:42 - dead_null_aware_expression
+warning - Unnecessary type check; the result is always 'true' - lib\src\modules\categorias\components\criar_categoria_modal.dart:573:11 - unnecessary_type_check
+warning - The value of the field '_tipoIconeSelecionado' isn't used - lib\src\modules\categorias\components\escolher_icone_modal.dart:31:10 - unused_field
+warning - The declaration '_getIcons' isn't referenced - lib\src\modules\categorias\components\escolher_icone_modal.dart:72:17 - unused_element
+   info - Unnecessary braces in a string interpolation - lib\src\modules\categorias\components\escolher_icone_modal.dart:462:31 - unnecessary_brace_in_string_interps
+   info - Unnecessary braces in a string interpolation - lib\src\modules\categorias\components\escolher_icone_modal.dart:494:31 - unnecessary_brace_in_string_interps
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\categorias\components\excluir_categoria_modal.dart:53:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\categorias\components\excluir_categoria_modal.dart:91:23 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\categorias\components\excluir_categoria_modal.dart:96:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\categorias\components\excluir_categoria_modal.dart:101:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\categorias\components\excluir_categoria_modal.dart:131:23 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\categorias\components\excluir_categoria_modal.dart:149:25 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\categorias\components\excluir_categoria_modal.dart:155:32 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\categorias\components\excluir_categoria_modal.dart:160:30 - use_build_context_synchronously
+warning - Unused import: '../../shared/utils/currency_formatter.dart' - lib\src\modules\categorias\components\migrar_categoria_modal.dart:14:8 - unused_import
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\categorias\components\migrar_categoria_modal.dart:70:23 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\categorias\components\migrar_categoria_modal.dart:78:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\categorias\components\migrar_categoria_modal.dart:83:28 - use_build_context_synchronously
+   info - The private field _resultados could be 'final' - lib\src\modules\categorias\examples\subcategorias_cache_test.dart:26:16 - prefer_final_fields
+warning - The left operand can't be null, so the right operand is never executed - lib\src\modules\categorias\pages\categoria_form_page.dart:53:52 - dead_null_aware_expression
+warning - The left operand can't be null, so the right operand is never executed - lib\src\modules\categorias\pages\categoria_form_page.dart:54:50 - dead_null_aware_expression
+warning - The left operand can't be null, so the right operand is never executed - lib\src\modules\categorias\pages\categoria_form_page.dart:55:54 - dead_null_aware_expression
+warning - Unused import: 'categoria_form_page.dart' - lib\src\modules\categorias\pages\categorias_page.dart:22:8 - unused_import
+warning - Unused import: 'subcategoria_form_page.dart' - lib\src\modules\categorias\pages\categorias_page.dart:23:8 - unused_import
+   info - The private field _valoresPorCategoria could be 'final' - lib\src\modules\categorias\pages\categorias_page.dart:150:23 - prefer_final_fields
+warning - The declaration '_getPeriodBackgroundColor' isn't referenced - lib\src\modules\categorias\pages\categorias_page.dart:221:9 - unused_element
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\categorias\pages\categorias_page.dart:564:9 - use_build_context_synchronously
+   info - Don't invoke 'print' in production code - lib\src\modules\categorias\pages\categorias_page.dart:581:9 - avoid_print
+warning - The value of the local variable 'subcategorias' isn't used - lib\src\modules\categorias\pages\categorias_page.dart:853:11 - unused_local_variable
+warning - The declaration '_novaSubcategoriaFAB' isn't referenced - lib\src\modules\categorias\pages\categorias_page.dart:1348:8 - unused_element
+warning - The declaration '_toggleSearch' isn't referenced - lib\src\modules\categorias\pages\categorias_page.dart:1542:8 - unused_element
+warning - Unused import: 'package:pie_chart_sz/pie_chart_sz.dart' - lib\src\modules\categorias\pages\gestao_categoria_page.dart:16:8 - unused_import
+   info - The imported package 'collection' isn't a dependency of the importing package - lib\src\modules\categorias\pages\gestao_categoria_page.dart:17:8 - depend_on_referenced_packages
+warning - Unused import: '../../transacoes/models/transacao_model.dart' - lib\src\modules\categorias\pages\gestao_categoria_page.dart:28:8 - unused_import
+warning - The value of the field '_houveMigracao' isn't used - lib\src\modules\categorias\pages\gestao_categoria_page.dart:68:8 - unused_field
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\categorias\pages\gestao_categoria_page.dart:912:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\categorias\pages\gestao_categoria_page.dart:919:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\categorias\pages\gestao_categoria_page.dart:926:9 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\categorias\pages\gestao_categoria_page.dart:944:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\categorias\pages\gestao_categoria_page.dart:950:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\categorias\pages\gestao_categoria_page.dart:962:9 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\categorias\pages\gestao_categoria_page.dart:977:23 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\categorias\pages\gestao_categoria_page.dart:980:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\categorias\pages\gestao_categoria_page.dart:985:28 - use_build_context_synchronously
+warning - The value of the local variable 'id' isn't used - lib\src\modules\categorias\pages\gestao_categoria_page.dart:1600:11 - unused_local_variable
+warning - The value of the local variable 'valorEfetivado' isn't used - lib\src\modules\categorias\pages\gestao_categoria_page.dart:1603:11 - unused_local_variable
+warning - The value of the local variable 'valorPendente' isn't used - lib\src\modules\categorias\pages\gestao_categoria_page.dart:1604:11 - unused_local_variable
+warning - The declaration '_buildItemSubcategoria' isn't referenced - lib\src\modules\categorias\pages\gestao_categoria_page.dart:1747:10 - unused_element
+warning - The declaration '_getColorByValue' isn't referenced - lib\src\modules\categorias\pages\gestao_categoria_page.dart:2436:9 - unused_element
+   info - 'swapAnimationDuration' is deprecated and shouldn't be used. Please use [duration] instead - lib\src\modules\categorias\pages\gestao_categoria_page.dart:2528:25 - deprecated_member_use
+   info - 'swapAnimationCurve' is deprecated and shouldn't be used. Please use [curve] instead - lib\src\modules\categorias\pages\gestao_categoria_page.dart:2529:25 - deprecated_member_use
+   info - Unnecessary use of 'toList' in a spread - lib\src\modules\categorias\pages\gestao_categoria_page.dart:2595:28 - unnecessary_to_list_in_spreads
+   info - 'red' is deprecated and shouldn't be used. Use (*.r * 255.0).round() & 0xff - lib\src\modules\categorias\pages\gestao_categoria_page.dart:2834:22 - deprecated_member_use
+   info - 'red' is deprecated and shouldn't be used. Use (*.r * 255.0).round() & 0xff - lib\src\modules\categorias\pages\gestao_categoria_page.dart:2834:31 - deprecated_member_use
+   info - 'red' is deprecated and shouldn't be used. Use (*.r * 255.0).round() & 0xff - lib\src\modules\categorias\pages\gestao_categoria_page.dart:2834:45 - deprecated_member_use
+   info - 'green' is deprecated and shouldn't be used. Use (*.g * 255.0).round() & 0xff - lib\src\modules\categorias\pages\gestao_categoria_page.dart:2835:22 - deprecated_member_use
+   info - 'green' is deprecated and shouldn't be used. Use (*.g * 255.0).round() & 0xff - lib\src\modules\categorias\pages\gestao_categoria_page.dart:2835:33 - deprecated_member_use
+   info - 'green' is deprecated and shouldn't be used. Use (*.g * 255.0).round() & 0xff - lib\src\modules\categorias\pages\gestao_categoria_page.dart:2835:49 - deprecated_member_use
+   info - 'blue' is deprecated and shouldn't be used. Use (*.b * 255.0).round() & 0xff - lib\src\modules\categorias\pages\gestao_categoria_page.dart:2836:22 - deprecated_member_use
+   info - 'blue' is deprecated and shouldn't be used. Use (*.b * 255.0).round() & 0xff - lib\src\modules\categorias\pages\gestao_categoria_page.dart:2836:32 - deprecated_member_use
+   info - 'blue' is deprecated and shouldn't be used. Use (*.b * 255.0).round() & 0xff - lib\src\modules\categorias\pages\gestao_categoria_page.dart:2836:47 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\categorias\pages\gestao_categoria_page.dart:3052:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\categorias\pages\gestao_categoria_page.dart:3056:30 - use_build_context_synchronously
+warning - The left operand can't be null, so the right operand is never executed - lib\src\modules\categorias\pages\subcategoria_form_page.dart:132:55 - dead_null_aware_expression
+warning - The value of the field '_categoriasMock' isn't used - lib\src\modules\categorias\services\categoria_service.dart:35:30 - unused_field
+warning - The value of the field '_subcategoriasMock' isn't used - lib\src\modules\categorias\services\categoria_service.dart:71:43 - unused_field
+warning - Unnecessary type check; the result is always 'true' - lib\src\modules\categorias\services\categoria_service.dart:195:9 - unnecessary_type_check
+warning - The declaration '_fetchFromSupabaseDirect' isn't referenced - lib\src\modules\categorias\services\categoria_service.dart:213:32 - unused_element
+warning - The declaration '_fetchCategoriasComValoresOffline' isn't referenced - lib\src\modules\categorias\services\categoria_service.dart:1049:38 - unused_element
+warning - The declaration '_fetchSubcategoriasComValoresOffline' isn't referenced - lib\src\modules\categorias\services\categoria_service.dart:1090:38 - unused_element
+warning - The value of the field '_ultimoUpdateCache' isn't used - lib\src\modules\categorias\services\categoria_service.dart:1295:13 - unused_field
+warning - The value of the field '_ultimoUpdateCacheSubcategorias' isn't used - lib\src\modules\categorias\services\categoria_service.dart:1302:13 - unused_field
+   info - Unnecessary braces in a string interpolation - lib\src\modules\categorias\services\categoria_service.dart:1415:27 - unnecessary_brace_in_string_interps
+   info - Unnecessary braces in a string interpolation - lib\src\modules\categorias\services\categoria_service.dart:1432:27 - unnecessary_brace_in_string_interps
+   info - Unnecessary braces in a string interpolation - lib\src\modules\categorias\services\categoria_service.dart:1453:40 - unnecessary_brace_in_string_interps
+   info - Unnecessary braces in a string interpolation - lib\src\modules\categorias\services\categoria_service.dart:1561:57 - unnecessary_brace_in_string_interps
+warning - The left operand can't be null, so the right operand is never executed - lib\src\modules\categorias\services\categoria_service.dart:1671:26 - dead_null_aware_expression
+   info - Uses 'await' on an instance of 'Database?', which is not a subtype of 'Future' - lib\src\modules\categorias\services\categoria_service.dart:2112:18 - await_only_futures
+   info - Uses 'await' on an instance of 'Database?', which is not a subtype of 'Future' - lib\src\modules\categorias\services\categoria_service.dart:2138:18 - await_only_futures
+warning - Unused import: 'package:image/image.dart' - lib\src\modules\configuracoes\pages\configuracoes_page.dart:17:8 - unused_import
+   info - Parameter 'key' could be a super parameter - lib\src\modules\configuracoes\pages\configuracoes_page.dart:29:9 - use_super_parameters
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\configuracoes\pages\configuracoes_page.dart:917:9 - use_build_context_synchronously
+   info - The import of 'package:flutter/services.dart' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/material.dart' - lib\src\modules\contas\pages\conta_form_page.dart:14:8 - unnecessary_import
+   info - The import of 'package:flutter/foundation.dart' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/material.dart' - lib\src\modules\contas\pages\conta_form_page.dart:15:8 - unnecessary_import
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\contas\pages\conta_form_page.dart:378:34 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\contas\pages\conta_form_page.dart:396:34 - use_build_context_synchronously
+   info - Use a 'SizedBox' to add whitespace to a layout - lib\src\modules\contas\pages\contas_arquivadas_page.dart:166:17 - sized_box_for_whitespace
+   info - The import of 'package:flutter/foundation.dart' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/material.dart' - lib\src\modules\contas\pages\contas_page.dart:10:8 - unnecessary_import
+warning - Unused import: '../../relatorios/pages/relatorios_page.dart' - lib\src\modules\contas\pages\contas_page.dart:24:8 - unused_import
+warning - The declaration '_limparQueueSync' isn't referenced - lib\src\modules\contas\pages\contas_page.dart:200:16 - unused_element
+warning - The declaration '_criarContasBasicas' isn't referenced - lib\src\modules\contas\pages\contas_page.dart:453:16 - unused_element
+warning - The declaration '_formatarTipoConta' isn't referenced - lib\src\modules\contas\pages\contas_page.dart:551:10 - unused_element
+warning - The declaration '_buildModoConsolidado' isn't referenced - lib\src\modules\contas\pages\contas_page.dart:780:10 - unused_element
+warning - The declaration '_buildModoEmpilhado' isn't referenced - lib\src\modules\contas\pages\contas_page.dart:804:10 - unused_element
+warning - Unused import: '../../../shared/utils/currency_formatter.dart' - lib\src\modules\contas\pages\contas_sugeridas_page.dart:3:8 - unused_import
+warning - The value of the field '_carregandoContas' isn't used - lib\src\modules\contas\pages\contas_sugeridas_page.dart:21:8 - unused_field
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\src\modules\contas\pages\contas_sugeridas_page.dart:305:39 - deprecated_member_use
+warning - The declaration '_buildInfoAtual' isn't referenced - lib\src\modules\contas\pages\correcao_saldo_page.dart:244:10 - unused_element
+warning - Unused import: 'contas_page.dart' - lib\src\modules\contas\pages\gestao_conta_page.dart:27:8 - unused_import
+   info - The private field _evolucaoSaldo could be 'final' - lib\src\modules\contas\pages\gestao_conta_page.dart:59:30 - prefer_final_fields
+   info - The private field _entradasVsSaidas could be 'final' - lib\src\modules\contas\pages\gestao_conta_page.dart:60:30 - prefer_final_fields
+warning - The declaration '_buildHeaderSeletor' isn't referenced - lib\src\modules\contas\pages\gestao_conta_page.dart:597:10 - unused_element
+warning - The declaration '_buildContaCardModerno' isn't referenced - lib\src\modules\contas\pages\gestao_conta_page.dart:779:10 - unused_element
+   info - 'swapAnimationDuration' is deprecated and shouldn't be used. Please use [duration] instead - lib\src\modules\contas\pages\gestao_conta_page.dart:1887:33 - deprecated_member_use
+   info - 'swapAnimationCurve' is deprecated and shouldn't be used. Please use [curve] instead - lib\src\modules\contas\pages\gestao_conta_page.dart:1888:33 - deprecated_member_use
+   info - Unnecessary use of 'toList' in a spread - lib\src\modules\contas\pages\gestao_conta_page.dart:1946:36 - unnecessary_to_list_in_spreads
+warning - The declaration '_getIconeTipoConta' isn't referenced - lib\src\modules\contas\pages\gestao_conta_page.dart:2175:12 - unused_element
+   info - Uses 'await' on an instance of 'Database?', which is not a subtype of 'Future' - lib\src\modules\contas\services\conta_service.dart:931:18 - await_only_futures
+   info - Parameter 'key' could be a super parameter - lib\src\modules\contas\widgets\conta_card.dart:21:9 - use_super_parameters
+warning - The operand can't be 'null', so the condition is always 'false' - lib\src\modules\contas\widgets\conta_card.dart:48:20 - unnecessary_null_comparison
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\contas\widgets\conta_card.dart:48:41 - unnecessary_non_null_assertion
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\contas\widgets\conta_card.dart:52:23 - unnecessary_non_null_assertion
+warning - The left operand can't be null, so the right operand is never executed - lib\src\modules\contas\widgets\conta_card.dart:250:66 - dead_null_aware_expression
+   info - Statements in an if should be enclosed in a block - lib\src\modules\diagnostico\models\dividas_model.dart:272:28 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\src\modules\diagnostico\models\dividas_model.dart:273:33 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\src\modules\diagnostico\models\dividas_model.dart:274:33 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\src\modules\diagnostico\models\dividas_model.dart:275:33 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\src\modules\diagnostico\models\dividas_model.dart:276:33 - curly_braces_in_flow_control_structures
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\src\modules\diagnostico\pages\diagnostico_flow_page.dart:643:32 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\src\modules\diagnostico\pages\diagnostico_flow_page.dart:654:22 - use_build_context_synchronously
+   info - Unnecessary use of 'toList' in a spread - lib\src\modules\diagnostico\pages\step01_percepcao_page.dart:347:14 - unnecessary_to_list_in_spreads
+   info - Unnecessary use of 'toList' in a spread - lib\src\modules\diagnostico\pages\step01_welcome_page.dart:154:12 - unnecessary_to_list_in_spreads
+warning - The declaration '_handleRendaChanged' isn't referenced - lib\src\modules\diagnostico\pages\step02_renda_page.dart:57:8 - unused_element
+warning - Unused import: '../../../sync/sync_manager.dart' - lib\src\modules\diagnostico\services\diagnostico_service.dart:14:8 - unused_import
+   info - The private field _dadosColetados could be 'final' - lib\src\modules\diagnostico\services\diagnostico_service.dart:35:24 - prefer_final_fields
+   info - Statements in an if should be enclosed in a block - lib\src\modules\diagnostico\services\score_calculator.dart:175:40 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\src\modules\diagnostico\services\score_calculator.dart:176:44 - curly_braces_in_flow_control_structures
+   info - Use 'isNotEmpty' instead of 'length' to test whether the collection is empty - lib\src\modules\diagnostico\services\score_calculator.dart:177:14 - prefer_is_empty
+   info - Statements in an if should be enclosed in a block - lib\src\modules\diagnostico\services\score_calculator.dart:177:44 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\src\modules\diagnostico\services\score_calculator.dart:180:35 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\src\modules\diagnostico\services\score_calculator.dart:181:40 - curly_braces_in_flow_control_structures
+   info - Use 'isNotEmpty' instead of 'length' to test whether the collection is empty - lib\src\modules\diagnostico\services\score_calculator.dart:182:14 - prefer_is_empty
+   info - Statements in an if should be enclosed in a block - lib\src\modules\diagnostico\services\score_calculator.dart:182:40 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\src\modules\diagnostico\services\score_calculator.dart:185:36 - curly_braces_in_flow_control_structures
+   info - Use 'isNotEmpty' instead of 'length' to test whether the collection is empty - lib\src\modules\diagnostico\services\score_calculator.dart:186:14 - prefer_is_empty
+   info - Statements in an if should be enclosed in a block - lib\src\modules\diagnostico\services\score_calculator.dart:186:41 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\src\modules\diagnostico\services\score_calculator.dart:190:32 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\src\modules\diagnostico\services\score_calculator.dart:191:36 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\src\modules\diagnostico\services\score_calculator.dart:192:36 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\src\modules\diagnostico\services\score_calculator.dart:193:36 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\src\modules\diagnostico\services\score_calculator.dart:203:37 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\src\modules\diagnostico\services\score_calculator.dart:204:42 - curly_braces_in_flow_control_structures
+   info - Use 'isNotEmpty' instead of 'length' to test whether the collection is empty - lib\src\modules\diagnostico\services\score_calculator.dart:205:14 - prefer_is_empty
+   info - Statements in an if should be enclosed in a block - lib\src\modules\diagnostico\services\score_calculator.dart:205:42 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\src\modules\diagnostico\services\score_calculator.dart:208:42 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\src\modules\diagnostico\services\score_calculator.dart:209:47 - curly_braces_in_flow_control_structures
+   info - Use 'isNotEmpty' instead of 'length' to test whether the collection is empty - lib\src\modules\diagnostico\services\score_calculator.dart:210:14 - prefer_is_empty
+   info - Statements in an if should be enclosed in a block - lib\src\modules\diagnostico\services\score_calculator.dart:210:47 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\src\modules\diagnostico\services\score_calculator.dart:213:46 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\src\modules\diagnostico\services\score_calculator.dart:214:51 - curly_braces_in_flow_control_structures
+   info - Use 'isNotEmpty' instead of 'length' to test whether the collection is empty - lib\src\modules\diagnostico\services\score_calculator.dart:215:14 - prefer_is_empty
+   info - Statements in an if should be enclosed in a block - lib\src\modules\diagnostico\services\score_calculator.dart:215:51 - curly_braces_in_flow_control_structures
+   info - Use 'isNotEmpty' instead of 'length' to test whether the collection is empty - lib\src\modules\diagnostico\services\score_calculator.dart:267:9 - prefer_is_empty
+warning - Unused import: '../models/percepcao_financeira.dart' - lib\src\modules\diagnostico\widgets\diagnostico_dashboard_widget.dart:14:8 - unused_import
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\src\modules\diagnostico\widgets\diagnostico_dashboard_widget.dart:164:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\src\modules\diagnostico\widgets\diagnostico_dashboard_widget.dart:202:33 - deprecated_member_use
+warning - This default clause is covered by the previous cases - lib\src\modules\diagnostico\widgets\diagnostico_navigation.dart:303:7 - unreachable_switch_default
+warning - This default clause is covered by the previous cases - lib\src\modules\diagnostico\widgets\diagnostico_navigation.dart:323:7 - unreachable_switch_default
+   info - Unnecessary braces in a string interpolation - lib\src\modules\diagnostico\widgets\dividas_questionario_widget.dart:42:17 - unnecessary_brace_in_string_interps
+warning - The declaration '_buildResultadoLoading' isn't referenced - lib\src\modules\diagnostico\widgets\etapa_wrapper.dart:415:10 - unused_element
+warning - The declaration '_buildResultadoErro' isn't referenced - lib\src\modules\diagnostico\widgets\etapa_wrapper.dart:447:10 - unused_element
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\diagnostico\widgets\etapa_wrapper.dart:986:9 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\diagnostico\widgets\etapa_wrapper.dart:997:20 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\diagnostico\widgets\etapa_wrapper.dart:1000:20 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\diagnostico\widgets\etapa_wrapper.dart:1007:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\diagnostico\widgets\etapa_wrapper.dart:1015:24 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\diagnostico\widgets\etapa_wrapper.dart:1016:22 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\diagnostico\widgets\etapa_wrapper.dart:1020:28 - use_build_context_synchronously
+warning - The value of the local variable 'index' isn't used - lib\src\modules\diagnostico\widgets\etapa_wrapper.dart:1430:13 - unused_local_variable
+warning - The value of the local variable 'resultado' isn't used - lib\src\modules\diagnostico\widgets\etapa_wrapper.dart:1507:11 - unused_local_variable
+warning - The value of the local variable 'resultado' isn't used - lib\src\modules\diagnostico\widgets\etapa_wrapper.dart:1519:11 - unused_local_variable
+warning - The value of the local variable 'resultado' isn't used - lib\src\modules\diagnostico\widgets\etapa_wrapper.dart:1531:11 - unused_local_variable
+warning - The value of the local variable 'resultado' isn't used - lib\src\modules\diagnostico\widgets\etapa_wrapper.dart:1543:11 - unused_local_variable
+warning - The value of the local variable 'resultado' isn't used - lib\src\modules\diagnostico\widgets\etapa_wrapper.dart:1555:11 - unused_local_variable
+warning - The value of the local variable 'resultado' isn't used - lib\src\modules\diagnostico\widgets\etapa_wrapper.dart:1567:11 - unused_local_variable
+   info - Unnecessary use of string interpolation - lib\src\modules\diagnostico\widgets\etapa_wrapper.dart:1679:27 - unnecessary_string_interpolations
+   info - Unnecessary use of string interpolation - lib\src\modules\diagnostico\widgets\etapa_wrapper.dart:1744:27 - unnecessary_string_interpolations
+   info - Unnecessary use of string interpolation - lib\src\modules\diagnostico\widgets\etapa_wrapper.dart:1789:27 - unnecessary_string_interpolations
+   info - Unnecessary use of string interpolation - lib\src\modules\diagnostico\widgets\etapa_wrapper.dart:1858:27 - unnecessary_string_interpolations
+   info - Unnecessary use of string interpolation - lib\src\modules\diagnostico\widgets\etapa_wrapper.dart:1927:27 - unnecessary_string_interpolations
+warning - Unused import: '../../shared/theme/app_colors.dart' - lib\src\modules\diagnostico\widgets\percepcao_questionario_widget.dart:10:8 - unused_import
+warning - Unused import: '../../transacoes/pages/transacao_form_page.dart' - lib\src\modules\importacao\pages\importacao_modal.dart:27:8 - unused_import
+warning - The value of the field '_isLoading' isn't used - lib\src\modules\importacao\pages\importacao_modal.dart:76:8 - unused_field
+warning - The declaration '_criarTransacoesFake' isn't referenced - lib\src\modules\importacao\pages\importacao_modal.dart:264:16 - unused_element
+warning - The declaration '_voltarParaSelecao' isn't referenced - lib\src\modules\importacao\pages\importacao_modal.dart:358:8 - unused_element
+warning - The declaration '_detectarFormato' isn't referenced - lib\src\modules\importacao\pages\importacao_modal.dart:461:16 - unused_element
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\importacao\pages\importacao_modal.dart:765:9 - use_build_context_synchronously
+warning - The left operand can't be null, so the right operand is never executed - lib\src\modules\importacao\pages\importacao_modal.dart:1091:60 - dead_null_aware_expression
+warning - The left operand can't be null, so the right operand is never executed - lib\src\modules\importacao\pages\importacao_modal.dart:1180:60 - dead_null_aware_expression
+   info - Use a 'SizedBox' to add whitespace to a layout - lib\src\modules\importacao\pages\importacao_modal.dart:1981:18 - sized_box_for_whitespace
+warning - The declaration '_buildTransacaoCard' isn't referenced - lib\src\modules\importacao\pages\importacao_modal.dart:2821:10 - unused_element
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\importacao\pages\importacao_modal.dart:3255:7 - use_build_context_synchronously
+warning - The operand can't be 'null', so the condition is always 'true' - lib\src\modules\importacao\pages\importacao_modal.dart:3301:42 - unnecessary_null_comparison
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\importacao\pages\importacao_modal.dart:3301:60 - unnecessary_non_null_assertion
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\importacao\pages\importacao_modal.dart:3302:56 - unnecessary_non_null_assertion
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\importacao\pages\importacao_modal.dart:3366:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\importacao\pages\importacao_modal.dart:3373:7 - use_build_context_synchronously
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\importacao\pages\importacao_modal.dart:3430:81 - unnecessary_non_null_assertion
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\importacao\pages\importacao_modal.dart:3431:65 - unnecessary_non_null_assertion
+warning - The value of the field '_loading' isn't used - lib\src\modules\importacao\pages\importacao_review_page.dart:45:8 - unused_field
+   info - The private field _transacoesPuladas could be 'final' - lib\src\modules\importacao\pages\importacao_review_page.dart:48:12 - prefer_final_fields
+   info - The private field _transacoesSalvas could be 'final' - lib\src\modules\importacao\pages\importacao_review_page.dart:49:12 - prefer_final_fields
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\importacao\pages\importacao_review_page.dart:225:7 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\importacao\pages\importacao_review_page.dart:248:22 - use_build_context_synchronously
+   info - The constant name 'USAR_HISTORICO' isn't a lowerCamelCase identifier - lib\src\modules\importacao\services\auto_categorization_service.dart:87:16 - constant_identifier_names
+warning - Dead code - lib\src\modules\importacao\services\auto_categorization_service.dart:88:25 - dead_code
+   info - Unnecessary braces in a string interpolation - lib\src\modules\importacao\services\conectcar_extractor.dart:80:29 - unnecessary_brace_in_string_interps
+warning - The receiver can't be 'null' because of short-circuiting, so the null-aware operator '?.' can't be used - lib\src\modules\importacao\services\conectcar_extractor.dart:134:63 - invalid_null_aware_operator
+warning - The receiver can't be 'null' because of short-circuiting, so the null-aware operator '?.' can't be used - lib\src\modules\importacao\services\conectcar_extractor.dart:500:40 - invalid_null_aware_operator
+  error - The name 'Cell' isn't a type, so it can't be used as a type argument - lib\src\modules\importacao\services\enhanced_excel_extractor.dart:319:29 - non_type_as_type_argument
+  error - The name 'Cell' isn't a type, so it can't be used as a type argument - lib\src\modules\importacao\services\enhanced_excel_extractor.dart:342:48 - non_type_as_type_argument
+  error - The name 'Cell' isn't a type, so it can't be used as a type argument - lib\src\modules\importacao\services\enhanced_excel_extractor.dart:379:10 - non_type_as_type_argument
+  error - Undefined class 'Cell' - lib\src\modules\importacao\services\enhanced_excel_extractor.dart:480:28 - undefined_class
+   info - Use 'isEmpty' instead of 'length' to test whether the collection is empty - lib\src\modules\importacao\services\enhanced_excel_extractor.dart:504:9 - prefer_is_empty
+warning - The value of the local variable 'hasHeader' isn't used - lib\src\modules\importacao\services\importacao_service.dart:258:12 - unused_local_variable
+warning - The declaration '_processarComJSEngine' isn't referenced - lib\src\modules\importacao\services\importacao_service.dart:369:36 - unused_element
+   info - Uses 'await' on an instance of 'JsEvalResult', which is not a subtype of 'Future' - lib\src\modules\importacao\services\importacao_service.dart:778:31 - await_only_futures
+   info - Unnecessary braces in a string interpolation - lib\src\modules\importacao\services\importacao_service.dart:781:31 - unnecessary_brace_in_string_interps
+   info - Unnecessary braces in a string interpolation - lib\src\modules\importacao\services\importacao_service.dart:810:32 - unnecessary_brace_in_string_interps
+warning - Unused import: '../../shared/theme/app_colors.dart' - lib\src\modules\importacao\widgets\importar_dados_widget.dart:10:8 - unused_import
+   info - Use interpolation to compose strings and values - lib\src\modules\importacao\widgets\importar_dados_widget.dart:131:17 - prefer_interpolation_to_compose_strings
+warning - Unused import: '../../cartoes/models/fatura_model.dart' - lib\src\modules\importacao\widgets\transacao_import_card.dart:20:8 - unused_import
+warning - The value of the field '_loading' isn't used - lib\src\modules\importacao\widgets\transacao_import_card.dart:70:8 - unused_field
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\importacao\widgets\transacao_import_card.dart:314:7 - use_build_context_synchronously
+warning - The left operand can't be null, so the right operand is never executed - lib\src\modules\importacao\widgets\transacao_import_card.dart:404:35 - dead_null_aware_expression
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\src\modules\importacao\widgets\transacao_import_card.dart:453:37 - deprecated_member_use
+warning - The receiver can't be null, so the null-aware operator '?.' is unnecessary - lib\src\modules\importacao\widgets\transacao_import_card.dart:620:50 - invalid_null_aware_operator
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\importacao\widgets\transacao_import_card.dart:621:67 - unnecessary_non_null_assertion
+warning - The receiver can't be null, so the null-aware operator '?.' is unnecessary - lib\src\modules\importacao\widgets\transacao_import_card.dart:646:52 - invalid_null_aware_operator
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\importacao\widgets\transacao_import_card.dart:647:69 - unnecessary_non_null_assertion
+warning - The receiver can't be null, so the null-aware operator '?.' is unnecessary - lib\src\modules\importacao\widgets\transacao_import_card.dart:772:51 - invalid_null_aware_operator
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\importacao\widgets\transacao_import_card.dart:773:52 - unnecessary_non_null_assertion
+warning - The receiver can't be null, so the null-aware operator '?.' is unnecessary - lib\src\modules\importacao\widgets\transacao_import_card.dart:841:50 - invalid_null_aware_operator
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\importacao\widgets\transacao_import_card.dart:842:67 - unnecessary_non_null_assertion
+warning - The value of the field '_periodoAtual' isn't used - lib\src\modules\planejamento\pages\planejamento_page.dart:193:10 - unused_field
+warning - The declaration '_formatarPeriodoCompleto' isn't referenced - lib\src\modules\planejamento\pages\planejamento_page.dart:282:10 - unused_element
+warning - The left operand can't be null, so the right operand is never executed - lib\src\modules\planejamento\pages\planejamento_page.dart:399:57 - dead_null_aware_expression
+warning - The left operand can't be null, so the right operand is never executed - lib\src\modules\planejamento\pages\planejamento_page.dart:422:57 - dead_null_aware_expression
+warning - The declaration '_calcularValoresRealizados' isn't referenced - lib\src\modules\planejamento\pages\planejamento_page.dart:547:16 - unused_element
+warning - The operand can't be 'null', so the condition is always 'true' - lib\src\modules\planejamento\pages\planejamento_page.dart:631:38 - unnecessary_null_comparison
+warning - The operand can't be 'null', so the condition is always 'true' - lib\src\modules\planejamento\pages\planejamento_page.dart:648:38 - unnecessary_null_comparison
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:1076:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:1077:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:1078:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:1079:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:1080:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:1091:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:1103:11 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:1110:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:1114:5 - avoid_print
+warning - The declaration '_mostrarMenuAcoes' isn't referenced - lib\src\modules\planejamento\pages\planejamento_page.dart:1318:8 - unused_element
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\planejamento\pages\planejamento_page.dart:1377:31 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\planejamento\pages\planejamento_page.dart:1380:38 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\planejamento\pages\planejamento_page.dart:1387:38 - use_build_context_synchronously
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:2102:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:2125:9 - avoid_print
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\planejamento\pages\planejamento_page.dart:2125:83 - unnecessary_non_null_assertion
+warning - The operand can't be 'null', so the condition is always 'true' - lib\src\modules\planejamento\pages\planejamento_page.dart:2137:31 - unnecessary_null_comparison
+warning - The operand can't be 'null', so the condition is always 'true' - lib\src\modules\planejamento\pages\planejamento_page.dart:2151:31 - unnecessary_null_comparison
+warning - Dead code - lib\src\modules\planejamento\pages\planejamento_page.dart:2537:51 - dead_code
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:2541:33 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:2557:37 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:2559:37 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:2570:33 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:2580:33 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:2581:33 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:2582:33 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:2583:33 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:2586:35 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:2587:35 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:2592:33 - avoid_print
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\planejamento\pages\planejamento_page.dart:2592:104 - unnecessary_non_null_assertion
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:2595:35 - avoid_print
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\planejamento\pages\planejamento_page.dart:2596:112 - unnecessary_non_null_assertion
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:2597:35 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:2599:35 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:2600:35 - avoid_print
+warning - The declaration '_excluirPlanejamento' isn't referenced - lib\src\modules\planejamento\pages\planejamento_page.dart:2641:16 - unused_element
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:2654:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:2659:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:2662:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:2666:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:2668:11 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:2676:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:2683:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:2687:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:2841:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:2842:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:2843:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:2844:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:2845:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:2846:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:2858:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:2859:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:2860:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:2861:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:2864:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:2866:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:2869:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:2870:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:2871:7 - avoid_print
+warning - The declaration '_atualizarPlanejamentoOtimista' isn't referenced - lib\src\modules\planejamento\pages\planejamento_page.dart:2966:8 - unused_element
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:2981:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:3002:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:3012:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:3013:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:3015:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:3016:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:3017:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:3018:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:3019:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:3020:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:3022:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:3025:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:3026:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:3027:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:3028:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:3029:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:3033:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:3035:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:3038:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:3041:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:3045:11 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:3047:11 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:3048:11 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:3052:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:3055:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:3057:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:3059:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:3062:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:3065:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:3067:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:3068:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:3069:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:3070:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:3081:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:3093:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:3094:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:3095:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:3100:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\planejamento\pages\planejamento_page.dart:3102:7 - avoid_print
+warning - Unused import: 'package:sqflite/sqflite.dart' - lib\src\modules\planejamento\services\planejamento_service.dart:11:8 - unused_import
+warning - Unused import: '../../categorias/models/categoria_model.dart' - lib\src\modules\planejamento\services\planejamento_service.dart:13:8 - unused_import
+warning - Unused import: '../../../sync/sync_manager.dart' - lib\src\modules\planejamento\services\planejamento_service.dart:15:8 - unused_import
+warning - The declaration '_carregarComRpcSupabase' isn't referenced - lib\src\modules\planejamento\services\planejamento_service.dart:267:38 - unused_element
+warning - Unnecessary type check; the result is always 'true' - lib\src\modules\planejamento\services\planejamento_service.dart:302:9 - unnecessary_type_check
+warning - The declaration '_processarDadosDoRpc' isn't referenced - lib\src\modules\planejamento\services\planejamento_service.dart:317:16 - unused_element
+warning - Unused import: 'resumo_executivo_page.dart' - lib\src\modules\relatorios\pages\relatorios_page.dart:23:8 - unused_import
+warning - Unused import: 'evolucao_mensal_page.dart' - lib\src\modules\relatorios\pages\relatorios_page.dart:24:8 - unused_import
+warning - Unused import: 'relatorio_categoria_page.dart' - lib\src\modules\relatorios\pages\relatorios_page.dart:25:8 - unused_import
+warning - Unused import: 'relatorio_conta_page.dart' - lib\src\modules\relatorios\pages\relatorios_page.dart:26:8 - unused_import
+warning - Unused import: '../../shared/theme/app_typography.dart' - lib\src\modules\relatorios\pages\relatorios_page.dart:34:8 - unused_import
+warning - Unused import: '../../shared/theme/responsive_sizes.dart' - lib\src\modules\relatorios\pages\relatorios_page.dart:35:8 - unused_import
+warning - The value of the field '_loading' isn't used - lib\src\modules\relatorios\pages\relatorios_page.dart:62:8 - unused_field
+warning - The declaration '_buildCardResumo' isn't referenced - lib\src\modules\relatorios\pages\relatorios_page.dart:298:10 - unused_element
+warning - The declaration '_buildCardNavegacao' isn't referenced - lib\src\modules\relatorios\pages\relatorios_page.dart:351:10 - unused_element
+warning - The declaration '_formatarMoeda' isn't referenced - lib\src\modules\relatorios\pages\relatorios_page.dart:402:10 - unused_element
+warning - The declaration '_formatarPercentual' isn't referenced - lib\src\modules\relatorios\pages\relatorios_page.dart:407:10 - unused_element
+warning - The declaration '_navegarParaGestaoCartoes' isn't referenced - lib\src\modules\relatorios\pages\relatorios_page.dart:475:8 - unused_element
+warning - The value of the local variable 'resumo' isn't used - lib\src\modules\relatorios\pages\relatorios_page.dart:660:11 - unused_local_variable
+   info - Don't invoke 'print' in production code - lib\src\modules\relatorios\pages\valor_hora_page.dart:150:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\relatorios\pages\valor_hora_page.dart:223:7 - avoid_print
+warning - The declaration '_formatarMesAnoCompleto' isn't referenced - lib\src\modules\relatorios\pages\valor_hora_page.dart:363:10 - unused_element
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\src\modules\relatorios\pages\valor_hora_page.dart:750:43 - deprecated_member_use
+   info - Unnecessary braces in a string interpolation - lib\src\modules\relatorios\services\faturas_pendentes_service.dart:112:67 - unnecessary_brace_in_string_interps
+warning - Unnecessary type check; the result is always 'false' - lib\src\modules\relatorios\services\relatorio_service.dart:42:11 - unnecessary_type_check
+warning - Unnecessary type check; the result is always 'false' - lib\src\modules\relatorios\services\relatorio_service.dart:124:11 - unnecessary_type_check
+warning - Unnecessary type check; the result is always 'false' - lib\src\modules\relatorios\services\relatorio_service.dart:211:11 - unnecessary_type_check
+warning - Unnecessary cast - lib\src\modules\relatorios\services\relatorios_service.dart:125:26 - unnecessary_cast
+warning - Unnecessary cast - lib\src\modules\relatorios\services\relatorios_service.dart:126:22 - unnecessary_cast
+warning - Unnecessary cast - lib\src\modules\relatorios\services\relatorios_service.dart:127:23 - unnecessary_cast
+warning - The left operand can't be null, so the right operand is never executed - lib\src\modules\relatorios\services\relatorios_service.dart:359:26 - dead_null_aware_expression
+   info - Unnecessary braces in a string interpolation - lib\src\modules\relatorios\services\resumo_financeiro_service.dart:188:66 - unnecessary_brace_in_string_interps
+   info - Unnecessary braces in a string interpolation - lib\src\modules\relatorios\services\resumo_financeiro_service.dart:188:83 - unnecessary_brace_in_string_interps
+warning - The value of the local variable 'dadosSaldo' isn't used - lib\src\modules\relatorios\widgets\insights_rapidos_widget_backup.dart:218:11 - unused_local_variable
+   info - Unnecessary braces in a string interpolation - lib\src\modules\relatorios\widgets\transacoes_pendentes_widget.dart:196:24 - unnecessary_brace_in_string_interps
+warning - The value of the local variable 'transacoesAdicionadas' isn't used - lib\src\modules\relatorios\widgets\transacoes_pendentes_widget.dart:279:9 - unused_local_variable
+warning - The declaration '_buildDataHeader' isn't referenced - lib\src\modules\relatorios\widgets\transacoes_pendentes_widget.dart:315:10 - unused_element
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\src\modules\relatorios\widgets\valor_hora_widget.dart:308:47 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\src\modules\relatorios\widgets\valor_hora_widget.dart:465:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\src\modules\relatorios\widgets\valor_hora_widget.dart:485:37 - deprecated_member_use
+warning - The declaration '_parseColor' isn't referenced - lib\src\modules\relatorios\widgets\valor_hora_widget.dart:564:9 - unused_element
+   info - 'red' is deprecated and shouldn't be used. Use (*.r * 255.0).round() & 0xff - lib\src\modules\shared\theme\cartao_color_palette.dart:191:31 - deprecated_member_use
+   info - 'green' is deprecated and shouldn't be used. Use (*.g * 255.0).round() & 0xff - lib\src\modules\shared\theme\cartao_color_palette.dart:191:49 - deprecated_member_use
+   info - 'blue' is deprecated and shouldn't be used. Use (*.b * 255.0).round() & 0xff - lib\src\modules\shared\theme\cartao_color_palette.dart:191:69 - deprecated_member_use
+   info - Dangling library doc comment - lib\src\modules\shared\utils\app_locale.dart:1:1 - dangling_library_doc_comments
+   info - Dangling library doc comment - lib\src\modules\shared\utils\brazilian_date_utils.dart:1:1 - dangling_library_doc_comments
+warning - The value of the field '_compactFormatter' isn't used - lib\src\modules\shared\utils\currency_formatter.dart:14:29 - unused_field
+warning - The value of the field '_percentFormatter' isn't used - lib\src\modules\shared\utils\currency_formatter.dart:21:29 - unused_field
+   info - Dangling library doc comment - lib\src\modules\shared\utils\locale_date_utils.dart:1:1 - dangling_library_doc_comments
+warning - The value of the local variable 'settings' isn't used - lib\src\modules\shared\utils\locale_date_utils.dart:9:11 - unused_local_variable
+   info - Unnecessary use of 'toList' in a spread - lib\src\modules\transacoes\components\conditional_transaction_fields.dart:329:16 - unnecessary_to_list_in_spreads
+   info - Parameter 'key' could be a super parameter - lib\src\modules\transacoes\components\escopo_edicao_modal.dart:11:9 - use_super_parameters
+warning - Unused import: '../../../shared/utils/currency_formatter.dart' - lib\src\modules\transacoes\components\filtros_transacoes_modal.dart:9:8 - unused_import
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\components\filtros_transacoes_modal.dart:60:7 - avoid_print
+   info - Parameter 'key' could be a super parameter - lib\src\modules\transacoes\components\operacao_feedback_widget.dart:25:9 - use_super_parameters
+   info - Parameter 'key' could be a super parameter - lib\src\modules\transacoes\components\operacao_feedback_widget.dart:314:9 - use_super_parameters
+warning - The value of the field '_currentState' isn't used - lib\src\modules\transacoes\components\operacao_feedback_widget.dart:464:26 - unused_field
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\components\operacao_helper.dart:44:9 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\components\operacao_helper.dart:54:20 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\components\operacao_helper.dart:93:9 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\components\operacao_helper.dart:103:20 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\components\operacao_helper.dart:137:9 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\components\operacao_helper.dart:146:20 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\components\operacao_helper.dart:180:9 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\components\operacao_helper.dart:189:20 - use_build_context_synchronously
+warning - The value of the field '_currencyFormatter' isn't used - lib\src\modules\transacoes\components\smart_money_field.dart:79:16 - unused_field
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\components\smart_money_field.dart:158:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\components\smart_money_field.dart:159:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\components\smart_money_field.dart:162:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\components\smart_money_field.dart:165:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\components\smart_money_field.dart:168:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\components\smart_money_field.dart:169:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\components\smart_money_field.dart:190:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\components\smart_money_field.dart:213:5 - avoid_print
+   info - Unnecessary use of 'toList' in a spread - lib\src\modules\transacoes\components\timeline_transacoes.dart:196:12 - unnecessary_to_list_in_spreads
+warning - The declaration '_formatarTipoEspecifico' isn't referenced - lib\src\modules\transacoes\components\timeline_transacoes.dart:745:10 - unused_element
+warning - The value of the field '_valorPendenteGrupo' isn't used - lib\src\modules\transacoes\components\transaction_detail_card.dart:51:11 - unused_field
+warning - The value of the field '_itemsEfetivados' isn't used - lib\src\modules\transacoes\components\transaction_detail_card.dart:52:8 - unused_field
+warning - The value of the field '_itemsPendentes' isn't used - lib\src\modules\transacoes\components\transaction_detail_card.dart:53:8 - unused_field
+warning - The value of the field '_posicaoAtualNoGrupo' isn't used - lib\src\modules\transacoes\components\transaction_detail_card.dart:56:8 - unused_field
+warning - The value of the field '_totalTransacoesGrupo' isn't used - lib\src\modules\transacoes\components\transaction_detail_card.dart:57:8 - unused_field
+warning - The operand can't be 'null', so the condition is always 'true' - lib\src\modules\transacoes\components\transaction_detail_card.dart:143:29 - unnecessary_null_comparison
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\transacoes\components\transaction_detail_card.dart:144:55 - unnecessary_non_null_assertion
+warning - The value of the local variable 'tipoGrupo' isn't used - lib\src\modules\transacoes\components\transaction_detail_card.dart:167:14 - unused_local_variable
+   info - Constructors for public widgets should have a named 'key' parameter - lib\src\modules\transacoes\examples\transacao_feedback_example.dart:9:7 - use_key_in_widget_constructors
+   info - Invalid use of a private type in a public API - lib\src\modules\transacoes\examples\transacao_feedback_example.dart:11:3 - library_private_types_in_public_api
+warning - Two keys in a map literal shouldn't be equal - lib\src\modules\transacoes\models\transacao_model.dart:252:7 - equal_keys_in_map
+warning - Two keys in a map literal shouldn't be equal - lib\src\modules\transacoes\models\transacao_model.dart:318:7 - equal_keys_in_map
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\alterar_categoria_page.dart:76:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\alterar_categoria_page.dart:97:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\alterar_categoria_page.dart:115:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\alterar_categoria_page.dart:217:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\alterar_categoria_page.dart:224:20 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\alterar_categoria_page.dart:227:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\alterar_categoria_page.dart:247:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\alterar_categoria_page.dart:255:22 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\alterar_categoria_page.dart:257:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\alterar_categoria_page.dart:266:28 - use_build_context_synchronously
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\transacoes\pages\alterar_categoria_page.dart:845:71 - unnecessary_non_null_assertion
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\transacoes\pages\alterar_categoria_page.dart:882:35 - unnecessary_non_null_assertion
+   info - Unnecessary use of 'toList' in a spread - lib\src\modules\transacoes\pages\alterar_categoria_page.dart:993:14 - unnecessary_to_list_in_spreads
+warning - Unused import: '../../categorias/data/categoria_icons.dart' - lib\src\modules\transacoes\pages\alterar_conta_page.dart:9:8 - unused_import
+   info - Unnecessary use of 'toList' in a spread - lib\src\modules\transacoes\pages\alterar_conta_page.dart:295:75 - unnecessary_to_list_in_spreads
+   info - Unnecessary use of 'toList' in a spread - lib\src\modules\transacoes\pages\alterar_conta_page.dart:300:71 - unnecessary_to_list_in_spreads
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\alterar_conta_page.dart:477:32 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\alterar_conta_page.dart:484:24 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\alterar_conta_page.dart:486:32 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\alterar_conta_page.dart:501:32 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\alterar_conta_page.dart:508:24 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\alterar_conta_page.dart:510:32 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\alterar_conta_page.dart:520:28 - use_build_context_synchronously
+warning - The declaration '_podeAlternarTipo' isn't referenced - lib\src\modules\transacoes\pages\alterar_conta_page.dart:548:8 - unused_element
+warning - The declaration '_getCorDaConta' isn't referenced - lib\src\modules\transacoes\pages\alterar_conta_page.dart:617:9 - unused_element
+warning - The declaration '_getIconeDaConta' isn't referenced - lib\src\modules\transacoes\pages\alterar_conta_page.dart:635:12 - unused_element
+warning - The declaration '_getCorDoCartao' isn't referenced - lib\src\modules\transacoes\pages\alterar_conta_page.dart:654:9 - unused_element
+warning - The declaration '_getIconeDoCartao' isn't referenced - lib\src\modules\transacoes\pages\alterar_conta_page.dart:661:12 - unused_element
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\alterar_data_page.dart:465:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\alterar_data_page.dart:472:22 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\alterar_data_page.dart:474:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\alterar_data_page.dart:483:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\alterar_descricao_page.dart:88:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\alterar_descricao_page.dart:96:22 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\alterar_descricao_page.dart:98:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\alterar_descricao_page.dart:107:28 - use_build_context_synchronously
+warning - The value of the field '_infoRecorrencia' isn't used - lib\src\modules\transacoes\pages\alterar_observacoes_page.dart:26:10 - unused_field
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\alterar_observacoes_page.dart:99:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\alterar_observacoes_page.dart:107:22 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\alterar_observacoes_page.dart:109:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\alterar_observacoes_page.dart:118:28 - use_build_context_synchronously
+   info - Unnecessary use of 'toList' in a spread - lib\src\modules\transacoes\pages\alterar_observacoes_page.dart:465:14 - unnecessary_to_list_in_spreads
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\alterar_valor_page.dart:82:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\alterar_valor_page.dart:84:7 - avoid_print
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\alterar_valor_page.dart:187:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\alterar_valor_page.dart:193:22 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\alterar_valor_page.dart:195:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\alterar_valor_page.dart:203:28 - use_build_context_synchronously
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\src\modules\transacoes\pages\alterar_valor_page.dart:419:33 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\aplicar_reajuste_page.dart:684:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\aplicar_reajuste_page.dart:687:22 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\aplicar_reajuste_page.dart:689:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\aplicar_reajuste_page.dart:694:28 - use_build_context_synchronously
+warning - The value of the field '_processando' isn't used - lib\src\modules\transacoes\pages\editar_transacao_page.dart:83:8 - unused_field
+warning - The value of the field '_valorPendenteGrupo' isn't used - lib\src\modules\transacoes\pages\editar_transacao_page.dart:93:11 - unused_field
+warning - The value of the field '_itemsEfetivados' isn't used - lib\src\modules\transacoes\pages\editar_transacao_page.dart:94:8 - unused_field
+warning - The value of the field '_itemsPendentes' isn't used - lib\src\modules\transacoes\pages\editar_transacao_page.dart:95:8 - unused_field
+   info - The private field _isAumento could be 'final' - lib\src\modules\transacoes\pages\editar_transacao_page.dart:103:8 - prefer_final_fields
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\editar_transacao_page.dart:124:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\editar_transacao_page.dart:287:11 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\editar_transacao_page.dart:292:15 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\editar_transacao_page.dart:296:15 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\editar_transacao_page.dart:299:13 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\editar_transacao_page.dart:300:13 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\editar_transacao_page.dart:340:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\editar_transacao_page.dart:345:13 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\editar_transacao_page.dart:349:13 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\editar_transacao_page.dart:352:11 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\editar_transacao_page.dart:353:11 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\editar_transacao_page.dart:430:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\editar_transacao_page.dart:439:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\editar_transacao_page.dart:443:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\editar_transacao_page.dart:445:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\editar_transacao_page.dart:450:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\editar_transacao_page.dart:472:11 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\editar_transacao_page.dart:473:11 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\editar_transacao_page.dart:478:13 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\editar_transacao_page.dart:485:11 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\editar_transacao_page.dart:488:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\editar_transacao_page.dart:489:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\editar_transacao_page.dart:490:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\editar_transacao_page.dart:492:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\editar_transacao_page.dart:497:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\editar_transacao_page.dart:503:13 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\editar_transacao_page.dart:515:11 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\editar_transacao_page.dart:522:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\editar_transacao_page.dart:524:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\editar_transacao_page.dart:533:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\editar_transacao_page.dart:543:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\editar_transacao_page.dart:545:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\editar_transacao_page.dart:574:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\editar_transacao_page.dart:577:7 - avoid_print
+warning - The operand can't be 'null', so the condition is always 'true' - lib\src\modules\transacoes\pages\editar_transacao_page.dart:670:29 - unnecessary_null_comparison
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\transacoes\pages\editar_transacao_page.dart:671:55 - unnecessary_non_null_assertion
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\editar_transacao_page.dart:768:21 - avoid_print
+warning - The declaration '_getTransactionContext' isn't referenced - lib\src\modules\transacoes\pages\editar_transacao_page.dart:816:10 - unused_element
+warning - The declaration '_getIconeTipo' isn't referenced - lib\src\modules\transacoes\pages\editar_transacao_page.dart:829:12 - unused_element
+warning - The declaration '_buildOpcoesEscopoReajuste' isn't referenced - lib\src\modules\transacoes\pages\editar_transacao_page.dart:1063:10 - unused_element
+   info - Unnecessary use of 'toList' in a spread - lib\src\modules\transacoes\pages\editar_transacao_page.dart:1141:14 - unnecessary_to_list_in_spreads
+warning - The declaration '_buildCardTransacao' isn't referenced - lib\src\modules\transacoes\pages\editar_transacao_page.dart:1296:10 - unused_element
+warning - The declaration '_buildBotaoGradiente' isn't referenced - lib\src\modules\transacoes\pages\editar_transacao_page.dart:1569:10 - unused_element
+   info - The variable name 'EditOptionCard' isn't a lowerCamelCase identifier - lib\src\modules\transacoes\pages\editar_transacao_page.dart:1623:10 - non_constant_identifier_names
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\src\modules\transacoes\pages\editar_transacao_page.dart:1645:35 - deprecated_member_use
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\editar_transacao_page.dart:1741:15 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\editar_transacao_page.dart:1794:13 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\editar_transacao_page.dart:1842:15 - avoid_print
+warning - The declaration '_salvarNovoValor' isn't referenced - lib\src\modules\transacoes\pages\editar_transacao_page.dart:1858:16 - unused_element
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\editar_transacao_page.dart:1879:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\editar_transacao_page.dart:1882:22 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\editar_transacao_page.dart:1884:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\editar_transacao_page.dart:1889:28 - use_build_context_synchronously
+warning - The declaration '_aplicarReajuste' isn't referenced - lib\src\modules\transacoes\pages\editar_transacao_page.dart:1899:16 - unused_element
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\editar_transacao_page.dart:1920:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\editar_transacao_page.dart:1923:22 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\editar_transacao_page.dart:1925:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\editar_transacao_page.dart:1930:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\editar_transacao_page.dart:1955:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\editar_transacao_page.dart:1975:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\editar_transacao_page.dart:1981:22 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\editar_transacao_page.dart:1984:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\editar_transacao_page.dart:2006:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\editar_transacao_page.dart:2024:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\editar_transacao_page.dart:2030:22 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\editar_transacao_page.dart:2032:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\editar_transacao_page.dart:2040:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\editar_transacao_page.dart:2072:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\editar_transacao_page.dart:2164:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\editar_transacao_page.dart:2170:22 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\editar_transacao_page.dart:2173:28 - use_build_context_synchronously
+warning - The declaration '_buildIconeQuadrado' isn't referenced - lib\src\modules\transacoes\pages\editar_transacao_page.dart:2226:10 - unused_element
+   info - Unnecessary braces in a string interpolation - lib\src\modules\transacoes\pages\editar_transacao_page.dart:2272:77 - unnecessary_brace_in_string_interps
+warning - The declaration '_buildCheckboxFuturas' isn't referenced - lib\src\modules\transacoes\pages\editar_transacao_page.dart:2451:10 - unused_element
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\src\modules\transacoes\pages\editar_transacao_page.dart:2464:33 - deprecated_member_use
+warning - The declaration '_buildPreviewAlteracoes' isn't referenced - lib\src\modules\transacoes\pages\editar_transacao_page.dart:2569:10 - unused_element
+warning - The declaration '_buildDialogEdicaoDescricao' isn't referenced - lib\src\modules\transacoes\pages\editar_transacao_page.dart:2727:10 - unused_element
+warning - The declaration '_selecionarData' isn't referenced - lib\src\modules\transacoes\pages\editar_transacao_page.dart:2770:16 - unused_element
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\editar_transacao_page.dart:2804:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\editar_transacao_page.dart:2880:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\editar_transacao_page.dart:2886:22 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\editar_transacao_page.dart:2888:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\editar_transacao_page.dart:2897:28 - use_build_context_synchronously
+warning - The declaration '_selecionarContaCartao' isn't referenced - lib\src\modules\transacoes\pages\editar_transacao_page.dart:2907:16 - unused_element
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\editar_transacao_page.dart:2919:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\editar_transacao_page.dart:2931:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\editar_transacao_page.dart:2938:9 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\editar_transacao_page.dart:3040:50 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\editar_transacao_page.dart:3048:41 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\editar_transacao_page.dart:3073:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\editar_transacao_page.dart:3085:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\editar_transacao_page.dart:3092:9 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\editar_transacao_page.dart:3187:28 - use_build_context_synchronously
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\transacoes\pages\editar_transacao_page.dart:3229:30 - unnecessary_non_null_assertion
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\editar_transacao_page.dart:3247:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\editar_transacao_page.dart:3251:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\editar_transacao_page.dart:3257:28 - use_build_context_synchronously
+warning - The declaration '_selecionarCategoria' isn't referenced - lib\src\modules\transacoes\pages\editar_transacao_page.dart:3264:16 - unused_element
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\editar_transacao_page.dart:3270:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\editar_transacao_page.dart:3277:9 - use_build_context_synchronously
+warning - The operand can't be 'null', so the condition is always 'true' - lib\src\modules\transacoes\pages\editar_transacao_page.dart:3330:50 - unnecessary_null_comparison
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\transacoes\pages\editar_transacao_page.dart:3330:74 - unnecessary_non_null_assertion
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\transacoes\pages\editar_transacao_page.dart:3331:61 - unnecessary_non_null_assertion
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\editar_transacao_page.dart:3363:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\editar_transacao_page.dart:3368:28 - use_build_context_synchronously
+warning - The declaration '_salvarNovaDescricao' isn't referenced - lib\src\modules\transacoes\pages\editar_transacao_page.dart:3378:16 - unused_element
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\editar_transacao_page.dart:3397:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\editar_transacao_page.dart:3408:22 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\editar_transacao_page.dart:3410:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\editar_transacao_page.dart:3419:28 - use_build_context_synchronously
+warning - Unused import: 'package:intl/intl.dart' - lib\src\modules\transacoes\pages\transacao_form_page.dart:11:8 - unused_import
+warning - Unused import: '../../transacoes/components/smart_field.dart' - lib\src\modules\transacoes\pages\transacao_form_page.dart:20:8 - unused_import
+   info - The prefix 'TransacaoSmartField' isn't a lower_case_with_underscores identifier - lib\src\modules\transacoes\pages\transacao_form_page.dart:20:58 - library_prefixes
+warning - Unused import: '../components/conditional_transaction_fields.dart' - lib\src\modules\transacoes\pages\transacao_form_page.dart:22:8 - unused_import
+warning - Unused import: '../components/status_switch.dart' - lib\src\modules\transacoes\pages\transacao_form_page.dart:24:8 - unused_import
+warning - The value of the field '_temParcelas' isn't used - lib\src\modules\transacoes\pages\transacao_form_page.dart:130:8 - unused_field
+warning - The value of the field '_ehRecorrente' isn't used - lib\src\modules\transacoes\pages\transacao_form_page.dart:131:8 - unused_field
+   info - The private field _frequenciaParcelada could be 'final' - lib\src\modules\transacoes\pages\transacao_form_page.dart:135:10 - prefer_final_fields
+   info - The private field _primeiroEfetivado could be 'final' - lib\src\modules\transacoes\pages\transacao_form_page.dart:158:8 - prefer_final_fields
+   info - The private field _salvarEContinuar could be 'final' - lib\src\modules\transacoes\pages\transacao_form_page.dart:162:8 - prefer_final_fields
+warning - The value of the field '_salvarEContinuar' isn't used - lib\src\modules\transacoes\pages\transacao_form_page.dart:162:8 - unused_field
+warning - The operand can't be 'null', so the condition is always 'true' - lib\src\modules\transacoes\pages\transacao_form_page.dart:431:23 - unnecessary_null_comparison
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\transacoes\pages\transacao_form_page.dart:431:47 - unnecessary_non_null_assertion
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\transacoes\pages\transacao_form_page.dart:432:43 - unnecessary_non_null_assertion
+warning - The value of the local variable 'subcategorias' isn't used - lib\src\modules\transacoes\pages\transacao_form_page.dart:544:13 - unused_local_variable
+warning - The operand can't be 'null', so the condition is always 'true' - lib\src\modules\transacoes\pages\transacao_form_page.dart:808:48 - unnecessary_null_comparison
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\transacoes\pages\transacao_form_page.dart:808:72 - unnecessary_non_null_assertion
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\transacoes\pages\transacao_form_page.dart:809:62 - unnecessary_non_null_assertion
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\transacao_form_page.dart:890:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transacoes\pages\transacao_form_page.dart:906:7 - use_build_context_synchronously
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\transacoes\pages\transacao_form_page.dart:959:94 - unnecessary_non_null_assertion
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\transacoes\pages\transacao_form_page.dart:960:73 - unnecessary_non_null_assertion
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\transacoes\pages\transacao_form_page.dart:1447:96 - unnecessary_non_null_assertion
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\transacoes\pages\transacao_form_page.dart:1448:75 - unnecessary_non_null_assertion
+warning - The operand can't be 'null', so the condition is always 'true' - lib\src\modules\transacoes\pages\transacao_form_page.dart:2265:69 - unnecessary_null_comparison
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\transacoes\pages\transacao_form_page.dart:2265:104 - unnecessary_non_null_assertion
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\transacoes\pages\transacao_form_page.dart:2266:85 - unnecessary_non_null_assertion
+warning - The operand can't be 'null', so the condition is always 'true' - lib\src\modules\transacoes\pages\transacao_form_page.dart:2296:69 - unnecessary_null_comparison
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\transacoes\pages\transacao_form_page.dart:2296:104 - unnecessary_non_null_assertion
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\transacoes\pages\transacao_form_page.dart:2297:85 - unnecessary_non_null_assertion
+warning - Unused import: '../../../services/grupos_metadados_service.dart' - lib\src\modules\transacoes\pages\transacoes_page.dart:29:8 - unused_import
+warning - Unused import: '../../../shared/utils/currency_formatter.dart' - lib\src\modules\transacoes\pages\transacoes_page.dart:30:8 - unused_import
+warning - Unused import: '../../../shared/components/modals/transacao_opcoes_modal.dart' - lib\src\modules\transacoes\pages\transacoes_page.dart:33:8 - unused_import
+   info - The private field _agruparPorDia could be 'final' - lib\src\modules\transacoes\pages\transacoes_page.dart:291:8 - prefer_final_fields
+warning - The value of the field '_mostrarPendentes' isn't used - lib\src\modules\transacoes\pages\transacoes_page.dart:292:8 - unused_field
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\transacoes_page.dart:447:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\transacoes_page.dart:448:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\transacoes_page.dart:449:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\transacoes_page.dart:450:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\transacoes_page.dart:451:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\transacoes_page.dart:456:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\transacoes_page.dart:477:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\transacoes_page.dart:478:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\transacoes_page.dart:482:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\transacoes_page.dart:493:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\transacoes_page.dart:499:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\transacoes_page.dart:651:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\transacoes_page.dart:652:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\transacoes_page.dart:653:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\transacoes_page.dart:674:7 - avoid_print
+warning - The declaration '_mostrarModalFiltros' isn't referenced - lib\src\modules\transacoes\pages\transacoes_page.dart:802:33 - unused_element
+warning - The declaration '_aplicarFiltroInteligente' isn't referenced - lib\src\modules\transacoes\pages\transacoes_page.dart:812:8 - unused_element
+warning - This default clause is covered by the previous cases - lib\src\modules\transacoes\pages\transacoes_page.dart:902:7 - unreachable_switch_default
+warning - The declaration '_navegarParaEditarTransacao' isn't referenced - lib\src\modules\transacoes\pages\transacoes_page.dart:1356:8 - unused_element
+warning - The declaration '_getCorTransacao' isn't referenced - lib\src\modules\transacoes\pages\transacoes_page.dart:1503:9 - unused_element
+warning - The declaration '_formatarTipoEspecifico' isn't referenced - lib\src\modules\transacoes\pages\transacoes_page.dart:2556:10 - unused_element
+warning - The declaration '_formatarTipoTransacao' isn't referenced - lib\src\modules\transacoes\pages\transacoes_page.dart:2711:10 - unused_element
+warning - The declaration '_getIconeTipoTransacaoModal' isn't referenced - lib\src\modules\transacoes\pages\transacoes_page.dart:2725:12 - unused_element
+warning - The declaration '_getCorTipoTransacaoModal' isn't referenced - lib\src\modules\transacoes\pages\transacoes_page.dart:2738:9 - unused_element
+warning - The declaration '_getTextoTipoTransacaoModal' isn't referenced - lib\src\modules\transacoes\pages\transacoes_page.dart:2751:10 - unused_element
+   info - The variable name 'EditOptionCardModal' isn't a lowerCamelCase identifier - lib\src\modules\transacoes\pages\transacoes_page.dart:2763:10 - non_constant_identifier_names
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\src\modules\transacoes\pages\transacoes_page.dart:2785:35 - deprecated_member_use
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\transacoes_page.dart:3118:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\transacoes_page.dart:3132:5 - avoid_print
+warning - The value of the local variable 'index' isn't used - lib\src\modules\transacoes\pages\transacoes_page.dart:3223:15 - unused_local_variable
+warning - The value of the local variable 'transacoes' isn't used - lib\src\modules\transacoes\pages\transacoes_page.dart:3519:11 - unused_local_variable
+warning - The declaration '_mostrarMenuAdicionar' isn't referenced - lib\src\modules\transacoes\pages\transacoes_page.dart:3633:8 - unused_element
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\transacoes_page.dart:3761:19 - avoid_print
+   info - Use interpolation to compose strings and values - lib\src\modules\transacoes\pages\transacoes_page.dart:3910:17 - prefer_interpolation_to_compose_strings
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\transacoes_page.dart:4005:11 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\transacoes_page.dart:4006:11 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\pages\transacoes_page.dart:4007:11 - avoid_print
+warning - Unused import: 'dart:developer' - lib\src\modules\transacoes\pages\transferencia_form_page.dart:7:8 - unused_import
+warning - The declaration '_buildSeletorContas' isn't referenced - lib\src\modules\transacoes\pages\transferencia_form_page.dart:747:10 - unused_element
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\transacoes\services\transacao_edit_service.dart:89:44 - unnecessary_non_null_assertion
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\transacoes\services\transacao_edit_service.dart:147:38 - unnecessary_non_null_assertion
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\transacoes\services\transacao_edit_service.dart:225:44 - unnecessary_non_null_assertion
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\transacoes\services\transacao_edit_service.dart:278:38 - unnecessary_non_null_assertion
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\transacoes\services\transacao_edit_service.dart:361:44 - unnecessary_non_null_assertion
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\transacoes\services\transacao_edit_service.dart:400:40 - unnecessary_non_null_assertion
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\transacoes\services\transacao_edit_service.dart:471:38 - unnecessary_non_null_assertion
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\transacoes\services\transacao_edit_service.dart:521:44 - unnecessary_non_null_assertion
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\transacoes\services\transacao_edit_service.dart:534:38 - unnecessary_non_null_assertion
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\transacoes\services\transacao_edit_service.dart:637:42 - unnecessary_non_null_assertion
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\transacoes\services\transacao_edit_service.dart:672:44 - unnecessary_non_null_assertion
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\transacoes\services\transacao_edit_service.dart:708:40 - unnecessary_non_null_assertion
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\transacoes\services\transacao_edit_service.dart:793:42 - unnecessary_non_null_assertion
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\services\transacao_edit_service.dart:813:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\services\transacao_edit_service.dart:814:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\services\transacao_edit_service.dart:815:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\services\transacao_edit_service.dart:816:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\services\transacao_edit_service.dart:833:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\services\transacao_edit_service.dart:834:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\services\transacao_edit_service.dart:835:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\services\transacao_edit_service.dart:836:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\services\transacao_edit_service.dart:838:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\services\transacao_edit_service.dart:840:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\services\transacao_edit_service.dart:844:9 - avoid_print
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\transacoes\services\transacao_edit_service.dart:846:44 - unnecessary_non_null_assertion
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\services\transacao_edit_service.dart:852:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\services\transacao_edit_service.dart:858:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\services\transacao_edit_service.dart:861:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\services\transacao_edit_service.dart:866:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\modules\transacoes\services\transacao_edit_service.dart:872:7 - avoid_print
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\transacoes\services\transacao_edit_service.dart:890:40 - unnecessary_non_null_assertion
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\transacoes\services\transacao_edit_service.dart:950:44 - unnecessary_non_null_assertion
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\transacoes\services\transacao_edit_service.dart:984:38 - unnecessary_non_null_assertion
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\transacoes\services\transacao_edit_service.dart:1038:42 - unnecessary_non_null_assertion
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\transacoes\services\transacao_edit_service.dart:1081:42 - unnecessary_non_null_assertion
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\transacoes\services\transacao_edit_service.dart:1125:42 - unnecessary_non_null_assertion
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\transacoes\services\transacao_edit_service.dart:1189:84 - unnecessary_non_null_assertion
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\transacoes\services\transacao_edit_service.dart:1210:84 - unnecessary_non_null_assertion
+   info - Unnecessary braces in a string interpolation - lib\src\modules\transacoes\services\transacao_edit_service.dart:1545:46 - unnecessary_brace_in_string_interps
+   info - Unnecessary braces in a string interpolation - lib\src\modules\transacoes\services\transacao_edit_service.dart:1637:62 - unnecessary_brace_in_string_interps
+warning - The '!' will have no effect because the receiver can't be null - lib\src\modules\transacoes\services\transacao_edit_service.dart:1761:44 - unnecessary_non_null_assertion
+warning - Unused import: '../../../sync/sync_manager.dart' - lib\src\modules\transacoes\services\transacao_service.dart:15:8 - unused_import
+warning - Unused import: '../../contas/services/conta_service.dart' - lib\src\modules\transacoes\services\transacao_service.dart:17:8 - unused_import
+warning - The value of the field '_localDb' isn't used - lib\src\modules\transacoes\services\transacao_service_complete.dart:24:9 - unused_field
+   info - Constructors for public widgets should have a named 'key' parameter - lib\src\modules\transferencias\examples\transferencia_feedback_example.dart:8:7 - use_key_in_widget_constructors
+   info - Invalid use of a private type in a public API - lib\src\modules\transferencias\examples\transferencia_feedback_example.dart:10:3 - library_private_types_in_public_api
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\src\modules\transferencias\examples\transferencia_feedback_example.dart:54:11 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\modules\transferencias\examples\transferencia_feedback_example.dart:65:22 - use_build_context_synchronously
+   info - Don't invoke 'print' in production code - lib\src\services\grupos_metadados_service.dart:135:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\services\grupos_metadados_service.dart:146:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\services\grupos_metadados_service.dart:150:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\services\grupos_metadados_service.dart:153:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\services\grupos_metadados_service.dart:199:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\services\grupos_metadados_service.dart:204:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\services\grupos_metadados_service.dart:205:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\services\grupos_metadados_service.dart:206:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\services\grupos_metadados_service.dart:207:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\services\grupos_metadados_service.dart:208:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\services\grupos_metadados_service.dart:341:7 - avoid_print
+warning - The value of the local variable 'testQuery' isn't used - lib\src\services\grupos_metadados_service.dart:345:15 - unused_local_variable
+   info - Don't invoke 'print' in production code - lib\src\services\grupos_metadados_service.dart:346:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\services\grupos_metadados_service.dart:348:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\services\grupos_metadados_service.dart:396:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\services\grupos_metadados_service.dart:397:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\services\grupos_metadados_service.dart:398:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\services\grupos_metadados_service.dart:399:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\services\grupos_metadados_service.dart:433:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\services\grupos_metadados_service.dart:442:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\services\grupos_metadados_service.dart:447:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\services\grupos_metadados_service.dart:455:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\services\grupos_metadados_service.dart:459:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\services\grupos_metadados_service.dart:462:7 - avoid_print
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\src\shared\components\modals\transacao_opcoes_modal.dart:612:24 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\src\shared\components\modals\transacao_opcoes_modal.dart:617:35 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\src\shared\components\modals\transacao_opcoes_modal.dart:639:31 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\src\shared\components\modals\transacao_opcoes_modal.dart:647:38 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\src\shared\components\modals\transacao_opcoes_modal.dart:687:36 - deprecated_member_use
+   info - Use interpolation to compose strings and values - lib\src\shared\components\sidebar.dart:409:17 - prefer_interpolation_to_compose_strings
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\src\shared\components\ui\smart_currency_input.dart:237:36 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\src\shared\components\ui\smart_field.dart:230:35 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\src\shared\components\ui\smart_field.dart:233:37 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\src\shared\components\ui\smart_field.dart:274:47 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\src\shared\components\ui\smart_field.dart:277:49 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\src\shared\components\ui\sync_status_indicator.dart:97:38 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\src\shared\components\ui\sync_status_indicator.dart:101:42 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps - lib\src\shared\utils\operation_feedback_helper.dart:121:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\src\shared\utils\operation_feedback_helper.dart:243:24 - use_build_context_synchronously
+   info - Unnecessary braces in a string interpolation - lib\src\sync\offline_queue.dart:132:76 - unnecessary_brace_in_string_interps
+warning - The declaration '_downloadUserCards' isn't referenced - lib\src\sync\sync_manager.dart:1731:16 - unused_element
+   info - Don't invoke 'print' in production code - lib\src\sync\sync_manager.dart:1940:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\sync\sync_manager.dart:1956:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\sync\sync_manager.dart:1959:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\sync\sync_manager.dart:1967:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\sync\sync_manager.dart:1985:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\sync\sync_manager.dart:1986:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\src\sync\sync_manager.dart:1993:7 - avoid_print
+   info - Can't use a relative path to import a library in 'lib' - test\modules\contas\conta_service_test.dart:8:8 - avoid_relative_lib_imports
+   info - Can't use a relative path to import a library in 'lib' - test\modules\contas\conta_service_test.dart:9:8 - avoid_relative_lib_imports
+warning - Unused import: '../../../lib/src/modules/contas/services/conta_service.dart' - test\modules\contas\conta_service_test.dart:9:8 - unused_import
+
+1005 issues found. (ran in 3.6s)

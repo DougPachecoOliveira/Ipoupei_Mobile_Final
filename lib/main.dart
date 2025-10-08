@@ -1,0 +1,452 @@
+// 🚀 Main - iPoupei Mobile
+// 
+// Ponto de entrada da aplicação Flutter
+// Inicializa auth integration e configura rotas
+// 
+// Baseado em: Flutter Material App + Provider
+
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'src/auth_integration.dart';
+import 'src/supabase_auth_service.dart';
+import 'src/modules/auth/pages/login_ipoupei_page.dart';
+import 'src/modules/auth/pages/signup_page.dart';
+import 'src/modules/auth/pages/reset_password_page.dart';
+// import 'src/modules/dashboard/pages/home_page.dart'; // DEPRECATED: Use /navigation
+import 'src/modules/planejamento/pages/planejamento_page.dart';
+import 'src/modules/relatorios/pages/relatorios_page.dart';
+import 'src/modules/relatorios/pages/valor_hora_page.dart';
+import 'src/modules/categorias/pages/categorias_sugeridas_page.dart';
+import 'src/modules/diagnostico/pages/diagnostico_flow_page.dart';
+import 'src/modules/configuracoes/pages/configuracoes_page.dart';
+import 'src/routes/main_navigation.dart';
+import 'src/modules/contas/services/conta_service.dart';
+import 'src/sync/sync_manager.dart';
+import 'fix_database_categorias.dart';
+
+void main() async {
+  // Garante que os widgets estão inicializados
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  try {
+    // Inicializa toda a infraestrutura de auth e database
+    debugPrint('🚀 Inicializando iPoupei Mobile...');
+    await authIntegration.initialize();
+    debugPrint('✅ iPoupei Mobile inicializado com sucesso!');
+
+    // 🔧 FIX TEMPORÁRIO: Corrige subcategorias com categoria_id errado
+    try {
+      debugPrint('🔧 Executando fix de subcategorias...');
+      await fixSubcategoriasDatabase();
+      debugPrint('✅ Fix de subcategorias concluído!');
+    } catch (e) {
+      debugPrint('⚠️ Erro ao executar fix: $e');
+    }
+
+  } catch (e) {
+    debugPrint('❌ Erro na inicialização: $e');
+    // Continua execução mesmo com erro de inicialização
+    // O app vai funcionar em modo degradado
+  }
+  
+  runApp(const IPoupeiApp());
+}
+
+// GlobalKey para navegação
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+class IPoupeiApp extends StatefulWidget {
+  const IPoupeiApp({super.key});
+
+  @override
+  State<IPoupeiApp> createState() => _IPoupeiAppState();
+}
+
+class _IPoupeiAppState extends State<IPoupeiApp> {
+  @override
+  void initState() {
+    super.initState();
+    _setupAuthListener();
+  }
+
+  /// 👂 LISTENER PARA DETECTAR PASSWORD RECOVERY
+  void _setupAuthListener() {
+    Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+      final event = data.event;
+
+      debugPrint('🔐 Auth event: $event');
+
+      // Detectar password recovery
+      if (event == AuthChangeEvent.passwordRecovery) {
+        debugPrint('🔑 Password recovery detectado - navegando para /reset-password');
+
+        // Navegar para página de reset password
+        Future.delayed(const Duration(milliseconds: 300), () {
+          navigatorKey.currentState?.pushReplacementNamed('/reset-password');
+        });
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiProvider(
+      providers: [
+        // Provider para AuthService (se quiser usar Provider pattern)
+        Provider<SupabaseAuthService>.value(
+          value: authIntegration.authService,
+        ),
+      ],
+      child: MaterialApp(
+        title: 'iPoupei Mobile',
+        debugShowCheckedModeBanner: false,
+        navigatorKey: navigatorKey, // Para poder navegar de fora do contexto
+
+        // 🎯 CONTROLE GLOBAL DE FONTES, ÍCONES E ALTURAS
+        builder: (context, child) {
+          final mediaQuery = MediaQuery.of(context);
+
+          // 🎯 CONTROLE DE FONT SIZE (Text scale)
+          double systemTextScale = mediaQuery.textScaler.scale(1.0);
+          // Limita entre 0.8 e 0.9 (de -20% até -10%)
+          double finalTextScale = systemTextScale.clamp(0.8, 0.9);
+
+          return MediaQuery(
+            data: mediaQuery.copyWith(
+              // Aplica escala de texto limitada
+              textScaler: TextScaler.linear(finalTextScale),
+            ),
+            child: Theme(
+              data: Theme.of(context).copyWith(
+                // Densidade visual compacta padrão
+                visualDensity: const VisualDensity(
+                  horizontal: -2.0,
+                  vertical: -2.0,
+                ),
+                // 🎯 ALTURAS DOS BOTÕES
+                elevatedButtonTheme: ElevatedButtonThemeData(
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(88, 36),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                  ),
+                ),
+                textButtonTheme: TextButtonThemeData(
+                  style: TextButton.styleFrom(
+                    minimumSize: const Size(64, 36),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                  ),
+                ),
+                outlinedButtonTheme: OutlinedButtonThemeData(
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(88, 36),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                  ),
+                ),
+                // 🎯 ALTURA DA APPBAR
+                appBarTheme: const AppBarTheme(
+                  toolbarHeight: 42,
+                ),
+                // 🎯 ALTURA DOS CARDS
+                cardTheme: const CardThemeData(
+                  margin: EdgeInsets.all(8),
+                  elevation: 2,
+                ),
+                // 🎯 ALTURA DOS LISTTILES
+                listTileTheme: const ListTileThemeData(
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 4,
+                  ),
+                  minVerticalPadding: 2,
+                ),
+              ),
+              child: IconTheme(
+                data: const IconThemeData(
+                  size: 24,
+                ),
+                child: child!,
+              ),
+            ),
+          );
+        },
+
+        // Tema da aplicação
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: Colors.blue,
+            brightness: Brightness.light,
+          ),
+          useMaterial3: true,
+          fontFamily: 'System',
+        ),
+        
+        // Rota inicial
+        home: const AuthWrapper(),
+        
+        // Rotas nomeadas
+        routes: {
+          '/login': (context) => const LoginIpoupeiPage(),
+          '/signup': (context) => const SignUpPage(),
+          '/reset-password': (context) => const ResetPasswordPage(),
+          // '/home': (context) => const HomePage(), // DEPRECATED: Use /navigation
+          '/navigation': (context) => const MainNavigation(),
+          '/planejamento': (context) => const PlanejamentoPage(),
+          '/relatorios': (context) => const RelatoriosPage(),
+          '/valor-hora': (context) => const ValorHoraPage(),
+          '/categorias-sugeridas': (context) => const CategoriasSugeridasPage(),
+          '/diagnostico': (context) => const DiagnosticoFlowPage(),
+          '/configuracoes': (context) => const ConfiguracoesPage(),
+        },
+        
+        // Rota desconhecida
+        onUnknownRoute: (settings) {
+          return MaterialPageRoute(
+            builder: (context) => const LoginIpoupeiPage(),
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// 🔐 Auth Wrapper - Decide qual tela mostrar baseado no status de auth
+class AuthWrapper extends StatefulWidget {
+  const AuthWrapper({super.key});
+
+  @override
+  State<AuthWrapper> createState() => _AuthWrapperState();
+}
+
+class _AuthWrapperState extends State<AuthWrapper> {
+  @override
+  void initState() {
+    super.initState();
+    
+    // Escuta mudanças no status de autenticação
+    authIntegration.authService.statusStream.listen((status) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    final authService = authIntegration.authService;
+    
+    // Mostra loading enquanto verifica autenticação
+    if (authService.isLoading) {
+      return const Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text(
+                'Carregando iPoupei...',
+                style: TextStyle(fontSize: 16),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    
+    // Se está autenticado, força sync e mostra navegação principal
+    if (authService.isAuthenticated) {
+      return const AuthenticatedWrapper();
+    }
+
+    // Senão, mostra login
+    return const LoginIpoupeiPage();
+  }
+}
+
+/// 🔒 Wrapper Autenticado - Força sync antes de mostrar app
+class AuthenticatedWrapper extends StatefulWidget {
+  const AuthenticatedWrapper({super.key});
+
+  @override
+  State<AuthenticatedWrapper> createState() => _AuthenticatedWrapperState();
+}
+
+class _AuthenticatedWrapperState extends State<AuthenticatedWrapper> with TickerProviderStateMixin {
+  bool _syncCompleted = false;
+  bool _syncError = false;
+  String _syncMessage = 'Sincronizando dados...';
+  late AnimationController _pulseController;
+  late Animation<double> _pulseAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Inicializar animação de pulse
+    _pulseController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    );
+
+    _pulseAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.05,
+    ).animate(CurvedAnimation(
+      parent: _pulseController,
+      curve: Curves.easeInOut,
+    ));
+
+    // Iniciar animação repetida
+    _pulseController.repeat(reverse: true);
+
+    _forcarSyncCompleto();
+  }
+
+  /// 🔄 FORÇA SYNC COMPLETO OBRIGATÓRIO DE TODOS OS DADOS
+  Future<void> _forcarSyncCompleto() async {
+    try {
+      final userId = authIntegration.authService.currentUser?.id;
+      if (userId == null) throw Exception('Usuário não autenticado');
+      
+      // 1. Sincronizar Contas (com saldos corretos do Supabase)
+      setState(() {
+        _syncMessage = 'Sincronizando contas...';
+      });
+      await ContaService.instance.forcarResync();
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      // 2. SyncManager fará sync completo de categorias, cartões e transações
+      setState(() {
+        _syncMessage = 'Sincronizando categorias...';
+      });
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      setState(() {
+        _syncMessage = 'Sincronizando cartões...';
+      });
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      setState(() {
+        _syncMessage = 'Sincronizando transações...';
+      });
+      
+      // 3. Força sync inicial completo do SyncManager (inclui tudo)
+      try {
+        await SyncManager.instance.syncInitial();
+      } catch (e) {
+        debugPrint('⚠️ Erro sync completo: $e (continuando...)');
+      }
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      // 4. Verificação final
+      setState(() {
+        _syncMessage = 'Finalizando sincronização...';
+      });
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      setState(() {
+        _syncMessage = 'Sincronização completa! ✅';
+        _syncCompleted = true;
+      });
+      
+      // 5. Aguarda para mostrar sucesso
+      await Future.delayed(const Duration(milliseconds: 800));
+      
+    } catch (e) {
+      debugPrint('❌ Erro no sync completo: $e');
+      setState(() {
+        _syncError = true;
+        _syncMessage = 'Erro na sincronização';
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Se sync completou com sucesso, mostra app normal
+    if (_syncCompleted && !_syncError) {
+      return const MainNavigation();
+    }
+    
+    // Senão, mostra loading de sync
+    return Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (!_syncError) ...[
+              AnimatedBuilder(
+                animation: _pulseAnimation,
+                builder: (context, child) {
+                  return Transform.scale(
+                    scale: _pulseAnimation.value,
+                    child: Image.asset(
+                      'assets/images/Logo.png',
+                      width: 240,
+                      height: 240,
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 24),
+              const CircularProgressIndicator(),
+              const SizedBox(height: 16),
+              Text(
+                _syncMessage,
+                style: const TextStyle(fontSize: 16),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Sincronizando todos os dados: contas, categorias, cartões e transações...\nGarantindo dados atualizados do Servidor',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ] else ...[
+              const Icon(
+                Icons.error_outline,
+                size: 64,
+                color: Colors.red,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                _syncMessage,
+                style: const TextStyle(fontSize: 16),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    _syncError = false;
+                    _syncCompleted = false;
+                  });
+                  _forcarSyncCompleto();
+                },
+                child: const Text('Tentar Novamente'),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}

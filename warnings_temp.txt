@@ -1,0 +1,579 @@
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\fix_database_categorias.dart|8|3|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\fix_database_categorias.dart|12|5|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\fix_database_categorias.dart|98|11|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\fix_database_categorias.dart|114|11|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\fix_database_categorias.dart|118|9|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\fix_database_categorias.dart|123|5|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\fix_database_categorias.dart|124|5|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\fix_database_categorias.dart|125|5|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\fix_database_categorias.dart|126|5|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\fix_database_categorias.dart|127|5|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\fix_database_categorias.dart|128|5|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\fix_database_categorias.dart|131|5|5|Don't invoke 'print' in production code.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\auth\\pages\\login_ipoupei_page.dart|297|22|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_KEY_IN_WIDGET_CONSTRUCTORS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\examples\\cartao_feedback_example.dart|8|7|21|Constructors for public widgets should have a named 'key' parameter.
+INFO|LINT|LIBRARY_PRIVATE_TYPES_IN_PUBLIC_API|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\examples\\cartao_feedback_example.dart|10|3|27|Invalid use of a private type in a public API.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\cartao_form_page.dart|265|7|5|Don't invoke 'print' in production code.
+INFO|LINT|UNNECESSARY_TO_LIST_IN_SPREADS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\cartao_form_page.dart|927|16|6|Unnecessary use of 'toList' in a spread.
+INFO|LINT|UNNECESSARY_TO_LIST_IN_SPREADS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\cartao_form_page.dart|1239|14|6|Unnecessary use of 'toList' in a spread.
+INFO|LINT|UNNECESSARY_TO_LIST_IN_SPREADS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\cartao_form_page.dart|1345|24|6|Unnecessary use of 'toList' in a spread.
+INFO|LINT|UNNECESSARY_TO_LIST_IN_SPREADS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\cartao_form_page.dart|1453|24|6|Unnecessary use of 'toList' in a spread.
+INFO|LINT|PREFER_FINAL_FIELDS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\cartoes_consolidado_page.dart|59|7|18|The private field _touchedIndex could be 'final'.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\cartoes_consolidado_page.dart|1259|21|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\cartoes_consolidado_page.dart|1262|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\cartoes_consolidado_page.dart|1273|9|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\cartoes_consolidado_page.dart|1288|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\cartoes_consolidado_page.dart|1289|23|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\cartoes_consolidado_page.dart|1293|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\cartoes_consolidado_page.dart|1386|21|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\cartoes_consolidado_page.dart|1392|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\cartoes_consolidado_page.dart|1406|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\cartoes_consolidado_page.dart|1422|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\cartoes_consolidado_page.dart|1423|23|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\cartoes_consolidado_page.dart|1426|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\cartoes_consolidado_page.dart|1635|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|AWAIT_ONLY_FUTURES|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\cartoes_consolidado_page.dart|1777|18|5|Uses 'await' on an instance of 'Database?', which is not a subtype of 'Future'.
+INFO|LINT|UNNECESSARY_BRACE_IN_STRING_INTERPS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\cartoes_consolidado_page.dart|1783|26|10|Unnecessary braces in a string interpolation.
+INFO|LINT|UNNECESSARY_BRACE_IN_STRING_INTERPS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\cartoes_consolidado_page.dart|1784|23|10|Unnecessary braces in a string interpolation.
+INFO|LINT|AWAIT_ONLY_FUTURES|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\cartoes_consolidado_page.dart|1811|18|5|Uses 'await' on an instance of 'Database?', which is not a subtype of 'Future'.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\cartoes_consolidado_page.dart|1862|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_SUPER_PARAMETERS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\cartoes_modal_page.dart|63|9|16|Parameter 'key' could be a super parameter.
+INFO|LINT|PREFER_FINAL_FIELDS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\cartoes_modal_page.dart|91|24|26|The private field _alteracoesDetectadas could be 'final'.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\cartoes_modal_page.dart|989|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\cartoes_modal_page.dart|997|23|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\cartoes_modal_page.dart|1002|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\cartoes_modal_page.dart|1049|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\cartoes_modal_page.dart|1055|23|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\cartoes_modal_page.dart|1060|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_SUPER_PARAMETERS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\despesa_cartao_page.dart|59|9|17|Parameter 'key' could be a super parameter.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\despesa_cartao_page.dart|2056|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\despesa_cartao_page.dart|2063|23|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\despesa_cartao_page.dart|2068|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|UNNECESSARY_BRACE_IN_STRING_INTERPS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\despesa_cartao_page.dart|2271|20|17|Unnecessary braces in a string interpolation.
+INFO|LINT|UNNECESSARY_BRACE_IN_STRING_INTERPS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\despesa_cartao_page.dart|2327|20|17|Unnecessary braces in a string interpolation.
+INFO|LINT|PREFER_FINAL_FIELDS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\fatura_detalhada_page.dart|61|16|24|The private field _faturasDisponiveis could be 'final'.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\fatura_detalhada_page.dart|234|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\fatura_detalhada_page.dart|245|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\fatura_detalhada_page.dart|296|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\fatura_detalhada_page.dart|307|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\fatura_detalhada_page.dart|404|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\fatura_detalhada_page.dart|415|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\fatura_detalhada_page.dart|455|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\fatura_detalhada_page.dart|466|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|UNNECESSARY_TO_LIST_IN_SPREADS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\fatura_detalhada_page.dart|951|24|6|Unnecessary use of 'toList' in a spread.
+INFO|LINT|SORT_CHILD_PROPERTIES_LAST|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\fatura_detalhada_page.dart|953|15|36|The 'child' argument should be last in widget constructor invocations.
+INFO|LINT|USE_SUPER_PARAMETERS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\faturas_list_page.dart|17|9|15|Parameter 'key' could be a super parameter.
+INFO|LINT|PREFER_FINAL_FIELDS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\faturas_list_page.dart|31|34|19|The private field _faturasPorMes could be 'final'.
+INFO|LINT|UNNECESSARY_TO_LIST_IN_SPREADS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\gestao_cartoes_mobile.dart|1487|26|6|Unnecessary use of 'toList' in a spread.
+INFO|LINT|UNNECESSARY_BRACE_IN_STRING_INTERPS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\gestao_cartoes_mobile.dart|1731|60|10|Unnecessary braces in a string interpolation.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\gestao_cartoes_mobile.dart|1910|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\gestao_cartoes_mobile.dart|1940|9|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\gestao_cartoes_mobile.dart|1954|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\gestao_cartoes_mobile.dart|1981|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\gestao_cartoes_mobile.dart|2091|9|16|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\gestao_cartoes_mobile.dart|2107|21|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\gestao_cartoes_mobile.dart|2111|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\gestao_cartoes_mobile.dart|2163|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\gestao_cartoes_mobile.dart|2164|23|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\pages\\gestao_cartoes_mobile.dart|2174|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|UNNECESSARY_BRACE_IN_STRING_INTERPS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\services\\cartao_data_service.dart|103|27|25|Unnecessary braces in a string interpolation.
+INFO|LINT|PREFER_IS_EMPTY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\services\\cartao_data_service.dart|158|11|17|Use 'isNotEmpty' instead of 'length' to test whether the collection is empty.
+INFO|LINT|PREFER_INTERPOLATION_TO_COMPOSE_STRINGS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\services\\cartao_data_service.dart|1458|42|33|Use interpolation to compose strings and values.
+INFO|LINT|PREFER_IS_EMPTY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\services\\cartao_data_service.dart|1785|11|17|Use 'isNotEmpty' instead of 'length' to test whether the collection is empty.
+INFO|LINT|UNNECESSARY_BRACE_IN_STRING_INTERPS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\services\\cartao_service.dart|716|29|13|Unnecessary braces in a string interpolation.
+INFO|LINT|UNNECESSARY_BRACE_IN_STRING_INTERPS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\services\\cartao_service.dart|731|26|13|Unnecessary braces in a string interpolation.
+INFO|LINT|UNNECESSARY_NULL_AWARE_ASSIGNMENTS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\services\\fatura_detection_service.dart|537|9|27|Unnecessary assignment of 'null'.
+INFO|LINT|USE_RETHROW_WHEN_POSSIBLE|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\services\\fatura_operations_service.dart|994|9|16|Use 'rethrow' to rethrow a caught exception.
+INFO|LINT|USE_RETHROW_WHEN_POSSIBLE|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\services\\fatura_operations_service.dart|1044|13|20|Use 'rethrow' to rethrow a caught exception.
+INFO|LINT|USE_RETHROW_WHEN_POSSIBLE|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\services\\fatura_operations_service.dart|1049|9|15|Use 'rethrow' to rethrow a caught exception.
+INFO|LINT|USE_SUPER_PARAMETERS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\widgets\\cartao_card.dart|21|9|10|Parameter 'key' could be a super parameter.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\widgets\\cartao_card.dart|327|5|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\widgets\\cartao_card.dart|330|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\widgets\\cartao_card.dart|334|5|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\widgets\\cartao_card.dart|335|5|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\widgets\\cartao_card.dart|336|5|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\widgets\\cartao_card.dart|337|5|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\widgets\\cartao_card.dart|338|5|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\widgets\\cartao_card.dart|339|5|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\widgets\\cartao_card.dart|340|5|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\widgets\\cartao_card.dart|341|5|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\widgets\\cartao_card.dart|345|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\widgets\\cartao_card.dart|351|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\widgets\\cartao_card.dart|359|9|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\widgets\\cartao_card.dart|367|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\widgets\\cartao_card.dart|373|5|5|Don't invoke 'print' in production code.
+INFO|LINT|UNNECESSARY_BRACE_IN_STRING_INTERPS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\widgets\\cartao_card.dart|588|26|16|Unnecessary braces in a string interpolation.
+INFO|LINT|USE_SUPER_PARAMETERS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\widgets\\cartao_form_modal.dart|50|9|15|Parameter 'key' could be a super parameter.
+INFO|LINT|USE_SUPER_PARAMETERS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\widgets\\confirmacao_modal.dart|11|9|16|Parameter 'key' could be a super parameter.
+INFO|LINT|USE_SUPER_PARAMETERS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\widgets\\modal_confirmacao_parcelamento.dart|11|9|28|Parameter 'key' could be a super parameter.
+INFO|LINT|USE_SUPER_PARAMETERS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\widgets\\modal_estorno_fatura.dart|13|9|18|Parameter 'key' could be a super parameter.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\widgets\\modal_estorno_fatura.dart|262|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\widgets\\modal_estorno_fatura.dart|271|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\widgets\\modal_estorno_fatura.dart|279|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_SUPER_PARAMETERS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\widgets\\modal_pagamento_fatura.dart|13|9|20|Parameter 'key' could be a super parameter.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\widgets\\modal_pagamento_fatura.dart|242|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\widgets\\modal_pagamento_fatura.dart|251|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\widgets\\modal_pagamento_fatura.dart|259|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_SUPER_PARAMETERS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\widgets\\modal_reabrir_fatura.dart|13|9|18|Parameter 'key' could be a super parameter.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\widgets\\modal_reabrir_fatura.dart|157|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\widgets\\modal_reabrir_fatura.dart|166|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\widgets\\modal_reabrir_fatura.dart|174|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_SUPER_PARAMETERS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\widgets\\visualizacao_consolidada_widget.dart|13|9|29|Parameter 'key' could be a super parameter.
+INFO|LINT|USE_SUPER_PARAMETERS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\cartoes\\widgets\\visualizacao_detalhada_widget.dart|22|9|27|Parameter 'key' could be a super parameter.
+INFO|LINT|UNNECESSARY_BRACE_IN_STRING_INTERPS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\categorias\\components\\escolher_icone_modal.dart|462|31|14|Unnecessary braces in a string interpolation.
+INFO|LINT|UNNECESSARY_BRACE_IN_STRING_INTERPS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\categorias\\components\\escolher_icone_modal.dart|494|31|14|Unnecessary braces in a string interpolation.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\categorias\\components\\excluir_categoria_modal.dart|53|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\categorias\\components\\excluir_categoria_modal.dart|91|23|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\categorias\\components\\excluir_categoria_modal.dart|96|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\categorias\\components\\excluir_categoria_modal.dart|101|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\categorias\\components\\excluir_categoria_modal.dart|131|23|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\categorias\\components\\excluir_categoria_modal.dart|149|25|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\categorias\\components\\excluir_categoria_modal.dart|155|32|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\categorias\\components\\excluir_categoria_modal.dart|160|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\categorias\\components\\migrar_categoria_modal.dart|70|23|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\categorias\\components\\migrar_categoria_modal.dart|78|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\categorias\\components\\migrar_categoria_modal.dart|83|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|PREFER_FINAL_FIELDS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\categorias\\examples\\subcategorias_cache_test.dart|26|16|16|The private field _resultados could be 'final'.
+INFO|LINT|PREFER_FINAL_FIELDS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\categorias\\pages\\categorias_page.dart|150|23|25|The private field _valoresPorCategoria could be 'final'.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\categorias\\pages\\categorias_page.dart|564|9|16|Don't use 'BuildContext's across async gaps.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\categorias\\pages\\categorias_page.dart|581|9|5|Don't invoke 'print' in production code.
+INFO|LINT|DEPEND_ON_REFERENCED_PACKAGES|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\categorias\\pages\\gestao_categoria_page.dart|17|8|36|The imported package 'collection' isn't a dependency of the importing package.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\categorias\\pages\\gestao_categoria_page.dart|912|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\categorias\\pages\\gestao_categoria_page.dart|919|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\categorias\\pages\\gestao_categoria_page.dart|926|9|16|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\categorias\\pages\\gestao_categoria_page.dart|944|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\categorias\\pages\\gestao_categoria_page.dart|950|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\categorias\\pages\\gestao_categoria_page.dart|962|9|16|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\categorias\\pages\\gestao_categoria_page.dart|977|23|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\categorias\\pages\\gestao_categoria_page.dart|980|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\categorias\\pages\\gestao_categoria_page.dart|985|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|UNNECESSARY_TO_LIST_IN_SPREADS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\categorias\\pages\\gestao_categoria_page.dart|2595|28|6|Unnecessary use of 'toList' in a spread.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\categorias\\pages\\gestao_categoria_page.dart|3052|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\categorias\\pages\\gestao_categoria_page.dart|3056|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|UNNECESSARY_BRACE_IN_STRING_INTERPS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\categorias\\services\\categoria_service.dart|1415|27|14|Unnecessary braces in a string interpolation.
+INFO|LINT|UNNECESSARY_BRACE_IN_STRING_INTERPS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\categorias\\services\\categoria_service.dart|1432|27|14|Unnecessary braces in a string interpolation.
+INFO|LINT|UNNECESSARY_BRACE_IN_STRING_INTERPS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\categorias\\services\\categoria_service.dart|1453|40|11|Unnecessary braces in a string interpolation.
+INFO|LINT|UNNECESSARY_BRACE_IN_STRING_INTERPS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\categorias\\services\\categoria_service.dart|1561|57|11|Unnecessary braces in a string interpolation.
+INFO|LINT|AWAIT_ONLY_FUTURES|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\categorias\\services\\categoria_service.dart|2112|18|5|Uses 'await' on an instance of 'Database?', which is not a subtype of 'Future'.
+INFO|LINT|AWAIT_ONLY_FUTURES|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\categorias\\services\\categoria_service.dart|2138|18|5|Uses 'await' on an instance of 'Database?', which is not a subtype of 'Future'.
+INFO|LINT|USE_SUPER_PARAMETERS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\configuracoes\\pages\\configuracoes_page.dart|29|9|17|Parameter 'key' could be a super parameter.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\configuracoes\\pages\\configuracoes_page.dart|917|9|16|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\contas\\pages\\conta_form_page.dart|378|34|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\contas\\pages\\conta_form_page.dart|396|34|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|SIZED_BOX_FOR_WHITESPACE|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\contas\\pages\\contas_arquivadas_page.dart|166|17|9|Use a 'SizedBox' to add whitespace to a layout.
+INFO|LINT|PREFER_FINAL_FIELDS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\contas\\pages\\gestao_conta_page.dart|59|30|19|The private field _evolucaoSaldo could be 'final'.
+INFO|LINT|PREFER_FINAL_FIELDS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\contas\\pages\\gestao_conta_page.dart|60|30|22|The private field _entradasVsSaidas could be 'final'.
+INFO|LINT|UNNECESSARY_TO_LIST_IN_SPREADS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\contas\\pages\\gestao_conta_page.dart|1946|36|6|Unnecessary use of 'toList' in a spread.
+INFO|LINT|AWAIT_ONLY_FUTURES|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\contas\\services\\conta_service.dart|931|18|5|Uses 'await' on an instance of 'Database?', which is not a subtype of 'Future'.
+INFO|LINT|USE_SUPER_PARAMETERS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\contas\\widgets\\conta_card.dart|21|9|9|Parameter 'key' could be a super parameter.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\diagnostico\\models\\dividas_model.dart|272|28|12|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\diagnostico\\models\\dividas_model.dart|273|33|11|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\diagnostico\\models\\dividas_model.dart|274|33|11|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\diagnostico\\models\\dividas_model.dart|275|33|11|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\diagnostico\\models\\dividas_model.dart|276|33|11|Statements in an if should be enclosed in a block.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\diagnostico\\pages\\diagnostico_flow_page.dart|643|32|7|Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\diagnostico\\pages\\diagnostico_flow_page.dart|654|22|7|Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check.
+INFO|LINT|UNNECESSARY_TO_LIST_IN_SPREADS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\diagnostico\\pages\\step01_percepcao_page.dart|347|14|6|Unnecessary use of 'toList' in a spread.
+INFO|LINT|UNNECESSARY_TO_LIST_IN_SPREADS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\diagnostico\\pages\\step01_welcome_page.dart|154|12|6|Unnecessary use of 'toList' in a spread.
+INFO|LINT|PREFER_FINAL_FIELDS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\diagnostico\\services\\diagnostico_service.dart|35|24|20|The private field _dadosColetados could be 'final'.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\diagnostico\\services\\score_calculator.dart|175|40|11|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\diagnostico\\services\\score_calculator.dart|176|44|11|Statements in an if should be enclosed in a block.
+INFO|LINT|PREFER_IS_EMPTY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\diagnostico\\services\\score_calculator.dart|177|14|28|Use 'isNotEmpty' instead of 'length' to test whether the collection is empty.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\diagnostico\\services\\score_calculator.dart|177|44|11|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\diagnostico\\services\\score_calculator.dart|180|35|11|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\diagnostico\\services\\score_calculator.dart|181|40|11|Statements in an if should be enclosed in a block.
+INFO|LINT|PREFER_IS_EMPTY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\diagnostico\\services\\score_calculator.dart|182|14|24|Use 'isNotEmpty' instead of 'length' to test whether the collection is empty.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\diagnostico\\services\\score_calculator.dart|182|40|11|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\diagnostico\\services\\score_calculator.dart|185|36|11|Statements in an if should be enclosed in a block.
+INFO|LINT|PREFER_IS_EMPTY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\diagnostico\\services\\score_calculator.dart|186|14|25|Use 'isNotEmpty' instead of 'length' to test whether the collection is empty.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\diagnostico\\services\\score_calculator.dart|186|41|11|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\diagnostico\\services\\score_calculator.dart|190|32|11|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\diagnostico\\services\\score_calculator.dart|191|36|11|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\diagnostico\\services\\score_calculator.dart|192|36|11|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\diagnostico\\services\\score_calculator.dart|193|36|11|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\diagnostico\\services\\score_calculator.dart|203|37|11|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\diagnostico\\services\\score_calculator.dart|204|42|11|Statements in an if should be enclosed in a block.
+INFO|LINT|PREFER_IS_EMPTY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\diagnostico\\services\\score_calculator.dart|205|14|26|Use 'isNotEmpty' instead of 'length' to test whether the collection is empty.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\diagnostico\\services\\score_calculator.dart|205|42|11|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\diagnostico\\services\\score_calculator.dart|208|42|11|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\diagnostico\\services\\score_calculator.dart|209|47|11|Statements in an if should be enclosed in a block.
+INFO|LINT|PREFER_IS_EMPTY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\diagnostico\\services\\score_calculator.dart|210|14|31|Use 'isNotEmpty' instead of 'length' to test whether the collection is empty.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\diagnostico\\services\\score_calculator.dart|210|47|11|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\diagnostico\\services\\score_calculator.dart|213|46|11|Statements in an if should be enclosed in a block.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\diagnostico\\services\\score_calculator.dart|214|51|11|Statements in an if should be enclosed in a block.
+INFO|LINT|PREFER_IS_EMPTY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\diagnostico\\services\\score_calculator.dart|215|14|35|Use 'isNotEmpty' instead of 'length' to test whether the collection is empty.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\diagnostico\\services\\score_calculator.dart|215|51|11|Statements in an if should be enclosed in a block.
+INFO|LINT|PREFER_IS_EMPTY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\diagnostico\\services\\score_calculator.dart|267|9|25|Use 'isNotEmpty' instead of 'length' to test whether the collection is empty.
+INFO|LINT|UNNECESSARY_BRACE_IN_STRING_INTERPS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\diagnostico\\widgets\\dividas_questionario_widget.dart|42|17|7|Unnecessary braces in a string interpolation.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\diagnostico\\widgets\\etapa_wrapper.dart|986|9|16|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\diagnostico\\widgets\\etapa_wrapper.dart|997|20|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\diagnostico\\widgets\\etapa_wrapper.dart|1000|20|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\diagnostico\\widgets\\etapa_wrapper.dart|1007|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\diagnostico\\widgets\\etapa_wrapper.dart|1015|24|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\diagnostico\\widgets\\etapa_wrapper.dart|1016|22|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\diagnostico\\widgets\\etapa_wrapper.dart|1020|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|UNNECESSARY_STRING_INTERPOLATIONS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\diagnostico\\widgets\\etapa_wrapper.dart|1679|27|9|Unnecessary use of string interpolation.
+INFO|LINT|UNNECESSARY_STRING_INTERPOLATIONS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\diagnostico\\widgets\\etapa_wrapper.dart|1744|27|9|Unnecessary use of string interpolation.
+INFO|LINT|UNNECESSARY_STRING_INTERPOLATIONS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\diagnostico\\widgets\\etapa_wrapper.dart|1789|27|9|Unnecessary use of string interpolation.
+INFO|LINT|UNNECESSARY_STRING_INTERPOLATIONS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\diagnostico\\widgets\\etapa_wrapper.dart|1858|27|9|Unnecessary use of string interpolation.
+INFO|LINT|UNNECESSARY_STRING_INTERPOLATIONS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\diagnostico\\widgets\\etapa_wrapper.dart|1927|27|9|Unnecessary use of string interpolation.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\importacao\\pages\\importacao_modal.dart|765|9|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|SIZED_BOX_FOR_WHITESPACE|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\importacao\\pages\\importacao_modal.dart|1981|18|9|Use a 'SizedBox' to add whitespace to a layout.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\importacao\\pages\\importacao_modal.dart|3255|7|16|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\importacao\\pages\\importacao_modal.dart|3366|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\importacao\\pages\\importacao_modal.dart|3373|7|16|Don't use 'BuildContext's across async gaps.
+INFO|LINT|PREFER_FINAL_FIELDS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\importacao\\pages\\importacao_review_page.dart|48|12|23|The private field _transacoesPuladas could be 'final'.
+INFO|LINT|PREFER_FINAL_FIELDS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\importacao\\pages\\importacao_review_page.dart|49|12|22|The private field _transacoesSalvas could be 'final'.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\importacao\\pages\\importacao_review_page.dart|225|7|16|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\importacao\\pages\\importacao_review_page.dart|248|22|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|CONSTANT_IDENTIFIER_NAMES|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\importacao\\services\\auto_categorization_service.dart|87|16|14|The constant name 'USAR_HISTORICO' isn't a lowerCamelCase identifier.
+INFO|LINT|UNNECESSARY_BRACE_IN_STRING_INTERPS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\importacao\\services\\conectcar_extractor.dart|80|29|11|Unnecessary braces in a string interpolation.
+INFO|LINT|PREFER_IS_EMPTY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\importacao\\services\\enhanced_excel_extractor.dart|504|9|15|Use 'isEmpty' instead of 'length' to test whether the collection is empty.
+INFO|LINT|AWAIT_ONLY_FUTURES|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\importacao\\services\\importacao_service.dart|778|31|5|Uses 'await' on an instance of 'JsEvalResult', which is not a subtype of 'Future'.
+INFO|LINT|UNNECESSARY_BRACE_IN_STRING_INTERPS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\importacao\\services\\importacao_service.dart|781|31|11|Unnecessary braces in a string interpolation.
+INFO|LINT|UNNECESSARY_BRACE_IN_STRING_INTERPS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\importacao\\services\\importacao_service.dart|810|32|17|Unnecessary braces in a string interpolation.
+INFO|LINT|PREFER_INTERPOLATION_TO_COMPOSE_STRINGS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\importacao\\widgets\\importar_dados_widget.dart|131|17|150|Use interpolation to compose strings and values.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\importacao\\widgets\\transacao_import_card.dart|314|7|16|Don't use 'BuildContext's across async gaps.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|1076|5|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|1077|5|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|1078|5|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|1079|5|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|1080|5|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|1091|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|1103|11|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|1110|9|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|1114|5|5|Don't invoke 'print' in production code.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|1377|31|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|1380|38|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|1387|38|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|2102|9|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|2125|9|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|2541|33|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|2557|37|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|2559|37|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|2570|33|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|2580|33|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|2581|33|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|2582|33|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|2583|33|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|2586|35|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|2587|35|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|2592|33|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|2595|35|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|2597|35|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|2599|35|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|2600|35|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|2654|5|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|2659|9|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|2662|9|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|2666|9|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|2668|11|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|2676|5|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|2683|5|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|2687|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|2841|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|2842|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|2843|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|2844|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|2845|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|2846|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|2858|9|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|2859|9|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|2860|9|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|2861|9|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|2864|9|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|2866|9|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|2869|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|2870|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|2871|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|2981|5|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|3002|5|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|3012|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|3013|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|3015|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|3016|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|3017|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|3018|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|3019|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|3020|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|3022|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|3025|9|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|3026|9|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|3027|9|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|3028|9|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|3029|9|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|3033|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|3035|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|3038|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|3041|9|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|3045|11|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|3047|11|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|3048|11|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|3052|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|3055|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|3057|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|3059|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|3062|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|3065|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|3067|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|3068|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|3069|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|3070|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|3081|9|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|3093|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|3094|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|3095|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|3100|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\planejamento\\pages\\planejamento_page.dart|3102|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\relatorios\\pages\\valor_hora_page.dart|150|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\relatorios\\pages\\valor_hora_page.dart|223|7|5|Don't invoke 'print' in production code.
+INFO|LINT|UNNECESSARY_BRACE_IN_STRING_INTERPS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\relatorios\\services\\faturas_pendentes_service.dart|112|67|20|Unnecessary braces in a string interpolation.
+INFO|LINT|UNNECESSARY_BRACE_IN_STRING_INTERPS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\relatorios\\services\\resumo_financeiro_service.dart|188|66|8|Unnecessary braces in a string interpolation.
+INFO|LINT|UNNECESSARY_BRACE_IN_STRING_INTERPS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\relatorios\\services\\resumo_financeiro_service.dart|188|83|12|Unnecessary braces in a string interpolation.
+INFO|LINT|UNNECESSARY_BRACE_IN_STRING_INTERPS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\relatorios\\widgets\\transacoes_pendentes_widget.dart|196|24|20|Unnecessary braces in a string interpolation.
+INFO|LINT|DANGLING_LIBRARY_DOC_COMMENTS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\shared\\utils\\app_locale.dart|1|1|83|Dangling library doc comment.
+INFO|LINT|DANGLING_LIBRARY_DOC_COMMENTS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\shared\\utils\\brazilian_date_utils.dart|1|1|117|Dangling library doc comment.
+INFO|LINT|DANGLING_LIBRARY_DOC_COMMENTS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\shared\\utils\\locale_date_utils.dart|1|1|66|Dangling library doc comment.
+INFO|LINT|UNNECESSARY_TO_LIST_IN_SPREADS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\components\\conditional_transaction_fields.dart|329|16|6|Unnecessary use of 'toList' in a spread.
+INFO|LINT|USE_SUPER_PARAMETERS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\components\\escopo_edicao_modal.dart|11|9|17|Parameter 'key' could be a super parameter.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\components\\filtros_transacoes_modal.dart|60|7|5|Don't invoke 'print' in production code.
+INFO|LINT|USE_SUPER_PARAMETERS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\components\\operacao_feedback_widget.dart|25|9|22|Parameter 'key' could be a super parameter.
+INFO|LINT|USE_SUPER_PARAMETERS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\components\\operacao_feedback_widget.dart|314|9|22|Parameter 'key' could be a super parameter.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\components\\operacao_helper.dart|44|9|16|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\components\\operacao_helper.dart|54|20|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\components\\operacao_helper.dart|93|9|16|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\components\\operacao_helper.dart|103|20|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\components\\operacao_helper.dart|137|9|16|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\components\\operacao_helper.dart|146|20|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\components\\operacao_helper.dart|180|9|16|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\components\\operacao_helper.dart|189|20|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\components\\smart_money_field.dart|158|5|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\components\\smart_money_field.dart|159|5|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\components\\smart_money_field.dart|162|5|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\components\\smart_money_field.dart|165|5|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\components\\smart_money_field.dart|168|5|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\components\\smart_money_field.dart|169|5|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\components\\smart_money_field.dart|190|5|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\components\\smart_money_field.dart|213|5|5|Don't invoke 'print' in production code.
+INFO|LINT|UNNECESSARY_TO_LIST_IN_SPREADS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\components\\timeline_transacoes.dart|196|12|6|Unnecessary use of 'toList' in a spread.
+INFO|LINT|USE_KEY_IN_WIDGET_CONSTRUCTORS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\examples\\transacao_feedback_example.dart|9|7|24|Constructors for public widgets should have a named 'key' parameter.
+INFO|LINT|LIBRARY_PRIVATE_TYPES_IN_PUBLIC_API|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\examples\\transacao_feedback_example.dart|11|3|30|Invalid use of a private type in a public API.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\alterar_categoria_page.dart|76|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\alterar_categoria_page.dart|97|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\alterar_categoria_page.dart|115|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\alterar_categoria_page.dart|217|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\alterar_categoria_page.dart|224|20|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\alterar_categoria_page.dart|227|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\alterar_categoria_page.dart|247|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\alterar_categoria_page.dart|255|22|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\alterar_categoria_page.dart|257|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\alterar_categoria_page.dart|266|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|UNNECESSARY_TO_LIST_IN_SPREADS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\alterar_categoria_page.dart|993|14|6|Unnecessary use of 'toList' in a spread.
+INFO|LINT|UNNECESSARY_TO_LIST_IN_SPREADS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\alterar_conta_page.dart|295|75|6|Unnecessary use of 'toList' in a spread.
+INFO|LINT|UNNECESSARY_TO_LIST_IN_SPREADS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\alterar_conta_page.dart|300|71|6|Unnecessary use of 'toList' in a spread.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\alterar_conta_page.dart|477|32|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\alterar_conta_page.dart|484|24|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\alterar_conta_page.dart|486|32|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\alterar_conta_page.dart|501|32|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\alterar_conta_page.dart|508|24|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\alterar_conta_page.dart|510|32|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\alterar_conta_page.dart|520|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\alterar_data_page.dart|465|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\alterar_data_page.dart|472|22|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\alterar_data_page.dart|474|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\alterar_data_page.dart|483|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\alterar_descricao_page.dart|88|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\alterar_descricao_page.dart|96|22|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\alterar_descricao_page.dart|98|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\alterar_descricao_page.dart|107|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\alterar_observacoes_page.dart|99|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\alterar_observacoes_page.dart|107|22|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\alterar_observacoes_page.dart|109|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\alterar_observacoes_page.dart|118|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|UNNECESSARY_TO_LIST_IN_SPREADS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\alterar_observacoes_page.dart|465|14|6|Unnecessary use of 'toList' in a spread.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\alterar_valor_page.dart|82|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\alterar_valor_page.dart|84|7|5|Don't invoke 'print' in production code.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\alterar_valor_page.dart|187|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\alterar_valor_page.dart|193|22|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\alterar_valor_page.dart|195|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\alterar_valor_page.dart|203|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\aplicar_reajuste_page.dart|684|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\aplicar_reajuste_page.dart|687|22|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\aplicar_reajuste_page.dart|689|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\aplicar_reajuste_page.dart|694|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|PREFER_FINAL_FIELDS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|103|8|17|The private field _isAumento could be 'final'.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|124|5|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|287|11|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|292|15|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|296|15|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|299|13|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|300|13|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|340|9|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|345|13|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|349|13|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|352|11|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|353|11|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|430|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|439|9|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|443|9|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|445|9|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|450|9|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|472|11|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|473|11|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|478|13|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|485|11|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|488|9|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|489|9|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|490|9|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|492|9|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|497|9|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|503|13|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|515|11|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|522|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|524|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|533|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|543|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|545|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|574|9|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|577|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|768|21|5|Don't invoke 'print' in production code.
+INFO|LINT|UNNECESSARY_TO_LIST_IN_SPREADS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|1141|14|6|Unnecessary use of 'toList' in a spread.
+INFO|LINT|NON_CONSTANT_IDENTIFIER_NAMES|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|1623|10|14|The variable name 'EditOptionCard' isn't a lowerCamelCase identifier.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|1741|15|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|1794|13|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|1842|15|5|Don't invoke 'print' in production code.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|1879|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|1882|22|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|1884|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|1889|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|1920|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|1923|22|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|1925|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|1930|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|1955|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|1975|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|1981|22|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|1984|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|2006|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|2024|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|2030|22|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|2032|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|2040|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|2072|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|2164|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|2170|22|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|2173|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|UNNECESSARY_BRACE_IN_STRING_INTERPS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|2272|77|20|Unnecessary braces in a string interpolation.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|2804|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|2880|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|2886|22|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|2888|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|2897|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|2919|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|2931|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|2938|9|16|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|3040|50|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|3048|41|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|3073|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|3085|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|3092|9|16|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|3187|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|3247|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|3251|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|3257|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|3270|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|3277|9|16|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|3363|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|3368|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|3397|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|3408|22|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|3410|30|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\editar_transacao_page.dart|3419|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|LIBRARY_PREFIXES|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\transacao_form_page.dart|20|58|19|The prefix 'TransacaoSmartField' isn't a lower_case_with_underscores identifier.
+INFO|LINT|PREFER_FINAL_FIELDS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\transacao_form_page.dart|135|10|31|The private field _frequenciaParcelada could be 'final'.
+INFO|LINT|PREFER_FINAL_FIELDS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\transacao_form_page.dart|158|8|25|The private field _primeiroEfetivado could be 'final'.
+INFO|LINT|PREFER_FINAL_FIELDS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\transacao_form_page.dart|162|8|25|The private field _salvarEContinuar could be 'final'.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\transacao_form_page.dart|890|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\transacao_form_page.dart|906|7|16|Don't use 'BuildContext's across async gaps.
+INFO|LINT|PREFER_FINAL_FIELDS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\transacoes_page.dart|291|8|21|The private field _agruparPorDia could be 'final'.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\transacoes_page.dart|447|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\transacoes_page.dart|448|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\transacoes_page.dart|449|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\transacoes_page.dart|450|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\transacoes_page.dart|451|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\transacoes_page.dart|456|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\transacoes_page.dart|477|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\transacoes_page.dart|478|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\transacoes_page.dart|482|9|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\transacoes_page.dart|493|9|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\transacoes_page.dart|499|9|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\transacoes_page.dart|651|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\transacoes_page.dart|652|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\transacoes_page.dart|653|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\transacoes_page.dart|674|7|5|Don't invoke 'print' in production code.
+INFO|LINT|NON_CONSTANT_IDENTIFIER_NAMES|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\transacoes_page.dart|2763|10|19|The variable name 'EditOptionCardModal' isn't a lowerCamelCase identifier.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\transacoes_page.dart|3118|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\transacoes_page.dart|3132|5|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\transacoes_page.dart|3761|19|5|Don't invoke 'print' in production code.
+INFO|LINT|PREFER_INTERPOLATION_TO_COMPOSE_STRINGS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\transacoes_page.dart|3910|17|149|Use interpolation to compose strings and values.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\transacoes_page.dart|4005|11|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\transacoes_page.dart|4006|11|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\pages\\transacoes_page.dart|4007|11|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\services\\transacao_edit_service.dart|813|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\services\\transacao_edit_service.dart|814|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\services\\transacao_edit_service.dart|815|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\services\\transacao_edit_service.dart|816|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\services\\transacao_edit_service.dart|833|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\services\\transacao_edit_service.dart|834|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\services\\transacao_edit_service.dart|835|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\services\\transacao_edit_service.dart|836|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\services\\transacao_edit_service.dart|838|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\services\\transacao_edit_service.dart|840|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\services\\transacao_edit_service.dart|844|9|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\services\\transacao_edit_service.dart|852|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\services\\transacao_edit_service.dart|858|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\services\\transacao_edit_service.dart|861|9|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\services\\transacao_edit_service.dart|866|9|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\services\\transacao_edit_service.dart|872|7|5|Don't invoke 'print' in production code.
+INFO|LINT|UNNECESSARY_BRACE_IN_STRING_INTERPS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\services\\transacao_edit_service.dart|1545|46|14|Unnecessary braces in a string interpolation.
+INFO|LINT|UNNECESSARY_BRACE_IN_STRING_INTERPS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transacoes\\services\\transacao_edit_service.dart|1637|62|16|Unnecessary braces in a string interpolation.
+INFO|LINT|USE_KEY_IN_WIDGET_CONSTRUCTORS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transferencias\\examples\\transferencia_feedback_example.dart|8|7|28|Constructors for public widgets should have a named 'key' parameter.
+INFO|LINT|LIBRARY_PRIVATE_TYPES_IN_PUBLIC_API|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transferencias\\examples\\transferencia_feedback_example.dart|10|3|34|Invalid use of a private type in a public API.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transferencias\\examples\\transferencia_feedback_example.dart|54|11|16|Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\modules\\transferencias\\examples\\transferencia_feedback_example.dart|65|22|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\services\\grupos_metadados_service.dart|135|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\services\\grupos_metadados_service.dart|146|9|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\services\\grupos_metadados_service.dart|150|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\services\\grupos_metadados_service.dart|153|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\services\\grupos_metadados_service.dart|199|9|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\services\\grupos_metadados_service.dart|204|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\services\\grupos_metadados_service.dart|205|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\services\\grupos_metadados_service.dart|206|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\services\\grupos_metadados_service.dart|207|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\services\\grupos_metadados_service.dart|208|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\services\\grupos_metadados_service.dart|341|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\services\\grupos_metadados_service.dart|346|9|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\services\\grupos_metadados_service.dart|348|9|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\services\\grupos_metadados_service.dart|396|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\services\\grupos_metadados_service.dart|397|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\services\\grupos_metadados_service.dart|398|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\services\\grupos_metadados_service.dart|399|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\services\\grupos_metadados_service.dart|433|9|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\services\\grupos_metadados_service.dart|442|9|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\services\\grupos_metadados_service.dart|447|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\services\\grupos_metadados_service.dart|455|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\services\\grupos_metadados_service.dart|459|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\services\\grupos_metadados_service.dart|462|7|5|Don't invoke 'print' in production code.
+INFO|LINT|PREFER_INTERPOLATION_TO_COMPOSE_STRINGS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\shared\\components\\sidebar.dart|409|17|138|Use interpolation to compose strings and values.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\shared\\utils\\operation_feedback_helper.dart|121|28|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\shared\\utils\\operation_feedback_helper.dart|243|24|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|UNNECESSARY_BRACE_IN_STRING_INTERPS|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\sync\\offline_queue.dart|132|76|14|Unnecessary braces in a string interpolation.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\sync\\sync_manager.dart|1940|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\sync\\sync_manager.dart|1956|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\sync\\sync_manager.dart|1959|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\sync\\sync_manager.dart|1967|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\sync\\sync_manager.dart|1985|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\sync\\sync_manager.dart|1986|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_PRINT|C:\\Projetos Flutter\\ipoupei_mobile\\lib\\src\\sync\\sync_manager.dart|1993|7|5|Don't invoke 'print' in production code.
+INFO|LINT|AVOID_RELATIVE_LIB_IMPORTS|C:\\Projetos Flutter\\ipoupei_mobile\\test\\modules\\contas\\conta_service_test.dart|8|8|57|Can't use a relative path to import a library in 'lib'.
+INFO|LINT|AVOID_RELATIVE_LIB_IMPORTS|C:\\Projetos Flutter\\ipoupei_mobile\\test\\modules\\contas\\conta_service_test.dart|9|8|61|Can't use a relative path to import a library in 'lib'.
