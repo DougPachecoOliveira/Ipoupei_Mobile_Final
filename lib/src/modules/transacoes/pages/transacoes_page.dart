@@ -28,6 +28,7 @@ import '../components/filtros_transacoes_modal.dart';
 import '../components/timeline_transacoes.dart';
 import '../../../services/grupos_metadados_service.dart';
 import '../../../shared/utils/currency_formatter.dart';
+import '../../../routes/main_navigation.dart';
 import '../components/transaction_detail_card.dart';
 import '../../importacao/pages/importacao_modal.dart';
 import '../../../shared/components/modals/transacao_opcoes_modal.dart';
@@ -294,6 +295,7 @@ class _TransacoesPageState extends State<TransacoesPage>
   // Filtros por categoria
   FiltroPeriodo? _periodoAtivo;
   VisaoRapida? _visaoAtiva;
+  VisaoRapida? _visaoTempSelecionada; // Para seleção temporária no modal
   FiltroInteligente? _filtroAtivo; // DEPRECATED - manter por compatibilidade temporária
   Map<String, dynamic> _parametrosFiltro = {};
   
@@ -509,7 +511,8 @@ class _TransacoesPageState extends State<TransacoesPage>
         _transacoes = transacoesFiltradas;
         _contas = contas.where((c) => c.ativo).toList();
         _cartoes = cartoes.where((c) => c.ativo).toList();
-        _categorias = categorias.where((c) => c.ativo).toList();
+        _categorias = categorias.where((c) => c.ativo).toList()
+          ..sort((a, b) => a.nome.compareTo(b.nome));
         _estatisticas = estatisticas;
       });
       
@@ -790,12 +793,24 @@ class _TransacoesPageState extends State<TransacoesPage>
 
   /// Modal com visões rápidas
   Future<VisaoRapida?> _mostrarModalVisoesRapidas() async {
-    return await showModalBottomSheet<VisaoRapida>(
+    // Inicializar seleção temporária com a visão atualmente ativa (se houver)
+    setState(() {
+      _visaoTempSelecionada = _visaoAtiva;
+    });
+
+    final resultado = await showModalBottomSheet<VisaoRapida>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => _buildModalVisoesRapidas(),
     );
+
+    // Limpar seleção temporária ao fechar o modal
+    setState(() {
+      _visaoTempSelecionada = null;
+    });
+
+    return resultado;
   }
 
   /// Modal com filtros inteligentes pré-definidos (DEPRECATED)
@@ -986,13 +1001,28 @@ class _TransacoesPageState extends State<TransacoesPage>
   /// Constrói o modal de visões rápidas
   Widget _buildModalVisoesRapidas() {
     return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.8,
+      ),
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         children: [
+          // Handle visual do modal
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(top: 12, bottom: 8),
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+
           // Header
           Container(
             padding: const EdgeInsets.all(20),
@@ -1025,13 +1055,83 @@ class _TransacoesPageState extends State<TransacoesPage>
             ),
           ),
 
-          // Lista de visões agrupadas por categoria
-          Flexible(
+          // Lista de visões agrupadas por categoria (agora scrollável)
+          Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(vertical: 16),
               child: Column(
                 children: _buildVisoesAgrupadas(),
               ),
+            ),
+          ),
+
+          // Seção de botões
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              border: Border(
+                top: BorderSide(color: Colors.grey[200]!, width: 1),
+              ),
+            ),
+            child: Row(
+              children: [
+                // Botão Cancelar
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF6B7280),
+                      side: const BorderSide(color: Color(0xFF6B7280)),
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'Cancelar',
+                      style: TextStyle(
+                        color: Color(0xFF6B7280),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 2,
+                  child: ElevatedButton(
+                    onPressed: _visaoTempSelecionada != null
+                      ? () => Navigator.pop(context, _visaoTempSelecionada)
+                      : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _modoAtual.corHeader,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.check, size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          _visaoTempSelecionada != null
+                            ? 'Aplicar Visão'
+                            : 'Selecione uma visão',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -1211,34 +1311,67 @@ class _TransacoesPageState extends State<TransacoesPage>
   /// Constrói item individual de visão
   Widget _buildItemVisao(VisaoRapida visao) {
     final isAtiva = _visaoAtiva == visao;
+    final isSelecionadaTemp = _visaoTempSelecionada == visao;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
       decoration: BoxDecoration(
-        color: isAtiva ? Theme.of(context).primaryColor.withValues(alpha: 0.1) : null,
+        color: isSelecionadaTemp
+          ? Theme.of(context).primaryColor.withValues(alpha: 0.1)
+          : isAtiva
+            ? Colors.grey[100]
+            : null,
         borderRadius: BorderRadius.circular(8),
-        border: isAtiva ? Border.all(color: Theme.of(context).primaryColor, width: 1) : null,
+        border: isSelecionadaTemp
+          ? Border.all(color: Theme.of(context).primaryColor, width: 2)
+          : isAtiva
+            ? Border.all(color: Colors.grey[400]!, width: 1)
+            : null,
       ),
       child: ListTile(
         leading: Icon(
           visao.icone,
-          color: isAtiva ? Theme.of(context).primaryColor : Colors.grey[600],
+          color: isSelecionadaTemp
+            ? Theme.of(context).primaryColor
+            : isAtiva
+              ? Colors.grey[600]
+              : Colors.grey[600],
         ),
         title: Text(
           visao.titulo,
           style: TextStyle(
-            fontWeight: isAtiva ? FontWeight.w600 : FontWeight.normal,
-            color: isAtiva ? Theme.of(context).primaryColor : Colors.black87,
+            fontWeight: isSelecionadaTemp ? FontWeight.w600 : FontWeight.normal,
+            color: isSelecionadaTemp
+              ? Theme.of(context).primaryColor
+              : isAtiva
+                ? Colors.grey[700]
+                : Colors.black87,
           ),
         ),
-        trailing: isAtiva
-          ? Icon(
-              Icons.check_circle,
-              color: Theme.of(context).primaryColor,
+        subtitle: isAtiva && !isSelecionadaTemp
+          ? const Text(
+              'Atualmente ativa',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
             )
           : null,
+        trailing: isSelecionadaTemp
+          ? Icon(
+              Icons.radio_button_checked,
+              color: Theme.of(context).primaryColor,
+            )
+          : isAtiva
+            ? const Icon(
+                Icons.check_circle_outline,
+                color: Colors.grey,
+              )
+            : Icon(
+                Icons.radio_button_unchecked,
+                color: Colors.grey[400],
+              ),
         onTap: () {
-          Navigator.pop(context, visao);
+          setState(() {
+            _visaoTempSelecionada = visao;
+          });
         },
       ),
     );
@@ -2042,15 +2175,15 @@ class _TransacoesPageState extends State<TransacoesPage>
     
     if (categoria == null) {
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
         decoration: BoxDecoration(
           color: const Color(0xFF6B7280), // Cinza como padrão
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(8),
         ),
         child: const Text(
           'Categoria',
           style: TextStyle(
-            fontSize: 11,
+            fontSize: 9,
             fontWeight: FontWeight.w500,
             color: Colors.white,
           ),
@@ -2067,15 +2200,15 @@ class _TransacoesPageState extends State<TransacoesPage>
     }
     
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
       decoration: BoxDecoration(
         color: corCategoria,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
         categoria.nome,
         style: const TextStyle(
-          fontSize: 11,
+          fontSize: 9,
           fontWeight: FontWeight.w500,
           color: Colors.white,
         ),
@@ -3738,13 +3871,28 @@ class _TransacoesPageState extends State<TransacoesPage>
       appBar: AppBar(
         backgroundColor: _modoAtual.corHeader,
         foregroundColor: Colors.white,
-        title: Text(
-          _modoAtual.titulo,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
+        automaticallyImplyLeading: false,
+        title: Row(
+          children: [
+            // Botão voltar customizado
+            Transform.translate(
+              offset: const Offset(-8, 0),
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
+                onPressed: () => _voltarComInteligencia(),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+              ),
+            ),
+            Text(
+              _modoAtual.titulo,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ],
         ),
         actions: [
           // Toggle Visualização (Lista → Compacta → Timeline) - Ícone compacto
@@ -3765,12 +3913,6 @@ class _TransacoesPageState extends State<TransacoesPage>
                       _modoVisualizacao == 1 ? 'Timeline' : 'Lista Normal',
             ),
 
-          // Botão de Importação
-          IconButton(
-            onPressed: _mostrarImportacao,
-            icon: const Icon(Icons.upload_file, color: Colors.white),
-            tooltip: 'Importar Transações',
-          ),
           // Botão de Visões Rápidas
           IconButton(
             onPressed: () async {
@@ -3814,7 +3956,9 @@ class _TransacoesPageState extends State<TransacoesPage>
           ),
         ],
       ),
-      body: Column(
+      body: Stack(
+        children: [
+          Column(
         children: [
           // Sublinha com navegação - Padrão Device
           Container(
@@ -3866,10 +4010,25 @@ class _TransacoesPageState extends State<TransacoesPage>
                       ),
                     ),
                   ),
-          ),
+                ),
+              ],
+            ),
+          _buildFABOverlay(),
         ],
       ),
-      floatingActionButton: _buildFAB(),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: _modoAtual.corHeader,
+        foregroundColor: Colors.white,
+        elevation: _fabExpanded ? 8 : 6,
+        onPressed: () {
+          setState(() => _fabExpanded = !_fabExpanded);
+        },
+        child: AnimatedRotation(
+          turns: _fabExpanded ? 0.125 : 0.0,
+          duration: const Duration(milliseconds: 200),
+          child: Icon(_fabExpanded ? Icons.close : Icons.add),
+        ),
+      ),
     );
   }
 
@@ -4230,10 +4389,16 @@ class _TransacoesPageState extends State<TransacoesPage>
       children: [
         // Overlay transparente quando menu está expandido
         if (_fabExpanded)
-          Positioned.fill(
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
             child: GestureDetector(
               onTap: () => setState(() => _fabExpanded = false),
               child: Container(
+                width: MediaQuery.of(context).size.width,
+                height: MediaQuery.of(context).size.height,
                 color: Colors.black.withAlpha(78),
               ),
             ),
@@ -4427,6 +4592,83 @@ class _TransacoesPageState extends State<TransacoesPage>
 
     if (resultado == true) {
       _carregarDados();
+    }
+  }
+
+  /// 🎯 OVERLAY E MENU DO FAB (COBRE TELA TODA)
+  Widget _buildFABOverlay() {
+    if (!_fabExpanded) return const SizedBox.shrink();
+
+    return Stack(
+      children: [
+        // Overlay transparente cobrindo toda a tela
+        Positioned.fill(
+          child: GestureDetector(
+            onTap: () => setState(() => _fabExpanded = false),
+            child: Container(
+              color: Colors.black.withAlpha(78),
+            ),
+          ),
+        ),
+
+        // Menu de opções expandido
+        Positioned(
+          right: 16,
+          bottom: 80,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              _buildFABOption(
+                icon: Icons.swap_horiz,
+                label: "Transferência",
+                color: Colors.blue,
+                onTap: _navegarParaNovaTransferencia,
+              ),
+              const SizedBox(height: 12),
+              _buildFABOption(
+                icon: Icons.add,
+                label: "Receita",
+                color: AppColors.verdeSucesso,
+                onTap: _navegarParaNovaReceita,
+              ),
+              const SizedBox(height: 12),
+              _buildFABOption(
+                icon: Icons.remove,
+                label: "Despesa",
+                color: AppColors.vermelhoErro,
+                onTap: _navegarParaNovaDespesa,
+              ),
+              const SizedBox(height: 12),
+              _buildFABOption(
+                icon: Icons.credit_card,
+                label: "Despesa Cartão",
+                color: Colors.orange,
+                onTap: _navegarParaNovaDespesaCartao,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 🧭 NAVEGAÇÃO INTELIGENTE - Voltar para origem ou relatórios
+  void _voltarComInteligencia() {
+    // Verificar se pode voltar (tem página anterior na pilha)
+    if (Navigator.canPop(context)) {
+      debugPrint('🧭 TransacoesPage: Voltando para página anterior');
+      Navigator.pop(context);
+    } else {
+      // Não tem página anterior, ir para relatórios (índice 2 no MainNavigation)
+      debugPrint('🧭 TransacoesPage: Sem página anterior, navegando para relatórios');
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (context) => MainNavigation(initialIndex: 2),
+        ),
+        (route) => false, // Remove todas as rotas anteriores
+      );
     }
   }
 }

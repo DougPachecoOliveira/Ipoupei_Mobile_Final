@@ -574,8 +574,8 @@ class _CriarCategoriaModalState extends State<CriarCategoriaModal> {
         iconeParaSalvar = _iconeSelecionado;
       } else if (_iconeSelecionado is IconData) {
         final iconData = _iconeSelecionado as IconData;
-        // Converte IconData para formato icon_XXXX (como arquivo offline)
-        iconeParaSalvar = 'icon_${iconData.codePoint.toRadixString(16)}';
+        // Converte IconData para nome usando método correto
+        iconeParaSalvar = CategoriaIcons.getNameFromIcon(iconData);
       } else {
         iconeParaSalvar = 'folder'; // default como arquivo offline
       }

@@ -49,7 +49,7 @@
 
                 <!-- Deep link final -->
                 <data
-                    android:scheme="com.ipoupei.app"
+                    android:scheme="br.com.ipoupei.mobile"
                     android:host="auth"
                     android:path="/callback" />
             </intent-filter>

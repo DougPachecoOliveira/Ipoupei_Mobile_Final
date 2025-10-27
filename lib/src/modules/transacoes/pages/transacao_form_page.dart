@@ -524,8 +524,9 @@ class _TransacaoFormPageState extends State<TransacaoFormPage> {
     try {
       final categorias = await _categoriaService.fetchCategorias();
       setState(() {
-        _categorias = categorias.where((c) => c.ativo).toList();
-        
+        _categorias = categorias.where((c) => c.ativo).toList()
+          ..sort((a, b) => a.nome.compareTo(b.nome));
+
         // Não pré-selecionar categoria - deixar usuário escolher
       });
     } catch (e) {
@@ -569,8 +570,9 @@ class _TransacaoFormPageState extends State<TransacaoFormPage> {
       log('✅ Carregadas ${subcategorias.length} subcategorias para categoria $categoriaId');
       
       setState(() {
-        _subcategorias = subcategorias.where((s) => s.ativo).toList();
-        
+        _subcategorias = subcategorias.where((s) => s.ativo).toList()
+          ..sort((a, b) => a.nome.compareTo(b.nome));
+
         // Reset da seleção de subcategoria ao trocar categoria
         _subcategoriaSelecionada = null;
         
@@ -642,12 +644,20 @@ class _TransacaoFormPageState extends State<TransacaoFormPage> {
               ),
             ),
             
-            // Lista scrollável de contas
+            // Lista scrollável de contas (ordenada: principal primeiro)
             Expanded(
               child: ListView.builder(
                 itemCount: _contas.length,
                 itemBuilder: (context, index) {
-                  final conta = _contas[index];
+                  // Ordenar contas: principal primeiro, depois por nome
+                  final contasOrdenadas = [..._contas];
+                  contasOrdenadas.sort((a, b) {
+                    if (a.contaPrincipal && !b.contaPrincipal) return -1;
+                    if (!a.contaPrincipal && b.contaPrincipal) return 1;
+                    return a.nome.compareTo(b.nome);
+                  });
+
+                  final conta = contasOrdenadas[index];
                   final isSelected = _contaSelecionada == conta.id;
                   
                   return Container(
@@ -672,14 +682,37 @@ class _TransacaoFormPageState extends State<TransacaoFormPage> {
                               : const Icon(Icons.account_balance, color: Colors.white, size: 20),
                         ),
                       ),
-                      title: Text(
-                        conta.nome,
-                        style: TextStyle(
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                        ),
+                      title: Row(
+                        children: [
+                          Text(
+                            conta.nome,
+                            style: TextStyle(
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            ),
+                          ),
+                          if (conta.contaPrincipal) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.amber.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: Colors.amber, width: 1),
+                              ),
+                              child: const Text(
+                                'Principal',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.amber,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                       subtitle: Text(
-                        conta.tipo,
+                        'Saldo: R\$ ${conta.saldo.toStringAsFixed(2).replaceAll('.', ',')}',
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.grey[600],
@@ -789,7 +822,8 @@ class _TransacaoFormPageState extends State<TransacaoFormPage> {
               child: ListView.builder(
                 itemCount: _categorias.where((c) => c.tipo == _tipoSelecionado).length,
                 itemBuilder: (context, index) {
-                  final categoriasFiltradas = _categorias.where((c) => c.tipo == _tipoSelecionado).toList();
+                  final categoriasFiltradas = _categorias.where((c) => c.tipo == _tipoSelecionado).toList()
+                    ..sort((a, b) => a.nome.compareTo(b.nome));
                   final categoria = categoriasFiltradas[index];
                   
                   final isSelected = _categoriaSelecionada == categoria.id;
@@ -1237,7 +1271,8 @@ class _TransacaoFormPageState extends State<TransacaoFormPage> {
         setState(() {
           _tipoSelecionado = tipo;
           // Atualizar categoria baseada no tipo selecionado
-          final categoriasPorTipo = _categorias.where((c) => c.tipo == tipo).toList();
+          final categoriasPorTipo = _categorias.where((c) => c.tipo == tipo).toList()
+            ..sort((a, b) => a.nome.compareTo(b.nome));
           if (categoriasPorTipo.isNotEmpty) {
             _categoriaSelecionada = categoriasPorTipo.first.id;
             _carregarSubcategoriasPorCategoria(categoriasPorTipo.first.id);

@@ -1063,13 +1063,27 @@ class _GestaoCategoriaPageState extends State<GestaoCategoriaPage> {
       backgroundColor: headerColor,
       elevation: 0,
       automaticallyImplyLeading: false,
-      title: const Text(
-        'Gestão da Categoria',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
-        ),
+      title: Row(
+        children: [
+          // Botão voltar
+          Transform.translate(
+            offset: const Offset(-8, 0),
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
+              onPressed: () => Navigator.pop(context),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+            ),
+          ),
+          const Text(
+            'Gestão da Categoria',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
       actions: [
         // Seletor de mês integrado no actions
@@ -1136,7 +1150,12 @@ class _GestaoCategoriaPageState extends State<GestaoCategoriaPage> {
           
           // Gráficos
           _buildGraficos(),
-          
+
+          const SizedBox(height: 24),
+
+          // Botão de voltar
+          _buildBotaoVoltar(headerColor),
+
           const SizedBox(height: 32),
         ],
       ),
@@ -3058,5 +3077,29 @@ class _GestaoCategoriaPageState extends State<GestaoCategoriaPage> {
         );
       }
     }
+  }
+
+  /// 🔙 BOTÃO DE VOLTAR
+  Widget _buildBotaoVoltar(Color headerColor) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: SizedBox(
+        width: double.infinity,
+        child: ElevatedButton.icon(
+          onPressed: () => Navigator.pop(context),
+          icon: const Icon(Icons.arrow_back, size: 20),
+          label: const Text('Voltar para Categorias'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: headerColor,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            elevation: 2,
+          ),
+        ),
+      ),
+    );
   }
 }

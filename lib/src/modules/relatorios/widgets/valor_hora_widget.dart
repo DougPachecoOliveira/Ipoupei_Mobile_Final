@@ -246,7 +246,6 @@ class _ValorHoraWidgetState extends State<ValorHoraWidget> {
         Navigator.pushNamed(context, '/valor-hora');
       },
       child: Container(
-        margin: const EdgeInsets.all(12),
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
@@ -476,7 +475,6 @@ class _ValorHoraWidgetState extends State<ValorHoraWidget> {
         Navigator.pushNamed(context, '/diagnostico');
       },
       child: Container(
-        margin: const EdgeInsets.all(12),
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           gradient: LinearGradient(

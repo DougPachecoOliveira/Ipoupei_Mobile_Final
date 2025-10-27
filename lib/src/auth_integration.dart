@@ -29,7 +29,7 @@ class SupabaseConfig {
   );
   
   /// Deep Link para autenticação - Configuração Profissional iPoupei
-  static const String authCallbackUrl = 'com.ipoupei.app://auth/callback';
+  static const String authCallbackUrl = 'br.com.ipoupei.mobile://auth/callback';
   
   /// Verificações de configuração
   static bool get isConfigured => 

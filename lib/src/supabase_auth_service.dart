@@ -9,7 +9,9 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'sync/connectivity_helper.dart';
+import 'auth_integration.dart';
 
 /// Estados de autenticação
 enum AuthStatus {
@@ -307,7 +309,7 @@ class SupabaseAuthService {
     try {
       final response = await Supabase.instance.client.auth.signInWithOAuth(
         OAuthProvider.google,
-        redirectTo: 'com.ipoupei.app://auth/callback', // Deep link para Flutter
+        redirectTo: SupabaseConfig.authCallbackUrl, // Deep link para Flutter
       );
 
       if (!response) {
@@ -328,6 +330,59 @@ class SupabaseAuthService {
       debugPrint('❌ Erro no login com Google: $e');
       _updateStatus(AuthStatus.error);
       throw Exception('Erro no login com Google: $e');
+    }
+  }
+
+  /// 🍎 APPLE SSO
+  Future<AuthUser> signInWithApple() async {
+    await _waitForInitialization();
+
+    debugPrint('🍎 Iniciando login com Apple...');
+    _updateStatus(AuthStatus.loading);
+
+    try {
+      // 1. Verificar se Sign in with Apple está disponível
+      if (!await SignInWithApple.isAvailable()) {
+        throw Exception('Sign in with Apple não está disponível neste dispositivo');
+      }
+
+      // 2. Obter credenciais do Apple
+      final credential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+      );
+
+      debugPrint('✅ Credenciais Apple obtidas: ${credential.userIdentifier}');
+
+      // 3. Autenticar com Supabase usando o token do Apple
+      final response = await Supabase.instance.client.auth.signInWithIdToken(
+        provider: OAuthProvider.apple,
+        idToken: credential.identityToken!,
+        nonce: credential.authorizationCode,
+      );
+
+      if (response.user == null) {
+        throw Exception('Falha na autenticação com Apple');
+      }
+
+      debugPrint('✅ Login com Apple concluído: ${response.user!.email}');
+
+      return AuthUser.fromSupabaseUser(response.user!);
+
+    } catch (e) {
+      debugPrint('❌ Erro no login com Apple: $e');
+      _updateStatus(AuthStatus.unauthenticated);
+
+      // Mapeia erros específicos do Apple Sign In
+      if (e.toString().contains('canceled')) {
+        throw Exception('Login cancelado pelo usuário');
+      } else if (e.toString().contains('not available')) {
+        throw Exception('Sign in with Apple não está disponível');
+      }
+
+      throw Exception('Erro no login com Apple: $e');
     }
   }
 

@@ -5,13 +5,18 @@
 //
 // Visual: Gradientes + sombras + padrões decorativos
 
+import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../database/local_database.dart';
+import '../../../sync/sync_manager.dart';
 import '../services/diagnostico_service.dart';
 import '../services/score_calculator.dart';
 import '../pages/diagnostico_flow_page.dart';
 import '../models/percepcao_financeira.dart';
+import '../models/diagnostico_etapa.dart';
 import '../../shared/theme/app_colors.dart';
 
 /// Widget bonito do dashboard de diagnóstico
@@ -30,6 +35,7 @@ class _DiagnosticoDashboardWidgetState extends State<DiagnosticoDashboardWidget>
   bool _isLoading = true;
   Map<String, dynamic>? _statusDiagnostico;
   RealtimeChannel? _realtimeChannel;
+  Timer? _syncTimer;
 
   @override
   void initState() {
@@ -37,11 +43,13 @@ class _DiagnosticoDashboardWidgetState extends State<DiagnosticoDashboardWidget>
     WidgetsBinding.instance.addObserver(this);
     _carregarStatusDiagnostico();
     _setupRealtimeSubscription();
+    _setupDailySync();
   }
 
   @override
   void dispose() {
     _realtimeChannel?.unsubscribe();
+    _syncTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -62,14 +70,14 @@ class _DiagnosticoDashboardWidgetState extends State<DiagnosticoDashboardWidget>
     }
   }
 
-  /// Carregar status do diagnóstico
+  /// Carregar status do diagnóstico diretamente do Supabase
   Future<void> _carregarStatusDiagnostico() async {
     if (!mounted) return;
 
     setState(() => _isLoading = true);
 
     try {
-      debugPrint('🔄 [DIAGNOSTICO_WIDGET] Carregando status do diagnóstico...');
+      debugPrint('🚀 [DIAGNOSTICO_WIDGET_NEW] Carregando status DIRETO do Supabase...');
 
       final userId = LocalDatabase.instance.currentUserId;
       if (userId == null) {
@@ -83,28 +91,59 @@ class _DiagnosticoDashboardWidgetState extends State<DiagnosticoDashboardWidget>
 
       debugPrint('✅ [DIAGNOSTICO_WIDGET] UserId: $userId');
 
-      final progresso = await _diagnosticoService.carregarProgresso();
-      final etapaAtual = progresso['etapa_atual'] ?? 0;
-      final diagnosticoCompleto = progresso['diagnostico_completo'] == 1;
+      // 🎯 BUSCAR DIRETO DO SUPABASE - sem cache local
+      debugPrint('🔄 [DIAGNOSTICO_WIDGET_NEW] Chamando buscarDiagnosticoSupabase...');
+      debugPrint('🔍 [DIAGNOSTICO_WIDGET_NEW] Service instance: $_diagnosticoService');
+      debugPrint('🔍 [DIAGNOSTICO_WIDGET_NEW] Service type: ${_diagnosticoService.runtimeType}');
 
-      debugPrint('📊 [DIAGNOSTICO_WIDGET] Progresso carregado - Etapa: $etapaAtual, Completo: $diagnosticoCompleto');
-
-      Map<String, dynamic>? resultado;
-      if (diagnosticoCompleto) {
-        final percepcao = await _diagnosticoService.carregarPercepcao();
-        final dividas = await _diagnosticoService.carregarDividas();
-        final contasCount = await _diagnosticoService.contarContas();
-        final cartoesCount = await _diagnosticoService.contarCartoes();
-        final categoriasCount = await _diagnosticoService.contarCategorias();
-
-        resultado = await _scoreCalculator.calcularResultadoCompleto(
-          percepcao: percepcao,
-          dividas: dividas,
-          contasCount: contasCount,
-          cartoesCount: cartoesCount,
-          categoriasCount: categoriasCount,
-        );
+      Map<String, dynamic>? dadosSupabase;
+      try {
+        dadosSupabase = await _diagnosticoService.buscarDiagnosticoSupabase();
+        debugPrint('🔄 [DIAGNOSTICO_WIDGET_NEW] Resultado: $dadosSupabase');
+      } catch (e, stackTrace) {
+        debugPrint('❌ [DIAGNOSTICO_WIDGET_NEW] Erro ao chamar método: $e');
+        debugPrint('❌ [DIAGNOSTICO_WIDGET_NEW] Stack: $stackTrace');
+        dadosSupabase = null;
       }
+
+      if (dadosSupabase == null) {
+        debugPrint('⚠️ [DIAGNOSTICO_WIDGET] Nenhum dado encontrado no Supabase - exibindo NOT LOGGED IN');
+        setState(() {
+          _isLoading = false;
+          _statusDiagnostico = null;
+        });
+        return;
+      }
+
+      debugPrint('✅ [DIAGNOSTICO_WIDGET] Dados do Supabase: $dadosSupabase');
+      debugPrint('🔥 [DIAGNOSTICO_WIDGET] *** HOT RELOAD FORÇADO *** NOVA VERSÃO CORRIGIDA');
+
+      final diagnosticoCompleto = dadosSupabase['completo'] ?? false;
+      final etapaAtual = dadosSupabase['etapa_atual'] ?? 0;
+      final resultadoJson = dadosSupabase['resultado'];
+
+      debugPrint('🎯 [DIAGNOSTICO_WIDGET] DADOS EXTRAÍDOS -> completo: $diagnosticoCompleto, etapa: $etapaAtual');
+
+      // Parse do resultado JSON se existir
+      Map<String, dynamic>? resultado;
+      if (resultadoJson != null && resultadoJson is Map) {
+        resultado = Map<String, dynamic>.from(resultadoJson);
+        debugPrint('✅ [DIAGNOSTICO_WIDGET] Score do Supabase: ${resultado['score_total']}');
+      } else if (resultadoJson != null && resultadoJson is String) {
+        try {
+          resultado = Map<String, dynamic>.from(
+            json.decode(resultadoJson)
+          );
+          debugPrint('✅ [DIAGNOSTICO_WIDGET] Score do Supabase (JSON string): ${resultado?['score_total']}');
+        } catch (e) {
+          debugPrint('⚠️ [DIAGNOSTICO_WIDGET] Erro ao parse do resultado JSON: $e');
+        }
+      }
+
+      debugPrint('📊 [DIAGNOSTICO_WIDGET] Status final:');
+      debugPrint('📊 [DIAGNOSTICO_WIDGET] - etapaAtual: $etapaAtual');
+      debugPrint('📊 [DIAGNOSTICO_WIDGET] - diagnosticoCompleto: $diagnosticoCompleto');
+      debugPrint('📊 [DIAGNOSTICO_WIDGET] - resultado: $resultado');
 
       if (mounted) {
         setState(() {
@@ -116,10 +155,11 @@ class _DiagnosticoDashboardWidgetState extends State<DiagnosticoDashboardWidget>
           _isLoading = false;
         });
 
-        debugPrint('✅ [DIAGNOSTICO_WIDGET] Status atualizado - Widget irá mostrar ${diagnosticoCompleto ? "completo" : "etapa ${etapaAtual + 1}"}');
+        debugPrint('✅ [DIAGNOSTICO_WIDGET] Status atualizado com dados do Supabase');
+        debugPrint('✅ [DIAGNOSTICO_WIDGET] Widget irá mostrar: ${diagnosticoCompleto ? "COMPLETED CARD 🎉" : "IN PROGRESS CARD (etapa ${etapaAtual + 1})"}');
       }
     } catch (e) {
-      debugPrint('❌ [DIAGNOSTICO_WIDGET] Erro ao carregar status: $e');
+      debugPrint('❌ [DIAGNOSTICO_WIDGET] Erro ao carregar do Supabase: $e');
       if (mounted) {
         setState(() => _isLoading = false);
       }
@@ -132,21 +172,70 @@ class _DiagnosticoDashboardWidgetState extends State<DiagnosticoDashboardWidget>
     _carregarStatusDiagnostico();
   }
 
+  /// Método público para forçar finalização do diagnóstico (DEBUG)
+  Future<void> forcarFinalizacao() async {
+    debugPrint('🔧 [DIAGNOSTICO_WIDGET] FORÇANDO FINALIZAÇÃO MANUAL...');
+    try {
+      setState(() => _isLoading = true);
+
+      // Forçar finalização
+      await _diagnosticoService.proximaEtapa();
+
+      // Recarregar dados
+      await _carregarStatusDiagnostico();
+
+      debugPrint('✅ [DIAGNOSTICO_WIDGET] Finalização forçada concluída');
+    } catch (e) {
+      debugPrint('❌ [DIAGNOSTICO_WIDGET] Erro ao forçar finalização: $e');
+    }
+  }
+
+  /// Método público para forçar sync manual com Supabase
+  Future<void> forcarSync() async {
+    debugPrint('🔄 [DIAGNOSTICO_WIDGET] Sync manual forçado');
+    try {
+      setState(() => _isLoading = true);
+
+      // Sincronizar com Supabase
+      await SyncManager.instance.syncPerfilUsuario(force: true);
+
+      // Recarregar dados
+      await _carregarStatusDiagnostico();
+
+      // Atualizar timestamp da última sync
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('diagnostico_last_sync', DateTime.now().millisecondsSinceEpoch);
+
+      debugPrint('✅ [DIAGNOSTICO_WIDGET] Sync manual concluído');
+    } catch (e) {
+      debugPrint('❌ [DIAGNOSTICO_WIDGET] Erro no sync manual: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    debugPrint('🎨 [DIAGNOSTICO_WIDGET] ===== BUILD DEBUG =====');
+    debugPrint('🎨 [DIAGNOSTICO_WIDGET] _isLoading: $_isLoading');
+    debugPrint('🎨 [DIAGNOSTICO_WIDGET] _statusDiagnostico: $_statusDiagnostico');
+
     if (_isLoading) {
+      debugPrint('🎨 [DIAGNOSTICO_WIDGET] Renderizando LOADING');
       return _buildLoadingCard();
     }
 
     if (_statusDiagnostico == null) {
+      debugPrint('🎨 [DIAGNOSTICO_WIDGET] Renderizando NOT LOGGED IN');
       return _buildNotLoggedInCard();
     }
 
     final completo = _statusDiagnostico!['completo'] ?? false;
+    debugPrint('🎨 [DIAGNOSTICO_WIDGET] Status completo: $completo');
 
     if (completo) {
+      debugPrint('🎨 [DIAGNOSTICO_WIDGET] Renderizando COMPLETED CARD 🎉');
       return _buildCompletedCard();
     } else {
+      debugPrint('🎨 [DIAGNOSTICO_WIDGET] Renderizando IN PROGRESS CARD');
       return _buildInProgressCard();
     }
   }
@@ -154,7 +243,6 @@ class _DiagnosticoDashboardWidgetState extends State<DiagnosticoDashboardWidget>
   /// Card de loading bonito
   Widget _buildLoadingCard() {
     return Container(
-      margin: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: const Color(0xFFf9fafb),
         borderRadius: BorderRadius.circular(6),
@@ -192,7 +280,6 @@ class _DiagnosticoDashboardWidgetState extends State<DiagnosticoDashboardWidget>
   /// Card quando não logado
   Widget _buildNotLoggedInCard() {
     return Container(
-      margin: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: const Color(0xFFf9fafb),
         borderRadius: BorderRadius.circular(6),
@@ -241,13 +328,12 @@ class _DiagnosticoDashboardWidgetState extends State<DiagnosticoDashboardWidget>
   /// Card bonito quando em progresso
   Widget _buildInProgressCard() {
     final etapaAtual = _statusDiagnostico!['etapa_atual'] ?? 0;
-    final totalEtapas = 9; // Total de etapas do diagnóstico (incluindo resultado)
+    final totalEtapas = DiagnosticoEtapas.fluxoCompleto.length; // Total dinâmico de etapas
     final progresso = ((etapaAtual + 1) / totalEtapas * 100).round().clamp(0, 100);
 
     return GestureDetector(
       onTap: _abrirDiagnostico,
       child: Container(
-        margin: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           gradient: const LinearGradient(
@@ -406,21 +492,28 @@ class _DiagnosticoDashboardWidgetState extends State<DiagnosticoDashboardWidget>
   Widget _buildCompletedCard() {
     final resultado = _statusDiagnostico!['resultado'];
     final score = resultado?['score_total'] ?? 0;
+    final valorHora = resultado?['valor_hora'] ?? 0.0;
+
+    // 🔍 DEBUG: Print do score que está sendo exibido no widget
+    debugPrint('🎯 [WIDGET_DASHBOARD] ===== SCORE DEBUG =====');
+    debugPrint('🎯 [WIDGET_DASHBOARD] Score exibido no widget: $score');
+    debugPrint('🎯 [WIDGET_DASHBOARD] Resultado completo: $resultado');
+    debugPrint('🎯 [WIDGET_DASHBOARD] Status diagnóstico: $_statusDiagnostico');
+    debugPrint('🎯 [WIDGET_DASHBOARD] ===== FIM SCORE DEBUG =====');
 
     return GestureDetector(
       onTap: _verResultados,
       child: Container(
-        margin: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           gradient: const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [AppColors.tealPrimary, AppColors.tealEscuro],
+            colors: [Color(0xFF1E40AF), Color(0xFF3B82F6)], // Azul festivo
           ),
           boxShadow: [
             BoxShadow(
-              color: AppColors.tealTransparente50,
+              color: const Color(0xFF3B82F6).withAlpha(78), // Sombra azul
               blurRadius: 12,
               offset: const Offset(0, 6),
             ),
@@ -448,30 +541,42 @@ class _DiagnosticoDashboardWidgetState extends State<DiagnosticoDashboardWidget>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Header com troféu
-                  Row(
+                  // Header festivo
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withAlpha(52),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(
-                          Icons.emoji_events,
-                          color: Colors.white,
-                          size: 24,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      const Expanded(
-                        child: Text(
-                          'Diagnóstico Concluído',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withAlpha(52),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(
+                              Icons.celebration,
+                              color: Colors.white,
+                              size: 24,
+                            ),
                           ),
+                          const SizedBox(width: 12),
+                          const Text(
+                            '🎉 Parabéns!',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      const Text(
+                        'Diagnóstico 100% Completo',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ],
@@ -479,24 +584,51 @@ class _DiagnosticoDashboardWidgetState extends State<DiagnosticoDashboardWidget>
 
                   const SizedBox(height: 16),
 
-                  // Score
-                  Row(
+                  // Score e Valor da Hora
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Seu Score: ',
-                        style: TextStyle(
-                          color: Colors.white.withAlpha(208),
-                          fontSize: 14,
-                        ),
+                      Row(
+                        children: [
+                          Text(
+                            'Seu Score: ',
+                            style: TextStyle(
+                              color: Colors.white.withAlpha(208),
+                              fontSize: 14,
+                            ),
+                          ),
+                          Text(
+                            '$score/100',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
-                      Text(
-                        '$score/100',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
+                      if (valorHora > 0) ...[
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Text(
+                              'Valor/Hora: ',
+                              style: TextStyle(
+                                color: Colors.white.withAlpha(208),
+                                fontSize: 14,
+                              ),
+                            ),
+                            Text(
+                              'R\$ ${valorHora.toStringAsFixed(2)}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
+                      ],
                     ],
                   ),
 
@@ -577,6 +709,57 @@ class _DiagnosticoDashboardWidgetState extends State<DiagnosticoDashboardWidget>
         builder: (context) => const DiagnosticoFlowPage(),
       ),
     );
+  }
+
+  /// 🕐 Configurar sync automático diário
+  void _setupDailySync() async {
+    try {
+      // Verificar se já passou mais de 1 dia desde última sync
+      await _checkAndPerformDailySync();
+
+      // Configurar timer para verificar a cada hora se precisa sync
+      _syncTimer = Timer.periodic(const Duration(hours: 1), (timer) {
+        _checkAndPerformDailySync();
+      });
+
+      debugPrint('⏰ [DIAGNOSTICO_WIDGET] Sync diário configurado');
+    } catch (e) {
+      debugPrint('❌ [DIAGNOSTICO_WIDGET] Erro ao configurar sync diário: $e');
+    }
+  }
+
+  /// Verificar e realizar sync diário se necessário
+  Future<void> _checkAndPerformDailySync() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final lastSyncKey = 'diagnostico_last_sync';
+      final lastSync = prefs.getInt(lastSyncKey) ?? 0;
+      final now = DateTime.now().millisecondsSinceEpoch;
+
+      // Se passou mais de 24 horas (86400000 ms), fazer sync
+      if (now - lastSync > 86400000) {
+        debugPrint('🔄 [DIAGNOSTICO_WIDGET] Realizando sync diário automático...');
+
+        try {
+          // Sincronizar dados de perfil_usuario com Supabase
+          await SyncManager.instance.syncPerfilUsuario(force: true);
+          debugPrint('✅ [DIAGNOSTICO_WIDGET] Sync com Supabase concluído');
+        } catch (e) {
+          debugPrint('⚠️ [DIAGNOSTICO_WIDGET] Erro no sync com Supabase: $e');
+        }
+
+        // Recarregar dados do banco forçando refresh
+        if (mounted) {
+          _carregarStatusDiagnostico();
+        }
+
+        // Salvar timestamp da última sync
+        await prefs.setInt(lastSyncKey, now);
+        debugPrint('✅ [DIAGNOSTICO_WIDGET] Sync diário concluído');
+      }
+    } catch (e) {
+      debugPrint('❌ [DIAGNOSTICO_WIDGET] Erro no sync diário: $e');
+    }
   }
 
   /// Refazer diagnóstico

@@ -373,7 +373,7 @@ class _AlterarObservacoesPageState extends State<AlterarObservacoesPage> {
               label: 'Observações',
               hint: 'Adicione observações sobre esta transação...',
               icon: Icons.edit_note,
-              transactionContext: widget.transacao.tipo,
+              transactionContext: _getTransactionContext(),
               maxLines: 4,
               maxLength: 500,
               onChanged: (value) {
@@ -529,13 +529,26 @@ class _AlterarObservacoesPageState extends State<AlterarObservacoesPage> {
       case 'receita':
         return AppColors.tealPrimary;
       case 'despesa':
-        return widget.transacao.cartaoId != null 
-            ? AppColors.roxoPrimario 
+        return widget.transacao.cartaoId != null
+            ? AppColors.roxoPrimario
             : AppColors.vermelhoHeader;
       case 'transferencia':
         return AppColors.azulHeader;
       default:
         return AppColors.tealPrimary;
+    }
+  }
+
+  String _getTransactionContext() {
+    switch (widget.transacao.tipo) {
+      case 'receita':
+        return 'receita';
+      case 'despesa':
+        return widget.transacao.cartaoId != null ? 'cartao' : 'despesa';
+      case 'transferencia':
+        return 'transferencia';
+      default:
+        return 'receita';
     }
   }
 

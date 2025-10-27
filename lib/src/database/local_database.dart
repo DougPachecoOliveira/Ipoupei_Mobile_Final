@@ -46,7 +46,7 @@ class LocalDatabase {
 
       _database = await openDatabase(
         path,
-        version: 5,
+        version: 6,
         onCreate: _createTables,
         onUpgrade: _upgradeTables,
       );
@@ -131,6 +131,8 @@ class LocalDatabase {
         diagnostico_score_planejamento INTEGER DEFAULT 0,
         diagnostico_score_investimento INTEGER DEFAULT 0,
         diagnostico_resultado_json TEXT,
+        aceita_comunic_email INTEGER DEFAULT 1,
+        aceita_comunic_whatsapp INTEGER DEFAULT 1,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
         sync_status TEXT DEFAULT 'synced',
@@ -582,6 +584,30 @@ class LocalDatabase {
         debugPrint('✅ Tabela planejamentos já existe na versão 5');
       }
     }
+
+    if (oldVersion < 6) {
+      debugPrint('🔄 Adicionando colunas de comunicação na versão 6...');
+
+      // Verificar se as colunas já existem antes de tentar adicioná-las
+      final tableInfo = await db.rawQuery('PRAGMA table_info(perfil_usuario)');
+      final columnNames = tableInfo.map((column) => column['name']).toSet();
+
+      if (!columnNames.contains('aceita_comunic_email')) {
+        await db.execute('ALTER TABLE perfil_usuario ADD COLUMN aceita_comunic_email INTEGER DEFAULT 1');
+        debugPrint('✅ Coluna aceita_comunic_email adicionada');
+      } else {
+        debugPrint('✅ Coluna aceita_comunic_email já existe');
+      }
+
+      if (!columnNames.contains('aceita_comunic_whatsapp')) {
+        await db.execute('ALTER TABLE perfil_usuario ADD COLUMN aceita_comunic_whatsapp INTEGER DEFAULT 1');
+        debugPrint('✅ Coluna aceita_comunic_whatsapp adicionada');
+      } else {
+        debugPrint('✅ Coluna aceita_comunic_whatsapp já existe');
+      }
+
+      debugPrint('✅ Colunas de comunicação processadas na versão 6');
+    }
   }
   
   /// 👤 DEFINE USUÁRIO ATUAL
@@ -944,11 +970,39 @@ class LocalDatabase {
     
     log('🔍 SQL Otimizado: $sql');
     log('🔍 Args: $whereArgs');
-    
+    log('🔍 User ID: $_currentUserId');
+    log('🔍 Período: ${dataInicio?.toIso8601String().split('T')[0]} até ${dataFim?.toIso8601String().split('T')[0]}');
+
     final result = await _database!.rawQuery(sql, whereArgs);
-    
+
     log('✅ Categorias com valores carregadas: ${result.length}');
-    
+
+    // 🐛 DEBUG: Log detailed results
+    for (final row in result) {
+      final nome = row['nome'] as String;
+      final valorTotal = row['valor_total'] as double;
+      final qtdTransacoes = row['quantidade_transacoes'] as int;
+      log('🔍 Categoria: $nome | Valor: R\$ $valorTotal | Transações: $qtdTransacoes');
+    }
+
+    // 🐛 DEBUG: Verificar se há transações no período para debug
+    final debugTransacoes = await _database!.rawQuery('''
+      SELECT COUNT(*) as total, SUM(valor) as soma_valores
+      FROM transacoes
+      WHERE usuario_id = ?
+        AND efetivado = 1
+        AND data >= ?
+        AND data <= ?
+    ''', [_currentUserId,
+          dataInicio?.toIso8601String().split('T')[0] ?? '1900-01-01',
+          dataFim?.toIso8601String().split('T')[0] ?? '2100-12-31']);
+
+    if (debugTransacoes.isNotEmpty) {
+      final totalTransacoes = debugTransacoes.first['total'] as int;
+      final somaValores = debugTransacoes.first['soma_valores'] as double?;
+      log('🔍 DEBUG: Total transações efetivadas no período: $totalTransacoes | Soma total: R\$ ${somaValores ?? 0.0}');
+    }
+
     return result;
   }
   

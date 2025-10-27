@@ -93,7 +93,7 @@ class _InsightsRapidosWidgetState extends State<InsightsRapidosWidget> {
     return GestureDetector(
       onTap: _proximoInsight,
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16),
+        margin: const EdgeInsets.all(12),
         height: 120, // Altura fixa compacta
         decoration: BoxDecoration(
           gradient: LinearGradient(

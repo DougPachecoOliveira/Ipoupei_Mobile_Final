@@ -6,8 +6,8 @@ import '../models/diagnostico_etapa.dart';
 import '../models/percepcao_financeira.dart';
 import '../models/dividas_model.dart';
 import '../services/diagnostico_service.dart';
+import '../services/score_calculator.dart';
 // import '../services/share_service.dart'; // Não existe ainda
-// import '../services/score_calculator.dart' as calc; // Não existe ainda
 import '../pages/diagnostico_flow_page.dart';
 import 'dividas_questionario_widget.dart';
 import 'youtube_player_widget.dart';
@@ -43,6 +43,9 @@ class EtapaWrapper extends StatefulWidget {
 }
 
 class _EtapaWrapperState extends State<EtapaWrapper> {
+  // Flag para evitar múltiplos cálculos de score
+  bool _jaCalculouScore = false;
+
   @override
   void initState() {
     super.initState();
@@ -55,18 +58,70 @@ class _EtapaWrapperState extends State<EtapaWrapper> {
 
   /// Simula o processamento automático e avança para resultado
   void _simularProcessamento() async {
+    debugPrint('🧮 [PROCESSAMENTO] Iniciando processamento de 8 segundos...');
     await Future.delayed(const Duration(seconds: 8)); // Simula 8 segundos de processamento
 
     if (mounted) {
-      // Avançar para próxima etapa (resultado)
-      DiagnosticoService.instance.proximaEtapa();
+      debugPrint('🧮 [PROCESSAMENTO] 8 segundos concluídos - chamando proximaEtapa()...');
 
-      debugPrint('🧮 [PROCESSAMENTO] Processamento concluído - avançando para resultado');
+      // Avançar para próxima etapa (resultado) - isso deve disparar o cálculo do score
+      await DiagnosticoService.instance.proximaEtapa();
+
+      debugPrint('🧮 [PROCESSAMENTO] proximaEtapa() concluído - deveria ter calculado score');
+    }
+  }
+
+  /// 🔧 Calcular score uma única vez (SEM REBUILD)
+  void _calcularScoreUmaVez() {
+    _jaCalculouScore = true; // Marcar como já tentou
+
+    debugPrint('🔧 [CALCULAR_SCORE] Tentativa única de cálculo do score...');
+
+    // Fazer cálculo em background SEM await para não bloquear UI
+    _calcularScoreBackground();
+  }
+
+  /// Calcula score em background
+  Future<void> _calcularScoreBackground() async {
+    try {
+      final diagnosticoService = DiagnosticoService.instance;
+
+      // Buscar dados necessários para o cálculo
+      final percepcao = await diagnosticoService.carregarPercepcao();
+      final dividas = await diagnosticoService.carregarDividas();
+      final contasCount = await diagnosticoService.contarContas();
+      final cartoesCount = await diagnosticoService.contarCartoes();
+      final categoriasCount = await diagnosticoService.contarCategorias();
+
+      debugPrint('🔧 [CALCULAR_SCORE] Dados para cálculo - Percepção: ${percepcao.isObrigatoriosCompletos}, Contas: $contasCount, Cartões: $cartoesCount, Categorias: $categoriasCount');
+
+      // Calcular resultado
+      final scoreCalculator = ScoreCalculator();
+      final resultado = await scoreCalculator.calcularResultadoCompleto(
+        percepcao: percepcao,
+        dividas: dividas,
+        contasCount: contasCount,
+        cartoesCount: cartoesCount,
+        categoriasCount: categoriasCount,
+      );
+
+      debugPrint('🔧 [CALCULAR_SCORE] Score calculado: ${resultado['score_total']}');
+
+      // Salvar o resultado
+      await diagnosticoService.finalizarDiagnostico(resultado);
+
+      debugPrint('✅ [CALCULAR_SCORE] Score salvo com sucesso!');
+
+      // O widget será atualizado via ValueListenableBuilder automaticamente
+    } catch (e) {
+      debugPrint('❌ [CALCULAR_SCORE] Erro ao calcular score: $e');
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('🏗️ [ETAPA_WRAPPER] build() - Etapa: ${widget.etapa.id} (${widget.etapa.tipo})');
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -105,13 +160,10 @@ class _EtapaWrapperState extends State<EtapaWrapper> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Player do YouTube
+          // Player do YouTube com tratamento de erro
           ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-            child: YoutubePlayerWidget(
-              video: widget.etapa.video!,
-              autoPlay: false,
-            ),
+            child: _buildYouTubePlayerSafe(),
           ),
 
           // Informações do vídeo
@@ -146,6 +198,55 @@ class _EtapaWrapperState extends State<EtapaWrapper> {
     );
   }
 
+  /// Player do YouTube com tratamento seguro de erros
+  Widget _buildYouTubePlayerSafe() {
+    try {
+      return YoutubePlayerWidget(
+        video: widget.etapa.video!,
+        autoPlay: false,
+      );
+    } catch (e) {
+      debugPrint('⚠️ [ETAPA_WRAPPER] Erro ao carregar vídeo YouTube: $e');
+
+      // Fallback: mostrar placeholder
+      return Container(
+        height: 200,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: AppColors.cinzaClaro,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.play_circle_outline,
+              size: 48,
+              color: AppColors.cinzaTexto,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Vídeo explicativo',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppColors.cinzaTexto,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Toque para assistir no YouTube',
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppColors.cinzaLegenda,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
   /// Constrói conteúdo específico baseado no tipo de etapa
   Widget _buildEtapaContent() {
     switch (widget.etapa.tipo) {
@@ -164,6 +265,8 @@ class _EtapaWrapperState extends State<EtapaWrapper> {
 
   /// Conteúdo de introdução
   Widget _buildIntroContent() {
+    debugPrint('🎯 [ETAPA_WRAPPER] _buildIntroContent() chamado - renderizando tela de intro');
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -224,6 +327,27 @@ class _EtapaWrapperState extends State<EtapaWrapper> {
 
           // Benefícios
           ..._buildBeneficios(),
+
+          const SizedBox(height: 32),
+
+          // Botão "Começar Diagnóstico"
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () => _iniciarDiagnostico(),
+              icon: const Icon(Icons.play_arrow, size: 20),
+              label: const Text('Começar Diagnóstico'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: widget.etapa.cor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 2,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -489,10 +613,40 @@ class _EtapaWrapperState extends State<EtapaWrapper> {
     );
   }
 
-  /// Resultado completo com score calculado
+  /// Resultado completo com score calculado (USANDO MESMA SOURCE QUE DASHBOARD)
   Widget _buildResultadoCompleto() {
     // GlobalKey para captura de screenshot
     final screenshotKey = GlobalKey();
+
+    // 🎯 USAR MESMA FONTE DE DADOS QUE O DASHBOARD WIDGET
+    return FutureBuilder<Map<String, dynamic>>(
+      future: DiagnosticoService.instance.carregarProgresso(), // SEM forceReload para evitar loop
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return _buildResultadoLoading();
+        }
+
+        final progresso = snapshot.data ?? {};
+        final resultadoReal = progresso['resultado'];
+        final scoreReal = resultadoReal?['score_total'] ?? 0;
+
+        debugPrint('🎯 [ETAPA_RESULTADO] ===== SCORE UNIFICADO =====');
+        debugPrint('🎯 [ETAPA_RESULTADO] Score do banco (igual dashboard): $scoreReal');
+        debugPrint('🎯 [ETAPA_RESULTADO] Resultado: $resultadoReal');
+        debugPrint('🎯 [ETAPA_RESULTADO] ===== FIM SCORE DEBUG =====');
+
+        // Fallback único se score for 0
+        if (scoreReal == 0 && !_jaCalculouScore) {
+          _calcularScoreUmaVez();
+        }
+
+        return _buildResultadoComScore(screenshotKey, scoreReal, resultadoReal);
+      },
+    );
+  }
+
+  /// Widget principal do resultado com score
+  Widget _buildResultadoComScore(GlobalKey screenshotKey, int scoreReal, Map<String, dynamic>? resultadoReal) {
 
     return RepaintBoundary(
       key: screenshotKey,
@@ -593,10 +747,10 @@ class _EtapaWrapperState extends State<EtapaWrapper> {
 
           const SizedBox(height: 32),
 
-          // Score simulado
-          const Text(
-            'Score: 75 pontos',
-            style: TextStyle(
+          // Score real calculado - USAR SEMPRE O SCORE REAL, SEM FALLBACK
+          Text(
+            'Score: $scoreReal pontos',
+            style: const TextStyle(
               fontSize: 32,
               fontWeight: FontWeight.bold,
               color: AppColors.verdeSucesso,
@@ -690,14 +844,19 @@ class _EtapaWrapperState extends State<EtapaWrapper> {
   }
 
   /// Compartilhar resultado
-  void _compartilharResultado() {
+  void _compartilharResultado() async {
     // Por enquanto, copiar para clipboard e mostrar mensagem
     // TODO: Implementar screenshot e share quando adicionar pacotes necessários
 
-    const textoCompartilhamento = '''
+    // 🎯 USAR MESMA FONTE QUE DASHBOARD E ETAPA RESULTADO
+    final progresso = await DiagnosticoService.instance.carregarProgresso();
+    final resultadoReal = progresso['resultado'];
+    final scoreReal = resultadoReal?['score_total'] ?? 0;
+
+    final textoCompartilhamento = '''
 🎯 Acabei de fazer meu Diagnóstico Financeiro no iPoupei!
 
-📊 Meu Score: 75 pontos
+📊 Meu Score: $scoreReal pontos
 🎖️ Perfil: Intermediário
 
 Descubra você também sua situação financeira e crie seu plano personalizado!
@@ -731,9 +890,9 @@ Descubra você também sua situação financeira e crie seu plano personalizado!
                 color: Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Text(
+              child: Text(
                 textoCompartilhamento,
-                style: TextStyle(fontSize: 12),
+                style: const TextStyle(fontSize: 12),
               ),
             ),
           ],
@@ -766,7 +925,12 @@ Descubra você também sua situação financeira e crie seu plano personalizado!
   }
 
   /// Preview do resultado
-  void _previewResultado() {
+  void _previewResultado() async {
+    // 🎯 USAR MESMA FONTE QUE DASHBOARD E ETAPA RESULTADO
+    final progresso = await DiagnosticoService.instance.carregarProgresso();
+    final resultadoReal = progresso['resultado'];
+    final scoreReal = resultadoReal?['score_total'] ?? 0;
+
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -870,9 +1034,9 @@ Descubra você também sua situação financeira e crie seu plano personalizado!
 
                       const SizedBox(height: 8),
 
-                      const Text(
-                        '75 pontos',
-                        style: TextStyle(
+                      Text(
+                        '$scoreReal pontos',
+                        style: const TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
                           color: AppColors.verdeSucesso,
@@ -2015,5 +2179,33 @@ Descubra você também sua situação financeira e crie seu plano personalizado!
 
   void _simularDadosGenericos() {
     widget.onDadosChanged({'dados': ['item1', 'item2', 'item3']});
+  }
+
+  /// Método para iniciar o diagnóstico na tela de intro
+  Future<void> _iniciarDiagnostico() async {
+    debugPrint('🚀 [INTRO] Usuário clicou em "Começar Diagnóstico"');
+
+    try {
+      // Avançar para próxima etapa através do serviço
+      await DiagnosticoService.instance.proximaEtapa();
+      debugPrint('✅ [INTRO] Avançou para próxima etapa com sucesso');
+    } catch (e) {
+      debugPrint('❌ [INTRO] Erro ao avançar etapa: $e');
+
+      // Mostrar erro para o usuário
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao iniciar diagnóstico: $e'),
+            backgroundColor: Colors.red,
+            action: SnackBarAction(
+              label: 'OK',
+              textColor: Colors.white,
+              onPressed: () => ScaffoldMessenger.of(context).hideCurrentSnackBar(),
+            ),
+          ),
+        );
+      }
+    }
   }
 }

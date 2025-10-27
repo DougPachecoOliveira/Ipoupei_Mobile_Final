@@ -294,14 +294,31 @@ class _CartoesConsolidadoPageState extends State<CartoesConsolidadoPage> with Si
     return Scaffold(
       backgroundColor: AppColors.cinzaClaro,
       appBar: _buildAppBarOriginal(),
-      body: _carregando 
-        ? _buildLoadingState()
-        : _erro != null 
-          ? _buildErrorState()
-          : _cartoes.isEmpty
-            ? _buildEmptyState()
-            : _buildContent(),
-      floatingActionButton: _buildFloatingActionButton(),
+      body: Stack(
+        children: [
+          _carregando
+            ? _buildLoadingState()
+            : _erro != null
+              ? _buildErrorState()
+              : _cartoes.isEmpty
+                ? _buildEmptyState()
+                : _buildContent(),
+          _buildFABOverlay(),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: AppColors.roxoHeader,
+        foregroundColor: Colors.white,
+        elevation: _fabExpanded ? 8 : 6,
+        onPressed: () {
+          setState(() => _fabExpanded = !_fabExpanded);
+        },
+        child: AnimatedRotation(
+          turns: _fabExpanded ? 0.125 : 0.0,
+          duration: const Duration(milliseconds: 200),
+          child: Icon(_fabExpanded ? Icons.close : Icons.add),
+        ),
+      ),
     );
   }
 
@@ -628,7 +645,7 @@ class _CartoesConsolidadoPageState extends State<CartoesConsolidadoPage> with Si
                   Text(
                     CurrencyFormatter.format(_totalUtilizado),
                     style: const TextStyle(
-                      fontSize: 18,
+                      fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: Colors.black87,
                     ),
@@ -650,7 +667,7 @@ class _CartoesConsolidadoPageState extends State<CartoesConsolidadoPage> with Si
                   Text(
                     CurrencyFormatter.format(_limiteTotal),
                     style: const TextStyle(
-                      fontSize: 18,
+                      fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: Colors.black87,
                     ),
@@ -951,85 +968,64 @@ class _CartoesConsolidadoPageState extends State<CartoesConsolidadoPage> with Si
   }
 
   /// 🎯 FLOATING ACTION BUTTON COM MENU DE OPÇÕES
-  Widget _buildFloatingActionButton() {
-    if (_carregando) return const SizedBox.shrink();
+  /// 🎯 OVERLAY E MENU DO FAB (COBRE TELA TODA)
+  Widget _buildFABOverlay() {
+    if (_carregando || !_fabExpanded) return const SizedBox.shrink();
 
     return Stack(
       children: [
-        // Overlay transparente quando menu está expandido
-        if (_fabExpanded)
-          Positioned.fill(
-            child: GestureDetector(
-              onTap: () => setState(() => _fabExpanded = false),
-              child: Container(
-                color: Colors.black.withAlpha(78),
-              ),
+        // Overlay transparente cobrindo toda a tela
+        Positioned.fill(
+          child: GestureDetector(
+            onTap: () => setState(() => _fabExpanded = false),
+            child: Container(
+              color: Colors.black.withAlpha(78),
             ),
           ),
+        ),
 
         // Menu de opções expandido
-        if (_fabExpanded)
-          Positioned(
-            right: 16,
-            bottom: 80, // Acima do FAB principal
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                _buildFABOption(
-                  icon: Icons.credit_card,
-                  label: 'Novo Cartão',
-                  color: Colors.purple,
-                  onTap: _navegarParaNovoCartaoFab,
-                ),
-                const SizedBox(height: 12),
-                _buildFABOption(
-                  icon: Icons.swap_horiz,
-                  label: 'Transferência',
-                  color: Colors.blue,
-                  onTap: _navegarParaNovaTransferencia,
-                ),
-                const SizedBox(height: 12),
-                _buildFABOption(
-                  icon: Icons.add,
-                  label: 'Receita',
-                  color: AppColors.verdeSucesso,
-                  onTap: _navegarParaNovaReceita,
-                ),
-                const SizedBox(height: 12),
-                _buildFABOption(
-                  icon: Icons.remove,
-                  label: 'Despesa',
-                  color: AppColors.vermelhoErro,
-                  onTap: _navegarParaNovaDespesaFab,
-                ),
-                const SizedBox(height: 12),
-                _buildFABOption(
-                  icon: Icons.shopping_bag,
-                  label: 'Despesa Cartão',
-                  color: Colors.orange,
-                  onTap: _navegarParaNovaDespesaCartaoFab,
-                ),
-              ],
-            ),
-          ),
-
-        // FAB principal
         Positioned(
-          right: 0,
-          bottom: 0,
-          child: FloatingActionButton(
-            backgroundColor: AppColors.roxoHeader,
-            foregroundColor: Colors.white,
-            elevation: _fabExpanded ? 8 : 6,
-            heroTag: 'cartoes_consolidado_fab',
-            onPressed: () {
-              setState(() => _fabExpanded = !_fabExpanded);
-            },
-            child: AnimatedRotation(
-              turns: _fabExpanded ? 0.125 : 0, // Rotação de 45 graus
-              duration: const Duration(milliseconds: 200),
-              child: Icon(_fabExpanded ? Icons.close : Icons.add),
-            ),
+          right: 16,
+          bottom: 80, // Acima do FAB principal
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              _buildFABOption(
+                icon: Icons.credit_card,
+                label: 'Novo Cartão',
+                color: Colors.purple,
+                onTap: _navegarParaNovoCartaoFab,
+              ),
+              const SizedBox(height: 12),
+              _buildFABOption(
+                icon: Icons.swap_horiz,
+                label: 'Transferência',
+                color: Colors.blue,
+                onTap: _navegarParaNovaTransferencia,
+              ),
+              const SizedBox(height: 12),
+              _buildFABOption(
+                icon: Icons.add,
+                label: 'Receita',
+                color: AppColors.verdeSucesso,
+                onTap: _navegarParaNovaReceita,
+              ),
+              const SizedBox(height: 12),
+              _buildFABOption(
+                icon: Icons.remove,
+                label: 'Despesa',
+                color: AppColors.vermelhoErro,
+                onTap: _navegarParaNovaDespesaFab,
+              ),
+              const SizedBox(height: 12),
+              _buildFABOption(
+                icon: Icons.shopping_bag,
+                label: 'Despesa Cartão',
+                color: Colors.orange,
+                onTap: _navegarParaNovaDespesaCartaoFab,
+              ),
+            ],
           ),
         ),
       ],
@@ -1136,6 +1132,7 @@ class _CartoesConsolidadoPageState extends State<CartoesConsolidadoPage> with Si
     final proximaMes = DateTime(data.year, data.month + 1);
     return _formatarPeriodo(proximaMes);
   }
+
 
   void _abrirGestaoCartao(CartaoModel cartao) {
     Navigator.push(

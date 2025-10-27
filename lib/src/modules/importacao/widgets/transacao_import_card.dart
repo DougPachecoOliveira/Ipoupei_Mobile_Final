@@ -109,8 +109,10 @@ class _TransacaoImportCardState extends State<TransacaoImportCard> {
       setState(() {
         _categorias = categorias
             .where((c) => c.tipo == _transacaoEditada.tipo && c.ativo)
-            .toList();
-        _subcategorias = subcategorias.where((s) => s.ativo).toList();
+            .toList()
+          ..sort((a, b) => a.nome.compareTo(b.nome));
+        _subcategorias = subcategorias.where((s) => s.ativo).toList()
+          ..sort((a, b) => a.nome.compareTo(b.nome));
       });
     } catch (e) {
       debugPrint('❌ Erro ao carregar categorias: $e');
@@ -286,7 +288,8 @@ class _TransacaoImportCardState extends State<TransacaoImportCard> {
           categoriaId: _categoriaEscolhida!.id
         );
 
-        subcategoriasDisponiveis = subcategoriasServidor.where((s) => s.ativo).toList();
+        subcategoriasDisponiveis = subcategoriasServidor.where((s) => s.ativo).toList()
+          ..sort((a, b) => a.nome.compareTo(b.nome));
 
         debugPrint('   ✅ ${subcategoriasDisponiveis.length} subcategorias carregadas do servidor');
 
@@ -349,7 +352,6 @@ class _TransacaoImportCardState extends State<TransacaoImportCard> {
     Color? fallbackColor,
     double size = 18,
   }) {
-    final iconData = CategoriaIcons.getIconData(icone);
     final iconColor = cor ?? fallbackColor ?? Colors.grey;
 
     return Container(
@@ -359,9 +361,9 @@ class _TransacaoImportCardState extends State<TransacaoImportCard> {
         color: iconColor.withAlpha(26),
         borderRadius: BorderRadius.circular(4),
       ),
-      child: Icon(
-        iconData,
-        size: size,
+      child: CategoriaIcons.renderIcon(
+        icone,
+        size,
         color: iconColor,
       ),
     );
@@ -553,20 +555,29 @@ class _TransacaoImportCardState extends State<TransacaoImportCard> {
           // Info da conta/cartão
           Row(
             children: [
-              Icon(
-                widget.conta != null
-                    ? (widget.conta?.icone?.isNotEmpty == true
-                        ? CategoriaIcons.getIconData(widget.conta!.icone)
-                        : Icons.account_balance)
-                    : Icons.credit_card,
-                size: 16,
-                color: widget.conta != null
-                    ? (widget.conta?.cor?.isNotEmpty == true
-                        ? Color(int.parse(widget.conta!.cor!.replaceAll('#', '0xFF')))
-                        : Colors.grey[600])
-                    : (widget.cartao?.cor?.isNotEmpty == true
-                        ? Color(int.parse(widget.cartao!.cor!.replaceAll('#', '0xFF')))
-                        : Colors.grey[600]),
+              widget.conta != null && widget.conta?.icone?.isNotEmpty == true
+                  ? CategoriaIcons.renderIcon(
+                      widget.conta!.icone,
+                      16,
+                      color: widget.conta != null
+                          ? (widget.conta?.cor?.isNotEmpty == true
+                              ? Color(int.parse(widget.conta!.cor!.replaceAll('#', '0xFF')))
+                              : Colors.grey[600])
+                          : (widget.cartao?.cor?.isNotEmpty == true
+                              ? Color(int.parse(widget.cartao!.cor!.replaceAll('#', '0xFF')))
+                              : Colors.grey[600]),
+                    )
+                  : Icon(
+                      widget.conta != null ? Icons.account_balance : Icons.credit_card,
+                      size: 16,
+                      color: widget.conta != null
+                          ? (widget.conta?.cor?.isNotEmpty == true
+                              ? Color(int.parse(widget.conta!.cor!.replaceAll('#', '0xFF')))
+                              : Colors.grey[600])
+                          : (widget.cartao?.cor?.isNotEmpty == true
+                              ? Color(int.parse(widget.cartao!.cor!.replaceAll('#', '0xFF')))
+                              : Colors.grey[600]),
+                    ),
               ),
               const SizedBox(width: 8),
               Expanded(

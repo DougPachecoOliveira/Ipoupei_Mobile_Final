@@ -2,14 +2,6 @@
 
 Aplicativo Flutter do iPoupei com sincronização offline/online automática.
 
-## 🎯 Demo Rápido
-
-### Login de Demonstração
-- **Email:** `daolive.big+ipoupei1@gmail.com`
-- **Senha:** `Doug1707`
-- **Nome:** `Douglas Oliveira` (para cadastro)
-
-**💡 Dica:** Use o botão "🧪 Preencher dados de demonstração" nas telas de login/cadastro!
 
 ## 🚀 Como Rodar
 
@@ -31,7 +23,6 @@ flutter build apk
 - 💾 **SQLite local** espelho exato das tabelas do Supabase
 - 🔄 **Sincronização automática** offline ↔ online
 - 📱 **Interface responsiva** Material Design 3
-- 🎯 **Demo credentials** pré-configuradas
 - ⚡ **Dependências atualizadas** para versões mais recentes
 - 🎨 **withValues()** para cores (Flutter 3.22+)
 - 🌐 **Connectivity Plus 6.1.5+** com List<ConnectivityResult>

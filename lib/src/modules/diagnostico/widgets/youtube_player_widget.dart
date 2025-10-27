@@ -22,8 +22,9 @@ class YoutubePlayerWidget extends StatefulWidget {
 }
 
 class _YoutubePlayerWidgetState extends State<YoutubePlayerWidget> {
-  late YoutubePlayerController _controller;
+  YoutubePlayerController? _controller;
   bool _isPlayerReady = false;
+  bool _hasError = false;
 
   @override
   void initState() {
@@ -32,35 +33,62 @@ class _YoutubePlayerWidgetState extends State<YoutubePlayerWidget> {
   }
 
   void _initializePlayer() {
-    _controller = YoutubePlayerController(
-      initialVideoId: widget.video.id,
-      flags: YoutubePlayerFlags(
-        autoPlay: widget.autoPlay,
-        mute: false,
-        loop: false,
-        enableCaption: false,
-        controlsVisibleAtStart: true,
-        showLiveFullscreenButton: false,
-      ),
-    );
+    try {
+      _controller = YoutubePlayerController(
+        initialVideoId: widget.video.id,
+        flags: YoutubePlayerFlags(
+          autoPlay: widget.autoPlay,
+          mute: false,
+          loop: false,
+          enableCaption: false,
+          controlsVisibleAtStart: true,
+          showLiveFullscreenButton: false,
+        ),
+      );
 
-    _controller.addListener(() {
-      if (_controller.value.isReady && !_isPlayerReady) {
+      _controller!.addListener(() {
+        try {
+          if (_controller!.value.isReady && !_isPlayerReady && mounted) {
+            setState(() {
+              _isPlayerReady = true;
+            });
+          }
+        } catch (e) {
+          debugPrint('⚠️ [YOUTUBE] Erro no listener: $e');
+          if (mounted) {
+            setState(() {
+              _hasError = true;
+            });
+          }
+        }
+      });
+    } catch (e) {
+      debugPrint('❌ [YOUTUBE] Erro ao inicializar player: $e');
+      if (mounted) {
         setState(() {
-          _isPlayerReady = true;
+          _hasError = true;
         });
       }
-    });
+    }
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    try {
+      _controller?.dispose();
+    } catch (e) {
+      debugPrint('⚠️ [YOUTUBE] Erro ao fazer dispose: $e');
+    }
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    // Se há erro, mostrar fallback
+    if (_hasError || _controller == null) {
+      return _buildErrorFallback();
+    }
+
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
@@ -78,7 +106,7 @@ class _YoutubePlayerWidgetState extends State<YoutubePlayerWidget> {
           children: [
             // Player do YouTube
             YoutubePlayer(
-              controller: _controller,
+              controller: _controller!,
               showVideoProgressIndicator: true,
               progressIndicatorColor: const Color(0xFFef4444),
               bottomActions: [
@@ -123,6 +151,50 @@ class _YoutubePlayerWidgetState extends State<YoutubePlayerWidget> {
             // Informações adicionais
             if (widget.video.subtitle != null || widget.video.duracaoEstimada != null)
               _buildVideoInfo(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Fallback quando há erro no player
+  Widget _buildErrorFallback() {
+    return Container(
+      height: 200,
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: InkWell(
+        onTap: _abrirNoYouTube,
+        borderRadius: BorderRadius.circular(12),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.play_circle_outline,
+              size: 48,
+              color: Colors.grey[600],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              widget.video.titulo,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[700],
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Toque para assistir no YouTube',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[500],
+              ),
+            ),
           ],
         ),
       ),

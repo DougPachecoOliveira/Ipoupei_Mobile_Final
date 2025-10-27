@@ -139,6 +139,7 @@ class _ResumoOrcamentoWidgetState extends State<ResumoOrcamentoWidget> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          _buildHeaderVisual(),
           _buildHeaderComRelevo(),
           if (_loading)
             _buildLoadingState()
@@ -151,15 +152,82 @@ class _ResumoOrcamentoWidgetState extends State<ResumoOrcamentoWidget> {
     );
   }
 
+  Widget _buildHeaderVisual() {
+    return ClipRRect(
+      borderRadius: const BorderRadius.only(
+        topLeft: Radius.circular(12),
+        topRight: Radius.circular(12),
+      ),
+      child: Container(
+        height: 70,
+        decoration: BoxDecoration(
+          image: DecorationImage(
+            image: const AssetImage('assets/images/planejamento_background.jpeg'),
+            fit: BoxFit.cover,
+            alignment: Alignment.center,
+            onError: (error, stackTrace) {
+              debugPrint('🚨 Erro ao carregar imagem planejamento_background.jpeg: $error');
+            },
+          ),
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Colors.black.withValues(alpha: 0.1),
+                Colors.black.withValues(alpha: 0.5),
+              ],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Texto elegante
+                const Text(
+                  'Planejamento Financeiro',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    shadows: [
+                      Shadow(
+                        color: Colors.black26,
+                        offset: Offset(0, 1),
+                        blurRadius: 3,
+                      ),
+                    ],
+                  ),
+                ),
+                // Ícone elegante
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Icon(
+                    Icons.lightbulb_outline,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildHeaderComRelevo() {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: const BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(12),
-          topRight: Radius.circular(12),
-        ),
         boxShadow: [
           BoxShadow(
             color: Color.fromRGBO(0, 0, 0, 0.08),

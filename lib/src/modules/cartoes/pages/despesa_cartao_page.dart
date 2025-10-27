@@ -251,8 +251,9 @@ class _DespesaCartaoPageState extends State<DespesaCartaoPage> {
       debugPrint('📂 Categorias recebidas: ${categorias.length}');
       
       setState(() {
-        _categorias = categorias.where((c) => c.ativo).toList();
-        debugPrint('📂 Categorias ativas: ${_categorias.length}');
+        _categorias = categorias.where((c) => c.ativo).toList()
+          ..sort((a, b) => a.nome.compareTo(b.nome));
+        debugPrint('📂 Categorias ativas ordenadas A-Z: ${_categorias.length}');
         
         if (_categorias.isNotEmpty) {
           debugPrint('📂 Primeira categoria: ${_categorias.first.nome}');
@@ -268,7 +269,7 @@ class _DespesaCartaoPageState extends State<DespesaCartaoPage> {
       final subcategorias = await _categoriaService.listarSubcategorias(categoriaId);
       
       setState(() {
-        _subcategorias = subcategorias;
+        _subcategorias = subcategorias..sort((a, b) => a.nome.compareTo(b.nome));
         _subcategoriaSelecionada = null;
       });
       debugPrint('✅ Subcategorias carregadas com sucesso');
@@ -2389,7 +2390,8 @@ class _DespesaCartaoPageState extends State<DespesaCartaoPage> {
               
               _subcategoriaSelecionada = subcategoriaEncontrada;
               _subcategoriaController.text = subcategoriaEncontrada.nome;
-              _subcategorias = subcategorias.where((s) => s.ativo).toList();
+              _subcategorias = subcategorias.where((s) => s.ativo).toList()
+                ..sort((a, b) => a.nome.compareTo(b.nome));
             } catch (e) {
               debugPrint('⚠️ Subcategoria não encontrada: $e');
             }

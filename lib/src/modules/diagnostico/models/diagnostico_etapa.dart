@@ -419,20 +419,7 @@ class DiagnosticoEtapas {
       ),
     ),
 
-    // 🤔 STEP 7: QUESTIONÁRIO PERCEPÇÃO
-    DiagnosticoEtapa(
-      id: 'percepcao',
-      titulo: '🤔 Sua Relação com Dinheiro',
-      subtitulo: 'Questionário sobre comportamento financeiro',
-      descricao: 'Responda algumas perguntas para entendermos melhor seu perfil e comportamento financeiro',
-      icone: Icons.psychology,
-      cor: Color(0xFF3b82f6),
-      tipo: TipoDiagnosticoEtapa.questionario,
-      obrigatorio: true,
-      mensagemValidacao: 'Complete o questionário para calcularmos seu diagnóstico',
-    ),
-
-    // ⚠️ STEP 8: DÍVIDAS (OPCIONAL)
+    // ⚠️ STEP 7: DÍVIDAS (OPCIONAL)
     DiagnosticoEtapa(
       id: 'dividas',
       titulo: '⚠️ Suas Dívidas',
@@ -450,7 +437,7 @@ class DiagnosticoEtapas {
       ),
     ),
 
-    // 🧮 PROCESSAMENTO
+    // 🧮 STEP 8: PROCESSAMENTO
     DiagnosticoEtapa(
       id: 'processamento',
       titulo: '🧮 Analisando seus Dados',
@@ -464,7 +451,7 @@ class DiagnosticoEtapas {
       permitirVoltar: false,
     ),
 
-    // 🎉 RESULTADO
+    // 🎉 STEP 9: RESULTADO
     DiagnosticoEtapa(
       id: 'resultado',
       titulo: '🎉 Seu Diagnóstico Está Pronto',

@@ -10,7 +10,6 @@ import 'package:flutter/material.dart';
 import '../../../auth_integration.dart';
 import '../components/auth_form.dart';
 import '../components/loading_overlay.dart';
-import '../components/demo_credentials_button.dart';
 import '../../configuracoes/services/usuario_service.dart';
 
 class LoginPage extends StatefulWidget {
@@ -277,11 +276,6 @@ class _LoginPageState extends State<LoginPage> {
                   errorMessage: _errorMessage,
                 ),
                 
-                // Botão de demonstração
-                DemoCredentialsButton(
-                  emailController: _emailController,
-                  passwordController: _passwordController,
-                ),
                 
                 const SizedBox(height: 24),
                 

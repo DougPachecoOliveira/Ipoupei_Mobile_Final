@@ -410,63 +410,32 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
 
   /// 🚀 NAVEGAR PARA TRANSAÇÕES COM FILTRO
   void _navegarParaTransacoes(TipoResumoFinanceiro tipo) {
-    debugPrint('🚀 Navegando para: $tipo');
+    debugPrint('🚀 Navegando para: $tipo (usando bottom navigation)');
 
     switch (tipo) {
       case TipoResumoFinanceiro.contas:
-        // Navegar para página de Contas
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const ContasPage(),
-          ),
-        ).then((_) => _carregarResumo()); // Recarregar ao voltar
+        // Navegar para aba Contas (índice 0)
+        Navigator.pushReplacementNamed(context, '/contas');
         break;
 
       case TipoResumoFinanceiro.receitas:
-        // Navegar para Transações com filtro de Receitas
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const TransacoesPage(
-              modoInicial: TransacoesPageMode.receitas,
-            ),
-          ),
-        ).then((_) => _carregarResumo());
+        // Navegar para aba Transações com filtro de Receitas (índice 4)
+        Navigator.pushReplacementNamed(context, '/transacoes');
         break;
 
       case TipoResumoFinanceiro.despesas:
-        // Navegar para Transações com filtro de Despesas
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const TransacoesPage(
-              modoInicial: TransacoesPageMode.despesas,
-            ),
-          ),
-        ).then((_) => _carregarResumo());
+        // Navegar para aba Transações com filtro de Despesas (índice 4)
+        Navigator.pushReplacementNamed(context, '/transacoes');
         break;
 
       case TipoResumoFinanceiro.transferencias:
-        // Navegar para Transações de Transferências
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const TransacoesPage(
-              modoInicial: TransacoesPageMode.todas,
-            ),
-          ),
-        ).then((_) => _carregarResumo());
+        // Navegar para aba Transações (índice 4)
+        Navigator.pushReplacementNamed(context, '/transacoes');
         break;
 
       case TipoResumoFinanceiro.cartoes:
-        // Navegar para Cartões Consolidado
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const CartoesConsolidadoPage(),
-          ),
-        ).then((_) => _carregarResumo());
+        // Navegar para aba Cartões (índice 1)
+        Navigator.pushReplacementNamed(context, '/cartoes');
         break;
     }
   }
@@ -664,12 +633,14 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
       backgroundColor: Colors.grey[50],
       drawer: const Sidebar(),
       appBar: _buildAppBar(),
-      body: RefreshIndicator(
-        onRefresh: _carregarResumo,
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(16),
-          child: Column(
+      body: Stack(
+        children: [
+          RefreshIndicator(
+            onRefresh: _carregarResumo,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(16),
+              child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
 
@@ -731,93 +702,95 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
               // Seção do Diagnóstico Financeiro
               const DiagnosticoDashboardWidget(),
 
+              const SizedBox(height: 16),
+
               // Widget "Quanto Vale Minha Hora" (após diagnóstico)
               ValorHoraWidget(
                 mesReferencia: _mesAtual,
               ),
             ],
+              ),
+            ),
           ),
-        ),
+          _buildFABOverlay(),
+        ],
       ),
       floatingActionButton: _buildFAB(),
     );
   }
 
-  /// 🚀 FAB com menu de 4 opções (padrão do app)
-  Widget _buildFAB() {
+  /// 🎯 OVERLAY E MENU DO FAB (COBRE TELA TODA)
+  Widget _buildFABOverlay() {
+    if (!_fabExpanded) return const SizedBox.shrink();
+
     return Stack(
       children: [
-        // Overlay transparente quando menu está expandido
-        if (_fabExpanded)
-          Positioned.fill(
-            child: GestureDetector(
-              onTap: () => setState(() => _fabExpanded = false),
-              child: Container(
-                color: Colors.black.withAlpha(78),
-              ),
-            ),
-          ),
-
-        // Menu de opções expandido
-        if (_fabExpanded)
-          Positioned(
-            right: 16,
-            bottom: 80,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                _buildFABOption(
-                  icon: Icons.swap_horiz,
-                  label: 'Transferência',
-                  color: Colors.blue,
-                  onTap: _navegarParaNovaTransferencia,
-                ),
-                const SizedBox(height: 12),
-                _buildFABOption(
-                  icon: Icons.add,
-                  label: 'Receita',
-                  color: AppColors.verdeSucesso,
-                  onTap: _navegarParaNovaReceita,
-                ),
-                const SizedBox(height: 12),
-                _buildFABOption(
-                  icon: Icons.remove,
-                  label: 'Despesa',
-                  color: AppColors.vermelhoErro,
-                  onTap: _navegarParaNovaDespesa,
-                ),
-                const SizedBox(height: 12),
-                _buildFABOption(
-                  icon: Icons.credit_card,
-                  label: 'Despesa Cartão',
-                  color: Colors.orange,
-                  onTap: _navegarParaNovaDespesaCartao,
-                ),
-              ],
-            ),
-          ),
-
-        // FAB principal
-        Positioned(
-          right: 0,
-          bottom: 0,
-          child: FloatingActionButton(
-            backgroundColor: Colors.blue[600],
-            foregroundColor: Colors.white,
-            elevation: _fabExpanded ? 8 : 6,
-            onPressed: () {
-              setState(() => _fabExpanded = !_fabExpanded);
-            },
-            heroTag: 'relatorios_fab',
-            child: AnimatedRotation(
-              turns: _fabExpanded ? 0.125 : 0.0,
-              duration: const Duration(milliseconds: 200),
-              child: Icon(_fabExpanded ? Icons.close : Icons.add),
+        // Overlay que cobre toda a tela
+        Positioned.fill(
+          child: GestureDetector(
+            onTap: () => setState(() => _fabExpanded = false),
+            child: Container(
+              color: Colors.black.withAlpha(78),
             ),
           ),
         ),
+        // Menu de opções posicionado no canto inferior direito
+        Positioned(
+          bottom: 80,
+          right: 16,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              _buildFABOption(
+                icon: Icons.swap_horiz,
+                label: "Transferência",
+                color: Colors.blue,
+                onTap: _navegarParaNovaTransferencia,
+              ),
+              const SizedBox(height: 12),
+              _buildFABOption(
+                icon: Icons.add,
+                label: "Receita",
+                color: AppColors.verdeSucesso,
+                onTap: _navegarParaNovaReceita,
+              ),
+              const SizedBox(height: 12),
+              _buildFABOption(
+                icon: Icons.remove,
+                label: "Despesa",
+                color: AppColors.vermelhoErro,
+                onTap: _navegarParaNovaDespesa,
+              ),
+              const SizedBox(height: 12),
+              _buildFABOption(
+                icon: Icons.credit_card,
+                label: "Despesa Cartão",
+                color: Colors.orange,
+                onTap: _navegarParaNovaDespesaCartao,
+              ),
+            ],
+          ),
+        ),
       ],
+    );
+  }
+
+  /// 🚀 FAB principal simplificado
+  Widget _buildFAB() {
+    return FloatingActionButton(
+      backgroundColor: Colors.blue[600],
+      foregroundColor: Colors.white,
+      elevation: _fabExpanded ? 8 : 6,
+      onPressed: () {
+        setState(() => _fabExpanded = !_fabExpanded);
+      },
+      heroTag: 'relatorios_fab',
+      child: AnimatedRotation(
+        turns: _fabExpanded ? 0.125 : 0.0,
+        duration: const Duration(milliseconds: 200),
+        child: Icon(_fabExpanded ? Icons.close : Icons.add),
+      ),
     );
   }
 

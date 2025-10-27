@@ -13,10 +13,11 @@
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import 'dart:io';
 import '../../../auth_integration.dart';
 import '../../shared/theme/app_colors.dart';
 import '../../configuracoes/services/usuario_service.dart';
-import '../components/demo_credentials_button.dart';
 
 enum AuthMode { login, register, recovery }
 
@@ -217,6 +218,29 @@ class _LoginIpoupeiPageState extends State<LoginIpoupeiPage>
     }
   }
 
+  /// 🍎 APPLE SSO
+  Future<void> _handleAppleSignIn() async {
+    if (_isLoading) return;
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      await authIntegration.authService.signInWithApple();
+      if (mounted) {
+        Navigator.of(context).pushReplacementNamed('/navigation');
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = e.toString().replaceAll('Exception: ', '');
+      });
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
   /// 🔍 VERIFICAR STATUS DA CONTA
   Future<void> _checkAccountStatus() async {
     try {
@@ -372,9 +396,9 @@ class _LoginIpoupeiPageState extends State<LoginIpoupeiPage>
                   if (_errorMessage != null) _buildErrorMessage(),
                   if (_successMessage != null) _buildSuccessMessage(),
 
-                  // Google SSO (apenas login)
+                  // OAuth SSO (apenas login)
                   if (_mode == AuthMode.login) ...[
-                    _buildGoogleButton(),
+                    _buildOAuthButtons(),
                     const SizedBox(height: 20),
                     _buildDivider(),
                     const SizedBox(height: 20),
@@ -385,12 +409,6 @@ class _LoginIpoupeiPageState extends State<LoginIpoupeiPage>
 
                   const SizedBox(height: 16),
 
-                  // Demo Credentials (apenas login)
-                  if (_mode == AuthMode.login)
-                    DemoCredentialsButton(
-                      emailController: _emailController,
-                      passwordController: _passwordController,
-                    ),
 
                   const SizedBox(height: 24),
 
@@ -467,32 +485,55 @@ class _LoginIpoupeiPageState extends State<LoginIpoupeiPage>
     );
   }
 
-  /// 🔵 BOTÃO GOOGLE
-  Widget _buildGoogleButton() {
-    return SizedBox(
-      height: 56,
-      child: OutlinedButton.icon(
-        onPressed: _isLoading ? null : _handleGoogleSignIn,
-        icon: Image.asset(
-          'assets/images/google-logo.png',
-          width: 24,
-          height: 24,
-          errorBuilder: (context, error, stackTrace) =>
-              const Icon(Icons.g_mobiledata, size: 28, color: AppColors.cinzaEscuro),
-        ),
-        label: Text(
-          _isLoading ? 'Redirecionando...' : 'Continuar com Google',
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-        ),
-        style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.cinzaEscuro,
-          backgroundColor: Colors.white,
-          side: const BorderSide(color: AppColors.cinzaBorda, width: 1.5),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+  /// 🔵🍎 BOTÕES OAUTH
+  Widget _buildOAuthButtons() {
+    return Column(
+      children: [
+        // Botão Google
+        SizedBox(
+          height: 56,
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: _isLoading ? null : _handleGoogleSignIn,
+            icon: Image.asset(
+              'assets/images/google-logo.png',
+              width: 24,
+              height: 24,
+              errorBuilder: (context, error, stackTrace) =>
+                  const Icon(Icons.g_mobiledata, size: 28, color: AppColors.cinzaEscuro),
+            ),
+            label: Text(
+              _isLoading ? 'Redirecionando...' : 'Continuar com Google',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.cinzaEscuro,
+              backgroundColor: Colors.white,
+              side: const BorderSide(color: AppColors.cinzaBorda, width: 1.5),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
           ),
         ),
-      ),
+
+        // Espaçamento entre botões
+        const SizedBox(height: 12),
+
+        // Botão Apple (apenas no iOS)
+        if (Platform.isIOS) ...[
+          SizedBox(
+            height: 56,
+            width: double.infinity,
+            child: SignInWithAppleButton(
+              onPressed: _isLoading ? () {} : () => _handleAppleSignIn(),
+              text: 'Continuar com Apple',
+              style: SignInWithAppleButtonStyle.black,
+              borderRadius: BorderRadius.circular(14),
+            ),
+          ),
+        ],
+      ],
     );
   }
 

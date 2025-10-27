@@ -299,6 +299,14 @@ class _TransferenciaFormPageState extends State<TransferenciaFormPage> {
                 itemCount: _contas.where((c) => c.id != _contaDestinoId).length,
                 itemBuilder: (context, index) {
                   final contasDisponiveis = _contas.where((c) => c.id != _contaDestinoId).toList();
+
+                  // Ordenar contas: principal primeiro, depois por nome
+                  contasDisponiveis.sort((a, b) {
+                    if (a.contaPrincipal && !b.contaPrincipal) return -1;
+                    if (!a.contaPrincipal && b.contaPrincipal) return 1;
+                    return a.nome.compareTo(b.nome);
+                  });
+
                   final conta = contasDisponiveis[index];
                   final isSelected = _contaOrigemId == conta.id;
                   
@@ -324,11 +332,34 @@ class _TransferenciaFormPageState extends State<TransferenciaFormPage> {
                               : const Icon(Icons.account_balance, color: Colors.white, size: 20),
                         ),
                       ),
-                      title: Text(
-                        conta.nome,
-                        style: TextStyle(
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                        ),
+                      title: Row(
+                        children: [
+                          Text(
+                            conta.nome,
+                            style: TextStyle(
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            ),
+                          ),
+                          if (conta.contaPrincipal) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.amber.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: Colors.amber, width: 1),
+                              ),
+                              child: const Text(
+                                'Principal',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.amber,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                       subtitle: Text(
                         'Saldo: R\$ ${conta.saldo.toStringAsFixed(2).replaceAll('.', ',')}',
@@ -414,6 +445,14 @@ class _TransferenciaFormPageState extends State<TransferenciaFormPage> {
                 itemCount: _contas.where((c) => c.id != _contaOrigemId).length,
                 itemBuilder: (context, index) {
                   final contasDisponiveis = _contas.where((c) => c.id != _contaOrigemId).toList();
+
+                  // Ordenar contas: principal primeiro, depois por nome
+                  contasDisponiveis.sort((a, b) {
+                    if (a.contaPrincipal && !b.contaPrincipal) return -1;
+                    if (!a.contaPrincipal && b.contaPrincipal) return 1;
+                    return a.nome.compareTo(b.nome);
+                  });
+
                   final conta = contasDisponiveis[index];
                   final isSelected = _contaDestinoId == conta.id;
                   
@@ -439,11 +478,34 @@ class _TransferenciaFormPageState extends State<TransferenciaFormPage> {
                               : const Icon(Icons.account_balance, color: Colors.white, size: 20),
                         ),
                       ),
-                      title: Text(
-                        conta.nome,
-                        style: TextStyle(
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                        ),
+                      title: Row(
+                        children: [
+                          Text(
+                            conta.nome,
+                            style: TextStyle(
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            ),
+                          ),
+                          if (conta.contaPrincipal) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.amber.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: Colors.amber, width: 1),
+                              ),
+                              child: const Text(
+                                'Principal',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.amber,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                       subtitle: Text(
                         'Saldo: R\$ ${conta.saldo.toStringAsFixed(2).replaceAll('.', ',')}',

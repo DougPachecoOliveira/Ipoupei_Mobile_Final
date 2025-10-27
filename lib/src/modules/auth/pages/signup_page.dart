@@ -10,7 +10,6 @@ import 'package:flutter/material.dart';
 import '../../../auth_integration.dart';
 import '../components/auth_form.dart';
 import '../components/loading_overlay.dart';
-import '../components/demo_credentials_button.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -142,12 +141,6 @@ class _SignUpPageState extends State<SignUpPage> {
                   isSignUp: true,
                 ),
                 
-                // Botão de demonstração
-                DemoCredentialsButton(
-                  emailController: _emailController,
-                  passwordController: _passwordController,
-                  nameController: _nameController,
-                ),
                 
                 const SizedBox(height: 24),
                 

@@ -136,9 +136,7 @@ class _GraficosCategoriaWidgetState extends State<GraficosCategoriaWidget> {
     required Color cor,
     required List<Map<String, dynamic>> dados,
   }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Container(
+    return Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -183,7 +181,6 @@ class _GraficosCategoriaWidgetState extends State<GraficosCategoriaWidget> {
             ),
           ],
         ),
-      ),
     );
   }
 

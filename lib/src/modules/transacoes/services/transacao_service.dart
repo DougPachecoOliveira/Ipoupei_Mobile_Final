@@ -192,7 +192,7 @@ class TransacaoService {
       CategoriaService.instance.notificarMudancaTransacoes();
 
       // 🔔 Notificar mudança nos saldos das contas
-      ContasRefreshNotifier.instance.notificarMudanca();
+      ContasRefreshNotifier.instance.notificarMudancaContas();
 
       return receitasModels;
     } catch (e) {
@@ -364,7 +364,7 @@ class TransacaoService {
       CategoriaService.instance.notificarMudancaTransacoes();
 
       // 🔔 Notificar mudança nos saldos das contas
-      ContasRefreshNotifier.instance.notificarMudanca();
+      ContasRefreshNotifier.instance.notificarMudancaContas();
 
       return despesasModels;
     } catch (e) {
@@ -487,7 +487,7 @@ class TransacaoService {
       log('✅ Transferência criada: $descricao ${isOnline ? "(online + offline)" : "(somente offline)"}');
 
       // 🔔 Notificar mudança nos saldos das contas
-      ContasRefreshNotifier.instance.notificarMudanca();
+      ContasRefreshNotifier.instance.notificarMudancaContas();
 
       return transferenciasModels;
     } catch (e) {

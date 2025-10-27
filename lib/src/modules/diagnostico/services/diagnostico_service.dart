@@ -7,6 +7,7 @@
 // Responsabilidades: Estado, navegação, persistência
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:developer';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -16,6 +17,7 @@ import '../../../sync/sync_manager.dart';
 import '../models/diagnostico_etapa.dart';
 import '../models/percepcao_financeira.dart';
 import '../models/dividas_model.dart';
+import 'score_calculator.dart';
 
 /// Service principal para gerenciar o diagnóstico
 class DiagnosticoService {
@@ -38,6 +40,9 @@ class DiagnosticoService {
   String? _erro;
   String? _userId;
 
+  // Instância do calculador de score
+  final ScoreCalculator _scoreCalculator = ScoreCalculator();
+
   // Stream controllers para notificar mudanças
   final StreamController<int> _etapaStreamController = StreamController<int>.broadcast();
   final StreamController<Map<String, dynamic>> _dadosStreamController = StreamController<Map<String, dynamic>>.broadcast();
@@ -52,8 +57,18 @@ class DiagnosticoService {
   Map<String, dynamic> get dadosColetados => Map.from(_dadosColetados);
   bool get loading => _loading;
   String? get erro => _erro;
-  DiagnosticoEtapa get etapaAtualObj => DiagnosticoEtapas.todas[_etapaAtual];
-  double get progresso => DiagnosticoEtapas.calcularProgressoPorIndice(_etapaAtual);
+  DiagnosticoEtapa get etapaAtualObj {
+    // 🔧 Proteção contra índice inválido quando diagnóstico está completo
+    if (_etapaAtual < 0 || _etapaAtual >= DiagnosticoEtapas.todas.length) {
+      return DiagnosticoEtapas.todas.last; // Retorna última etapa (resultado)
+    }
+    return DiagnosticoEtapas.todas[_etapaAtual];
+  }
+  double get progresso {
+    // 🔧 Se diagnóstico completo (_etapaAtual = -1), progresso é 100%
+    if (_etapaAtual < 0) return 1.0;
+    return DiagnosticoEtapas.calcularProgressoPorIndice(_etapaAtual);
+  }
   bool get podeAvancar => _validarEtapaAtual();
   bool get podeVoltar => _etapaAtual > 0 && etapaAtualObj.permitirVoltar;
 
@@ -125,6 +140,19 @@ class DiagnosticoService {
         // Carregar etapa atual
         _etapaAtual = perfil['diagnostico_etapa_atual'] ?? 0;
 
+        // 🔧 VALIDAÇÃO: Corrigir estado inválido (etapa além do limite)
+        final maxEtapa = DiagnosticoEtapas.fluxoCompleto.length - 1;
+        if (_etapaAtual > maxEtapa) {
+          debugPrint('⚠️ [DIAGNOSTICO_SERVICE] Estado inválido detectado: etapa $_etapaAtual > $maxEtapa');
+          debugPrint('🔧 [DIAGNOSTICO_SERVICE] Corrigindo para etapa final ($maxEtapa)');
+          _etapaAtual = maxEtapa;
+          _isCompleto = true; // Marcar como completo se chegou ao final
+        }
+
+        // Carregar status de diagnóstico completo
+        _isCompleto = (perfil['diagnostico_completo'] == 1);
+        log('📊 [DIAGNOSTICO_SERVICE] Status carregado - Etapa: $_etapaAtual, Completo: $_isCompleto');
+
         // Carregar dados de percepção se existirem
         if (perfil['sentimento_financeiro'] != null) {
           _dadosColetados['percepcao'] = {
@@ -142,6 +170,30 @@ class DiagnosticoService {
             'renda_mensal': perfil['renda_mensal'],
             'tipo_renda': perfil['tipo_renda'],
           };
+        }
+
+        // 🎯 Carregar resultado do diagnóstico salvo (se existir)
+        if (perfil['diagnostico_resultado_json'] != null) {
+          try {
+            final resultadoJson = perfil['diagnostico_resultado_json'] as String;
+            final resultado = jsonDecode(resultadoJson) as Map<String, dynamic>;
+
+            log('🔍 [DIAGNOSTICO_SERVICE] Resultado salvo encontrado: ${resultado.toString()}');
+            log('🔍 [DIAGNOSTICO_SERVICE] Score salvo: ${resultado['score_total']}');
+
+            // 🚨 VERIFICAÇÃO: Se score é muito baixo, pode ser resultado antigo inválido
+            final scoreSalvo = resultado['score_total'] as int? ?? 0;
+            if (scoreSalvo < 50) {
+              log('⚠️ [DIAGNOSTICO_SERVICE] Score suspeito ($scoreSalvo < 50) - ignorando resultado salvo');
+              log('🔄 [DIAGNOSTICO_SERVICE] Forçando recálculo do diagnóstico...');
+              // Não carregar resultado suspeito - deixa recalcular
+            } else {
+              _dadosColetados['resultado'] = resultado;
+              log('✅ [DIAGNOSTICO_SERVICE] Resultado salvo carregado: score=${resultado['score_total']}');
+            }
+          } catch (e) {
+            log('⚠️ [DIAGNOSTICO_SERVICE] Erro ao carregar resultado salvo: $e');
+          }
         }
       }
 
@@ -238,7 +290,7 @@ class DiagnosticoService {
 
   /// 📱 NAVEGAÇÃO ENTRE ETAPAS
   /// Avança para próxima etapa (se possível)
-  void proximaEtapa() {
+  Future<void> proximaEtapa() async {
     if (!podeAvancar) {
       debugPrint('⚠️ [DIAGNOSTICO] Não pode avançar - etapa atual incompleta');
       return;
@@ -249,6 +301,28 @@ class DiagnosticoService {
       salvarProgressoAtual();
       _notificarMudancas();
       debugPrint('➡️ [DIAGNOSTICO] Avançou para etapa $_etapaAtual: ${etapaAtualObj.titulo}');
+
+      // Se chegou na última etapa (resultado), finalizar diagnóstico
+      if (_etapaAtual == DiagnosticoEtapas.fluxoCompleto.length - 1) {
+        debugPrint('🎉 [DIAGNOSTICO] Chegou na última etapa - finalizando diagnóstico...');
+
+        // Calcular resultado final
+        final percepcao = await carregarPercepcao();
+        final dividas = await carregarDividas();
+        final contasCount = await contarContas();
+        final cartoesCount = await contarCartoes();
+        final categoriasCount = await contarCategorias();
+
+        final resultado = await _scoreCalculator.calcularResultadoCompleto(
+          percepcao: percepcao,
+          dividas: dividas,
+          contasCount: contasCount,
+          cartoesCount: cartoesCount,
+          categoriasCount: categoriasCount,
+        );
+
+        await finalizarDiagnostico(resultado);
+      }
     }
   }
 
@@ -558,7 +632,7 @@ class DiagnosticoService {
   }
 
   /// Carregar progresso do diagnóstico
-  Future<Map<String, dynamic>> carregarProgresso() async {
+  Future<Map<String, dynamic>> carregarProgresso({bool forceReload = false}) async {
     // Garantir que o serviço está inicializado
     if (_userId == null) {
       final userId = await _getCurrentUserId();
@@ -567,12 +641,17 @@ class DiagnosticoService {
       }
     }
 
-    // ⚠️ CORREÇÃO: NÃO recarregar se já inicializado (widget sempre mostrava etapa 0)
-    // await _carregarProgressoSalvo();
+    // Se forceReload = true, recarregar dados do banco
+    if (forceReload) {
+      log('🔄 [DIAGNOSTICO_SERVICE] Forçando recarga dos dados do banco...');
+      await _carregarProgressoSalvo();
+    }
+
     return {
       'etapa_atual': _etapaAtual,
       'diagnostico_completo': _isCompleto ? 1 : 0,
       'dados_coletados': _dadosColetados,
+      'resultado': _dadosColetados['resultado'], // 🎯 Incluir resultado salvo
     };
   }
 
@@ -659,9 +738,10 @@ class DiagnosticoService {
         'perfil_usuario',
         {
           'diagnostico_completo': 1,
-          'diagnostico_completo_em': DateTime.now().toIso8601String(),
           'diagnostico_etapa_atual': -1, // -1 indica completo
+          'diagnostico_resultado_json': jsonEncode(resultado), // 🎯 Salvar resultado completo
           'updated_at': DateTime.now().toIso8601String(),
+          'sync_status': 'pending',
         },
         where: 'id = ?',
         whereArgs: [_userId],
@@ -669,6 +749,10 @@ class DiagnosticoService {
 
       // Marcar processamento como completo
       _dadosColetados['processamento_completo'] = true;
+
+      // 🎯 SALVAR RESULTADO TAMBÉM EM _dadosColetados para acesso direto
+      _dadosColetados['resultado'] = resultado;
+      _isCompleto = true; // Atualizar flag local
 
       _notificarMudancas();
 
@@ -688,34 +772,57 @@ class DiagnosticoService {
       _setLoading(true);
 
       _etapaAtual = 0;
+      _isCompleto = false; // 🔧 CORREÇÃO: Também resetar flag de completo
       _dadosColetados.clear();
 
-      final db = LocalDatabase.instance;
+      debugPrint('🔄 [DIAGNOSTICO_SERVICE] Estado local resetado - etapa: $_etapaAtual, completo: $_isCompleto, dados: ${_dadosColetados.keys.toList()}');
 
+      // 1. Limpar no banco local
+      final db = LocalDatabase.instance;
       await db.update(
         'perfil_usuario',
         {
           'diagnostico_etapa_atual': 0,
           'diagnostico_completo': 0,
-          'diagnostico_completo_em': null,
           'sentimento_financeiro': null,
           'percepcao_controle': null,
           'percepcao_gastos': null,
           'disciplina_financeira': null,
           'relacao_dinheiro': null,
           'dividas_diagnostico': null,
+          'diagnostico_resultado_json': null, // 🔧 CORREÇÃO: Limpar resultado salvo também
           'updated_at': DateTime.now().toIso8601String(),
         },
         where: 'id = ?',
         whereArgs: [_userId],
       );
 
+      // 2. Limpar também no Supabase
+      try {
+        final userId = _userId ?? await _getCurrentUserId();
+        if (userId != null) {
+          await Supabase.instance.client
+            .from('perfil_usuario')
+            .update({
+              'diagnostico_etapa_atual': 0,
+              'diagnostico_completo': false,
+              'diagnostico_resultado_json': null,
+              'updated_at': DateTime.now().toIso8601String(),
+            })
+            .eq('id', userId);
+
+          debugPrint('✅ [DIAGNOSTICO_SERVICE] Dados também limpos no Supabase');
+        }
+      } catch (e) {
+        debugPrint('⚠️ [DIAGNOSTICO_SERVICE] Erro ao limpar Supabase (continuando): $e');
+      }
+
       _notificarMudancas();
 
-      log('🔄 [DIAGNOSTICO_SERVICE] Diagnóstico reiniciado');
+      debugPrint('✅ [DIAGNOSTICO_SERVICE] Diagnóstico reiniciado completamente');
 
     } catch (e) {
-      log('❌ [DIAGNOSTICO_SERVICE] Erro ao reiniciar: $e');
+      debugPrint('❌ [DIAGNOSTICO_SERVICE] Erro ao reiniciar: $e');
       _setErro(e.toString());
     } finally {
       _setLoading(false);
@@ -746,21 +853,21 @@ class DiagnosticoService {
       // 1. Tentar do LocalDatabase primeiro (mais confiável)
       final localUserId = LocalDatabase.instance.currentUserId;
       if (localUserId != null && localUserId.isNotEmpty) {
-        log('✅ [DIAGNOSTICO_SERVICE] User ID do LocalDatabase: $localUserId');
+        debugPrint('✅ [DIAGNOSTICO_SERVICE] User ID do LocalDatabase: $localUserId');
         return localUserId;
       }
 
       // 2. Fallback para Supabase Auth
       final supabaseUser = Supabase.instance.client.auth.currentUser;
       if (supabaseUser != null && supabaseUser.id.isNotEmpty) {
-        log('✅ [DIAGNOSTICO_SERVICE] User ID do Supabase Auth: ${supabaseUser.id}');
+        debugPrint('✅ [DIAGNOSTICO_SERVICE] User ID do Supabase Auth: ${supabaseUser.id}');
         return supabaseUser.id;
       }
 
-      log('❌ [DIAGNOSTICO_SERVICE] Nenhum usuário logado encontrado');
+      debugPrint('❌ [DIAGNOSTICO_SERVICE] Nenhum usuário logado encontrado');
       return null;
     } catch (e) {
-      log('❌ [DIAGNOSTICO_SERVICE] Erro ao obter user ID: $e');
+      debugPrint('❌ [DIAGNOSTICO_SERVICE] Erro ao obter user ID: $e');
       return null;
     }
   }
@@ -837,6 +944,15 @@ class DiagnosticoService {
   /// Valida se a etapa atual está completa
   bool _validarEtapaAtual() {
     debugPrint('🎯 [DIAGNOSTICO] Etapa atual: $_etapaAtual (${etapaAtualObj.id})');
+
+    // Etapas especiais que não precisam de dados específicos
+    if (etapaAtualObj.tipo == TipoDiagnosticoEtapa.processamento ||
+        etapaAtualObj.tipo == TipoDiagnosticoEtapa.resultado ||
+        etapaAtualObj.tipo == TipoDiagnosticoEtapa.intro) {
+      debugPrint('✅ [DIAGNOSTICO] Etapa ${etapaAtualObj.id} sempre válida (tipo: ${etapaAtualObj.tipo})');
+      return true;
+    }
+
     final isCompleta = etapaAtualObj.isCompleta(_dadosColetados);
     debugPrint('🔍 [DIAGNOSTICO] Validação etapa ${etapaAtualObj.id}: $isCompleta');
     debugPrint('🔍 [DIAGNOSTICO] Dados disponíveis: ${_dadosColetados.keys.toList()}');
@@ -869,6 +985,86 @@ class DiagnosticoService {
       'podeAvancar': podeAvancar,
       'podeVoltar': podeVoltar,
     };
+  }
+
+  /// Busca diagnóstico diretamente do Supabase (fonte única da verdade)
+  Future<Map<String, dynamic>?> buscarDiagnosticoSupabase() async {
+    debugPrint('🚀 [DIAGNOSTICO_SERVICE_FIRST_LINE] MÉTODO INICIADO!');
+    try {
+      debugPrint('🔍 [DIAGNOSTICO_SERVICE] Buscando diagnóstico direto do Supabase...');
+
+      final userId = _userId ?? await _getCurrentUserId();
+      debugPrint('🔍 [DIAGNOSTICO_SERVICE] UserId obtido: $userId');
+
+      if (userId == null) {
+        debugPrint('❌ [DIAGNOSTICO_SERVICE] Usuário não encontrado');
+        return null;
+      }
+
+      debugPrint('🔍 [DIAGNOSTICO_SERVICE] Iniciando query Supabase...');
+      // Query direta no Supabase - fonte única da verdade
+      // Primeiro vamos descobrir quais colunas existem
+      debugPrint('🔍 [DIAGNOSTICO_SERVICE] Testando query simples primeiro...');
+
+      final response = await Supabase.instance.client
+          .from('perfil_usuario')
+          .select('*')
+          .eq('id', userId)
+          .maybeSingle();
+
+      debugPrint('🔍 [DIAGNOSTICO_SERVICE] Estrutura completa do perfil: $response');
+
+      debugPrint('🔍 [DIAGNOSTICO_SERVICE] Response recebido: $response');
+
+      if (response == null) {
+        debugPrint('❌ [DIAGNOSTICO_SERVICE] Perfil não encontrado no Supabase para userId: $userId');
+        return null;
+      }
+
+      debugPrint('✅ [DIAGNOSTICO_SERVICE] Dados do Supabase: $response');
+
+      // Verificar as colunas que realmente existem
+      debugPrint('🔍 [DIAGNOSTICO_SERVICE] Colunas disponíveis: ${response?.keys}');
+
+      // Vamos procurar por colunas relacionadas ao diagnóstico
+      final keys = response?.keys.where((key) => key.contains('diagnostico')).toList() ?? [];
+      debugPrint('🔍 [DIAGNOSTICO_SERVICE] Colunas do diagnóstico encontradas: $keys');
+
+      // Procurar por colunas com nomes similares
+      String? colunaCompleto;
+      String? colunaEtapa;
+      String? colunaResultado;
+
+      for (final key in response?.keys ?? []) {
+        if (key.toLowerCase().contains('completo')) {
+          colunaCompleto = key;
+        } else if (key.toLowerCase().contains('etapa')) {
+          colunaEtapa = key;
+        } else if (key.toLowerCase().contains('resultado') || key.toLowerCase().contains('json')) {
+          colunaResultado = key;
+        }
+      }
+
+      debugPrint('🎯 [DIAGNOSTICO_SERVICE] Mapeamento das colunas:');
+      debugPrint('   - Completo: $colunaCompleto = ${colunaCompleto != null ? response[colunaCompleto] : "null"}');
+      debugPrint('   - Etapa: $colunaEtapa = ${colunaEtapa != null ? response[colunaEtapa] : "null"}');
+      debugPrint('   - Resultado: $colunaResultado = ${colunaResultado != null ? response[colunaResultado] : "null"}');
+
+      // Usar as colunas encontradas
+      final result = {
+        'etapa_atual': (colunaEtapa != null ? response[colunaEtapa] : 0) ?? 0,
+        'completo': (colunaCompleto != null ? response[colunaCompleto] == true : false),
+        'resultado': colunaResultado != null ? response[colunaResultado] : null,
+      };
+
+      debugPrint('🚀 [DIAGNOSTICO_SERVICE] Resultado final: $result');
+      return result;
+
+    } catch (e, stackTrace) {
+      debugPrint('❌ [DIAGNOSTICO_SERVICE] Erro ao buscar do Supabase: $e');
+      debugPrint('❌ [DIAGNOSTICO_SERVICE] StackTrace: $stackTrace');
+      return null;
+    }
   }
 
   /// Limpar recursos

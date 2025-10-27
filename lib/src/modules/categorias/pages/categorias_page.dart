@@ -347,12 +347,32 @@ class _CategoriasPageState extends State<CategoriasPage> with TickerProviderStat
 
   /// Filtrar categorias por pesquisa
   List<CategoriaModel> _filtrarCategorias(List<CategoriaModel> categorias) {
-    if (_searchQuery.isEmpty) return categorias;
+    // Primeiro filtro: só categorias que têm valores no período atual
+    List<CategoriaModel> categoriasComValor = categorias.where((categoria) {
+      final temValor = _valoresPorCategoria.containsKey(categoria.id) &&
+                      (_valoresPorCategoria[categoria.id] ?? 0.0) > 0.0;
 
-    return categorias.where((categoria) {
+      // 🐛 DEBUG: Log de filtragem
+      if (!temValor) {
+        debugPrint('🔍 FILTRO: Removendo categoria "${categoria.nome}" por não ter valor no período');
+      }
+
+      return temValor;
+    }).toList();
+
+    // Segundo filtro: busca por texto (se houver)
+    if (_searchQuery.isEmpty) {
+      debugPrint('🔍 FILTRO: Exibindo ${categoriasComValor.length} categorias com valor');
+      return categoriasComValor;
+    }
+
+    final resultado = categoriasComValor.where((categoria) {
       return categoria.nome.toLowerCase().contains(_searchQuery.toLowerCase()) ||
              (categoria.descricao?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false);
     }).toList();
+
+    debugPrint('🔍 FILTRO: Após busca "${_searchQuery}", restaram ${resultado.length} categorias');
+    return resultado;
   }
 
   /// Ordenar categorias
@@ -648,11 +668,27 @@ class _CategoriasPageState extends State<CategoriasPage> with TickerProviderStat
           ),
           IconButton(
             icon: const Icon(Icons.refresh, color: Colors.white),
-            onPressed: () {
-              _categoriaService.limparCache(); // ✅ Limpar cache ao fazer refresh manual
-              _carregarCategorias();
+            onPressed: () async {
+              debugPrint('🔄 DEBUG: REFRESH MANUAL - Limpando TODOS os caches...');
+
+              // 🧹 Limpar TODOS os caches agressivamente
+              _categoriaService.limparCache();
+
+              // 🧹 Limpar cache local também
+              _valoresPorCategoria.clear();
+              _totalReceitas = 0.0;
+              _totalDespesas = 0.0;
+              _totalPago = 0.0;
+              _totalRecebido = 0.0;
+
+              debugPrint('🔄 DEBUG: Todos caches limpos, recarregando dados...');
+
+              // 🔄 Recarregar tudo do zero
+              await _carregarCategorias();
+
+              debugPrint('🔄 DEBUG: Refresh manual completo!');
             },
-            tooltip: 'Atualizar',
+            tooltip: 'Atualizar (Debug)',
           ),
         ],
         bottom: PreferredSize(
@@ -714,8 +750,25 @@ class _CategoriasPageState extends State<CategoriasPage> with TickerProviderStat
           ),
         ),
       ),
-      body: _buildBody(),
-      floatingActionButton: _buildFAB(),
+      body: Stack(
+        children: [
+          _buildBody(),
+          _buildFABOverlay(),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: _headerColor,
+        foregroundColor: Colors.white,
+        elevation: _fabExpanded ? 8 : 6,
+        onPressed: () {
+          setState(() => _fabExpanded = !_fabExpanded);
+        },
+        child: AnimatedRotation(
+          turns: _fabExpanded ? 0.125 : 0,
+          duration: const Duration(milliseconds: 200),
+          child: Icon(_fabExpanded ? Icons.close : Icons.add),
+        ),
+      ),
     );
   }
 
@@ -1128,84 +1181,65 @@ class _CategoriasPageState extends State<CategoriasPage> with TickerProviderStat
     );
   }
 
-  Widget? _buildFAB() {
+  /// 🎯 OVERLAY E MENU DO FAB (COBRE TELA TODA)
+  Widget _buildFABOverlay() {
+    if (!_fabExpanded) return const SizedBox.shrink();
+
     return Stack(
       children: [
-        // Overlay transparente quando menu está expandido
-        if (_fabExpanded)
-          Positioned.fill(
-            child: GestureDetector(
-              onTap: () => setState(() => _fabExpanded = false),
-              child: Container(
-                color: Colors.black.withAlpha(78),
-              ),
+        // Overlay transparente cobrindo toda a tela
+        Positioned.fill(
+          child: GestureDetector(
+            onTap: () => setState(() => _fabExpanded = false),
+            child: Container(
+              color: Colors.black.withAlpha(78),
             ),
           ),
+        ),
 
         // Menu de opções expandido
-        if (_fabExpanded)
-          Positioned(
-            right: 16,
-            bottom: 80,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                _buildFABOption(
-                  icon: Icons.category,
-                  label: 'Nova Categoria',
-                  color: _headerColor,
-                  onTap: _novaCategoria,
-                ),
-                const SizedBox(height: 12),
-                _buildFABOption(
-                  icon: Icons.swap_horiz,
-                  label: 'Transferência',
-                  color: Colors.blue,
-                  onTap: _navegarParaNovaTransferencia,
-                ),
-                const SizedBox(height: 12),
-                _buildFABOption(
-                  icon: Icons.add,
-                  label: 'Receita',
-                  color: AppColors.verdeSucesso,
-                  onTap: _navegarParaNovaReceita,
-                ),
-                const SizedBox(height: 12),
-                _buildFABOption(
-                  icon: Icons.remove,
-                  label: 'Despesa',
-                  color: AppColors.vermelhoErro,
-                  onTap: _navegarParaNovaDespesa,
-                ),
-                const SizedBox(height: 12),
-                _buildFABOption(
-                  icon: Icons.credit_card,
-                  label: 'Despesa Cartão',
-                  color: Colors.orange,
-                  onTap: _navegarParaNovaDespesaCartao,
-                ),
-              ],
-            ),
-          ),
-
-        // FAB principal
         Positioned(
-          right: 0,
-          bottom: 0,
-          child: FloatingActionButton(
-            backgroundColor: _headerColor,
-            foregroundColor: Colors.white,
-            elevation: _fabExpanded ? 8 : 6,
-            onPressed: () {
-              setState(() => _fabExpanded = !_fabExpanded);
-            },
-            heroTag: 'categorias_fab',
-            child: AnimatedRotation(
-              turns: _fabExpanded ? 0.125 : 0.0,
-              duration: const Duration(milliseconds: 200),
-              child: Icon(_fabExpanded ? Icons.close : Icons.add),
-            ),
+          right: 16,
+          bottom: 80,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              _buildFABOption(
+                icon: Icons.category,
+                label: 'Nova Categoria',
+                color: _headerColor,
+                onTap: _novaCategoria,
+              ),
+              const SizedBox(height: 12),
+              _buildFABOption(
+                icon: Icons.swap_horiz,
+                label: 'Transferência',
+                color: Colors.blue,
+                onTap: _navegarParaNovaTransferencia,
+              ),
+              const SizedBox(height: 12),
+              _buildFABOption(
+                icon: Icons.add,
+                label: 'Receita',
+                color: AppColors.verdeSucesso,
+                onTap: _navegarParaNovaReceita,
+              ),
+              const SizedBox(height: 12),
+              _buildFABOption(
+                icon: Icons.remove,
+                label: 'Despesa',
+                color: AppColors.vermelhoErro,
+                onTap: _navegarParaNovaDespesa,
+              ),
+              const SizedBox(height: 12),
+              _buildFABOption(
+                icon: Icons.credit_card,
+                label: 'Despesa Cartão',
+                color: Colors.orange,
+                onTap: _navegarParaNovaDespesaCartao,
+              ),
+            ],
           ),
         ),
       ],
@@ -1438,15 +1472,23 @@ class _CategoriasPageState extends State<CategoriasPage> with TickerProviderStat
       );
       
       debugPrint('⚡ ${categoriasComValores.length} categorias com valores pré-calculados!');
-      
+
+      // 🐛 DEBUG: Log dos dados recebidos do serviço
+      debugPrint('🔍 PERÍODO ATUAL - Início: ${dataInicio.day}/${dataInicio.month}/${dataInicio.year}, Fim: ${dataFim.day}/${dataFim.month}/${dataFim.year}');
+
       // Processar dados pré-calculados (muito mais rápido que N+1 queries!)
       for (final item in categoriasComValores) {
         final categoriaId = item['id'] as String;
+        final categoriaName = item['nome'] as String? ?? 'Sem nome';
         final valorTotal = (item['valor_total'] as num?)?.toDouble() ?? 0.0;
         final tipo = item['tipo'] as String?;
-        
+
+        // 🐛 DEBUG: Log cada categoria antes do filtro
+        debugPrint('🔍 CATEGORIA: $categoriaName | ID: $categoriaId | Valor: R\$ $valorTotal | Tipo: $tipo');
+
         if (valorTotal > 0) {
           _valoresPorCategoria[categoriaId] = valorTotal;
+          debugPrint('  ✅ Categoria adicionada ao map com valor R\$ $valorTotal');
 
           if (tipo == 'receita') {
             _totalReceitas += valorTotal;
@@ -1455,8 +1497,14 @@ class _CategoriasPageState extends State<CategoriasPage> with TickerProviderStat
             _totalDespesas += valorTotal;
             _totalPago += valorTotal; // Por enquanto, assumindo que despesas são efetivadas
           }
+        } else {
+          debugPrint('  ❌ Categoria EXCLUÍDA por valor zero: R\$ $valorTotal');
         }
       }
+
+      // 🐛 DEBUG: Resumo final
+      debugPrint('🔍 RESUMO FINAL - Categorias no map: ${_valoresPorCategoria.length}');
+      debugPrint('🔍 Map conteúdo: $_valoresPorCategoria');
       
       debugPrint('💰 Totais otimizados - Receitas: R\$ $_totalReceitas, Despesas: R\$ $_totalDespesas');
       debugPrint('💳 Totais efetivados - Recebido: R\$ $_totalRecebido, Pago: R\$ $_totalPago');
@@ -1524,7 +1572,17 @@ class _CategoriasPageState extends State<CategoriasPage> with TickerProviderStat
 
   /// 💰 OBTER VALOR REAL DA CATEGORIA
   double _getValorRealCategoria(CategoriaModel categoria) {
-    return _valoresPorCategoria[categoria.id] ?? 0.0;
+    final valor = _valoresPorCategoria[categoria.id] ?? 0.0;
+
+    // 🐛 DEBUG: Log quando retorna valor zero
+    if (valor == 0.0) {
+      debugPrint('🔍 _getValorRealCategoria: ${categoria.nome} retornou R\$ 0,00 (ID: ${categoria.id})');
+      debugPrint('🔍 Map atual tem ${_valoresPorCategoria.length} categorias: ${_valoresPorCategoria.keys.toList()}');
+    } else {
+      debugPrint('🔍 _getValorRealCategoria: ${categoria.nome} = R\$ $valor');
+    }
+
+    return valor;
   }
 
   /// 📊 CALCULAR PORCENTAGEM REAL DA CATEGORIA

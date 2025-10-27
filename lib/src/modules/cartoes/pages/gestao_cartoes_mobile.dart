@@ -708,7 +708,7 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
                 child: Icon(
                   icone,
                   color: cor,
-                  size: 28,
+                  size: 20,
                 ),
               ),
               
@@ -931,8 +931,19 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Valor em cima
+          Text(
+            valor,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              color: cor,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 4),
+          // Título
           Text(
             titulo,
             style: const TextStyle(
@@ -940,15 +951,7 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
               color: Colors.grey,
               fontWeight: FontWeight.w500,
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            valor,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: cor,
-            ),
+            textAlign: TextAlign.center,
           ),
         ],
       ),

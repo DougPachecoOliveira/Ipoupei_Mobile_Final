@@ -8,6 +8,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:app_links/app_links.dart';
 
 import 'src/auth_integration.dart';
 import 'src/supabase_auth_service.dart';
@@ -16,7 +17,6 @@ import 'src/modules/auth/pages/signup_page.dart';
 import 'src/modules/auth/pages/reset_password_page.dart';
 // import 'src/modules/dashboard/pages/home_page.dart'; // DEPRECATED: Use /navigation
 import 'src/modules/planejamento/pages/planejamento_page.dart';
-import 'src/modules/relatorios/pages/relatorios_page.dart';
 import 'src/modules/relatorios/pages/valor_hora_page.dart';
 import 'src/modules/categorias/pages/categorias_sugeridas_page.dart';
 import 'src/modules/diagnostico/pages/diagnostico_flow_page.dart';
@@ -65,10 +65,76 @@ class IPoupeiApp extends StatefulWidget {
 }
 
 class _IPoupeiAppState extends State<IPoupeiApp> {
+  late AppLinks _appLinks;
+
   @override
   void initState() {
     super.initState();
     _setupAuthListener();
+    _setupDeepLinkHandler();
+  }
+
+  /// 🔗 CONFIGURA HANDLER DE DEEP LINKS PARA OAUTH CALLBACKS
+  void _setupDeepLinkHandler() {
+    _appLinks = AppLinks();
+
+    // Escuta deep links quando o app já está rodando
+    _appLinks.uriLinkStream.listen((uri) {
+      debugPrint('🔗 Deep link recebido (app rodando): $uri');
+      _handleDeepLink(uri);
+    }, onError: (err) {
+      debugPrint('❌ Erro no deep link listener: $err');
+    });
+
+    // Verifica se o app foi aberto via deep link
+    _appLinks.getInitialLink().then((uri) {
+      if (uri != null) {
+        debugPrint('🔗 Deep link inicial (app aberto): $uri');
+        _handleDeepLink(uri);
+      }
+    }).catchError((err) {
+      debugPrint('❌ Erro ao verificar deep link inicial: $err');
+    });
+  }
+
+  /// 🔄 PROCESSA DEEP LINK PARA OAUTH E PASSWORD RECOVERY
+  void _handleDeepLink(Uri uri) async {
+    try {
+      debugPrint('🔄 Processando deep link: ${uri.toString()}');
+
+      // Verifica se é callback de auth (OAuth ou password recovery)
+      if (uri.scheme == 'br.com.ipoupei.mobile' && uri.host == 'auth' && uri.path == '/callback') {
+        debugPrint('✅ Callback de auth detectado!');
+
+        // Extrai parâmetros do URL
+        final urlString = uri.toString();
+        debugPrint('🔍 URL completo para processamento: $urlString');
+
+        try {
+          // Processa a sessão com o Supabase
+          await Supabase.instance.client.auth.getSessionFromUrl(Uri.parse(urlString));
+          debugPrint('✅ Sessão processada com sucesso via deep link!');
+
+          // Navega para a tela principal
+          Future.delayed(const Duration(milliseconds: 500), () {
+            navigatorKey.currentState?.pushReplacementNamed('/navigation');
+          });
+
+        } catch (authError) {
+          debugPrint('❌ Erro ao processar sessão: $authError');
+
+          // Se der erro, navega para login
+          Future.delayed(const Duration(milliseconds: 500), () {
+            navigatorKey.currentState?.pushReplacementNamed('/login');
+          });
+        }
+      } else {
+        debugPrint('ℹ️ Deep link não é callback de auth: ${uri.toString()}');
+      }
+
+    } catch (e) {
+      debugPrint('❌ Erro ao processar deep link: $e');
+    }
   }
 
   /// 👂 LISTENER PARA DETECTAR PASSWORD RECOVERY
@@ -201,8 +267,15 @@ class _IPoupeiAppState extends State<IPoupeiApp> {
           '/reset-password': (context) => const ResetPasswordPage(),
           // '/home': (context) => const HomePage(), // DEPRECATED: Use /navigation
           '/navigation': (context) => const MainNavigation(),
+
+          // 🧭 ROTAS COM NAVEGAÇÃO PARA ATALHOS
+          '/contas': (context) => const MainNavigation(initialIndex: 0),
+          '/cartoes': (context) => const MainNavigation(initialIndex: 1),
+          '/relatorios': (context) => const MainNavigation(initialIndex: 2),
+          '/categorias': (context) => const MainNavigation(initialIndex: 3),
+          '/transacoes': (context) => const MainNavigation(initialIndex: 4),
+
           '/planejamento': (context) => const PlanejamentoPage(),
-          '/relatorios': (context) => const RelatoriosPage(),
           '/valor-hora': (context) => const ValorHoraPage(),
           '/categorias-sugeridas': (context) => const CategoriasSugeridasPage(),
           '/diagnostico': (context) => const DiagnosticoFlowPage(),
@@ -217,6 +290,12 @@ class _IPoupeiAppState extends State<IPoupeiApp> {
         },
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    // AppLinks é automaticamente disposto pelo package
+    super.dispose();
   }
 }
 
