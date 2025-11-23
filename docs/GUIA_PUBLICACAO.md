@@ -313,12 +313,19 @@ flutter install --release
    - **Preço:** R$ 299,00
    - **Período:** Anual (não renovável automaticamente)
 
-3. Crie segunda assinatura:
+3. Crie segunda assinatura (renovação anual):
    - **ID do produto:** `ipoupei_annual_renewal`
    - **Nome:** iPoupei - Renovação Anual
    - **Descrição:** Acesso completo ao app
-   - **Preço:** R$ 159,90
+   - **Preço:** R$ 199,00
    - **Período:** Anual
+
+4. Crie terceira assinatura (mensal):
+   - **ID do produto:** `ipoupei_monthly`
+   - **Nome:** iPoupei - Mensal
+   - **Descrição:** Acesso completo ao app
+   - **Preço:** R$ 19,90
+   - **Período:** Mensal
 
 ### 4.7 Upload do App
 

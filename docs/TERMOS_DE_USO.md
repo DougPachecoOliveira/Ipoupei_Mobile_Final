@@ -169,8 +169,9 @@ Nas mentorias, falamos sobre coisas que outros lugares evitam:
 
 | Período | Valor | O que inclui |
 |---------|-------|--------------|
-| **1º Ano** | R$ 299,00 | App completo + Mentoria financeira personalizada |
-| **A partir do 2º Ano** | R$ 159,90/ano | App completo |
+| **1º Ano (anual)** | R$ 299,00 | App completo + Mentoria financeira personalizada |
+| **A partir do 2º Ano (anual)** | R$ 199,00 | App completo |
+| **Mensal** | R$ 19,90/mês | App completo (sem mentoria inclusa) |
 
 ### 5.2 Por Que Esse Modelo
 
@@ -180,9 +181,11 @@ Nas mentorias, falamos sobre coisas que outros lugares evitam:
 
 ### 5.3 Forma de Pagamento
 
-- Cobrança **anual** (não há opção mensal)
+- Cobrança **anual** ou **mensal** (você escolhe)
 - Pagamento antecipado para o período contratado
 - Formas aceitas: cartão de crédito, PIX, boleto
+
+**Nota:** A mentoria financeira personalizada só está inclusa no plano anual do primeiro ano. No plano mensal, a mentoria pode ser contratada separadamente.
 
 ### 5.4 Renovação
 

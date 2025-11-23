@@ -255,8 +255,9 @@ Se sua situação é simples, talvez o app seja suficiente. Se sua situação é
 
 | Período | Valor | O que inclui |
 |---------|-------|--------------|
-| **1º Ano** | R$ 299,00 | App completo + Mentoria financeira |
-| **A partir do 2º Ano** | R$ 159,90/ano | App completo |
+| **1º Ano (anual)** | R$ 299,00 | App completo + Mentoria financeira |
+| **A partir do 2º Ano (anual)** | R$ 199,00 | App completo |
+| **Mensal** | R$ 19,90/mês | App completo (sem mentoria inclusa) |
 
 ---
 
