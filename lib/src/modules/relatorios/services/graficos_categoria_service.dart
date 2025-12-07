@@ -43,6 +43,7 @@ class GraficosCategoriaService {
           AND DATE(t.data) BETWEEN DATE(?) AND DATE(?)
           AND c.ativo = 1
           AND c.tipo = ?
+          AND (t.transferencia IS NULL OR t.transferencia = 0)
         GROUP BY c.id, c.nome
         ORDER BY total_valor DESC
         LIMIT 10
@@ -60,7 +61,11 @@ class GraficosCategoriaService {
           'total_transacoes': row['total_transacoes'] as int,
           'total_valor': (row['total_valor'] as num?)?.toDouble() ?? 0.0,
         };
-      }).where((item) => (item['total_valor'] as double) > 0).toList();
+      }).toList();
+
+      // ✅ CORREÇÃO ANTI-REGRESSÃO: NÃO filtrar categorias com valor zero
+      // Categorias zeradas são informação valiosa para análise
+      // REMOVIDO: .where((item) => (item['total_valor'] as double) > 0)
 
       debugPrint('📊 Encontradas ${dados.length} categorias de despesas');
       for (final item in dados.take(5)) {
@@ -102,6 +107,7 @@ class GraficosCategoriaService {
           AND DATE(t.data) BETWEEN DATE(?) AND DATE(?)
           AND c.ativo = 1
           AND c.tipo = ?
+          AND (t.transferencia IS NULL OR t.transferencia = 0)
         GROUP BY c.id, c.nome
         ORDER BY total_valor DESC
         LIMIT 10
@@ -119,7 +125,11 @@ class GraficosCategoriaService {
           'total_transacoes': row['total_transacoes'] as int,
           'total_valor': (row['total_valor'] as num?)?.toDouble() ?? 0.0,
         };
-      }).where((item) => (item['total_valor'] as double) > 0).toList();
+      }).toList();
+
+      // ✅ CORREÇÃO ANTI-REGRESSÃO: NÃO filtrar categorias com valor zero
+      // Categorias zeradas são informação valiosa para análise
+      // REMOVIDO: .where((item) => (item['total_valor'] as double) > 0)
 
       debugPrint('📈 Encontradas ${dados.length} categorias de receitas');
       for (final item in dados.take(5)) {

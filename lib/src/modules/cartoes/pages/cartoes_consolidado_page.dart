@@ -1784,9 +1784,10 @@ class _CartoesConsolidadoPageState extends State<CartoesConsolidadoPage> with Si
         SELECT COALESCE(SUM(t.valor), 0) as total
         FROM transacoes t
         INNER JOIN categorias c ON t.categoria_id = c.id
-        WHERE t.cartao_id = ? 
+        WHERE t.cartao_id = ?
           AND COALESCE(t.fatura_vencimento, t.data) BETWEEN ? AND ?
           AND t.tipo = 'despesa'
+          AND (t.transferencia IS NULL OR t.transferencia = 0)
           AND c.ativo = 1
           AND c.tipo = 'despesa'
       ''', [cartaoId, inicioMes, fimMes]);
@@ -1809,16 +1810,17 @@ class _CartoesConsolidadoPageState extends State<CartoesConsolidadoPage> with Si
       if (db == null) return;
 
       final result = await db.rawQuery('''
-        SELECT DISTINCT 
+        SELECT DISTINCT
           fatura_vencimento,
           COUNT(*) as total_transacoes,
           SUM(CASE WHEN efetivado = 1 THEN valor ELSE 0 END) as valor_pago,
           SUM(valor) as valor_total
-        FROM transacoes 
-        WHERE cartao_id = ? 
+        FROM transacoes
+        WHERE cartao_id = ?
           AND fatura_vencimento IS NOT NULL
           AND fatura_vencimento < ?
           AND tipo = 'despesa'
+          AND (transferencia IS NULL OR transferencia = 0)
         GROUP BY fatura_vencimento
         HAVING (SUM(valor) - SUM(CASE WHEN efetivado = 1 THEN valor ELSE 0 END)) > 0.01
         ORDER BY fatura_vencimento DESC

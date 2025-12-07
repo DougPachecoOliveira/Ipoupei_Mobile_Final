@@ -75,6 +75,12 @@ class AutoCategorizationService {
     final descricaoNormalizada = _normalizarTexto(descricao);
     final tipo = transacao.tipo;
 
+    // 🔥 RESET FORÇADO - Se a transação já foi categorizada ERRADO como "Vendas", limpar
+    if (transacao.categoriaId != null && transacao.categoriaId == '37079136-12b6-4625-8ca3-fff096b9185e') {
+      log('🧹 [RESET] Limpando categoria ERRADA "Vendas" para "${transacao.descricao}"');
+      transacao = transacao.copyWith(categoriaId: null, subcategoriaId: null);
+    }
+
     // Filtrar categorias do tipo correto e ativas
     final categoriasDoTipo = categorias.where((c) => c.tipo == tipo && c.ativo).toList();
     log('🔎 [INICIO] Tipo: $tipo, Categorias disponíveis do tipo: ${categoriasDoTipo.length}');
@@ -84,7 +90,7 @@ class AutoCategorizationService {
 
     // 🎯 ESTRATÉGIA 0: Buscar no histórico do usuário (PRIORIDADE MÁXIMA)
     // Se o usuário já categorizou essa descrição exata antes, usar a mesma categoria
-    const bool USAR_HISTORICO = false; // 🚫 DESABILITADO - histórico tem categorizações erradas antigas
+    const bool USAR_HISTORICO = false; // 🚫 COMPLETAMENTE DESABILITADO - histórico tem categorizações ERRADAS
     if (USAR_HISTORICO) {
     try {
       final db = LocalDatabase.instance.database;
@@ -246,17 +252,35 @@ class AutoCategorizationService {
       }
     }
 
-    // Se encontrou categoria E subcategoria, retornar transação atualizada
-    if (categoriaMatch != null && subcategoriaMatch != null) {
-      log('🎯 [FINAL] "${transacao.descricao}" → categoriaMatch: ${categoriaMatch.nome} (${categoriaMatch.id}), subcategoriaMatch: ${subcategoriaMatch.nome} (${subcategoriaMatch.id}, categoriaId: ${subcategoriaMatch.categoriaId})');
+    // 🎯 ESTRATÉGIA FINAL: Categorizar se encontrou pelo menos categoria
+    if (categoriaMatch != null) {
+      // Se não encontrou subcategoria, tentar buscar a primeira da categoria
+      if (subcategoriaMatch == null) {
+        final subsDisponiveis = subcategorias.where((s) => s.categoriaId == categoriaMatch!.id && s.ativo).toList();
+        if (subsDisponiveis.isNotEmpty) {
+          subcategoriaMatch = subsDisponiveis.first;
+          log('🔄 [FALLBACK] Usando primeira subcategoria da categoria ${categoriaMatch.nome}: ${subcategoriaMatch.nome}');
+        }
+      }
 
-      return transacao.copyWith(
-        categoriaId: categoriaMatch.id,
-        subcategoriaId: subcategoriaMatch.id,
-      );
+      if (subcategoriaMatch != null) {
+        log('🎯 [FINAL SUCESSO] "${transacao.descricao}" → ${categoriaMatch.nome}/${subcategoriaMatch.nome}');
+        return transacao.copyWith(
+          categoriaId: categoriaMatch.id,
+          subcategoriaId: subcategoriaMatch.id,
+        );
+      } else {
+        log('⚠️ [FINAL PARCIAL] "${transacao.descricao}" → ${categoriaMatch.nome}/SEM_SUBCATEGORIA');
+        // MESMO SEM SUBCATEGORIA, ainda categoriza só com categoria
+        return transacao.copyWith(
+          categoriaId: categoriaMatch.id,
+          // Deixa subcategoriaId como null
+        );
+      }
     }
 
-    // Se não encontrou AMBOS, retornar null para não categorizar
+    // Se não encontrou nem categoria, não categorizar
+    log('❌ [FINAL FALHA] "${transacao.descricao}" → SEM_CATEGORIA');
     return null;
   }
 
@@ -283,6 +307,13 @@ class AutoCategorizationService {
       'mercado', 'supermercado', 'padaria', 'açougue', 'acougue',
       'restaurante', 'lanchonete', 'pizzaria', 'hamburger',
       'mcdonalds', 'bobs', 'burguer', 'subway',
+      // FATURAS - Adicionando padrões específicos
+      'mercadolivre*nestl', 'mercadolivre*nestle', 'mercadolivre',
+      'carrefour', 'pao de acucar', 'pão de açúcar', 'extra',
+      'drogaria', 'drogasil', 'pague menos',
+      'hortifrtuti', 'hortifruti', 'saude', 'supermercado',
+      'cannoleria', 'gelateria', 'bacio di latte', 'cacau show',
+      'tasca', 'san paolo', 'bullguer',
     ];
     return palavrasChave.any((p) => descricao.contains(p));
   }
@@ -312,6 +343,10 @@ class AutoCategorizationService {
       'netflix', 'spotify', 'amazon prime', 'disney', 'hbo',
       'cinema', 'ingresso', 'show', 'teatro',
       'youtube premium', 'apple music', 'deezer',
+      // FATURAS - Adicionando padrões específicos
+      'google youtube', 'youtube', 'totalpass',
+      'fila rb', 'fila br', 'fila',
+      'bacio di latte', 'indigo',
     ];
     return palavrasChave.any((p) => descricao.contains(p));
   }
@@ -323,6 +358,9 @@ class AutoCategorizationService {
       'água', 'agua', 'saneamento', 'sabesp',
       'internet', 'vivo', 'claro', 'tim', 'oi',
       'iptu', 'taxa',
+      // FATURAS - Adicionando padrões específicos
+      'airbnb', 'madeiramadeira', 'kombina',
+      'estac shop', 'estacionamento',
     ];
     return palavrasChave.any((p) => descricao.contains(p));
   }
@@ -332,6 +370,11 @@ class AutoCategorizationService {
       'zara', 'renner', 'riachuelo', 'cea',
       'roupa', 'calça', 'camisa', 'sapato',
       'nike', 'adidas', 'puma',
+      // FATURAS - Adicionando padrões específicos
+      'niazi chohfi', 'chohfi', 'lojas americanas',
+      'centauro', 'netshoes', 'mlp*netshoes',
+      'shopee *hotrodcamiseta', 'hotrodcamiseta',
+      'daiso brasil', 'brasilpark',
     ];
     return palavrasChave.any((p) => descricao.contains(p));
   }
@@ -364,24 +407,79 @@ class AutoCategorizationService {
   // ========== HELPERS ==========
 
   CategoriaModel? _findCategoria(List<CategoriaModel> categorias, List<String> palavrasChave) {
-    log('🔍 [DEBUG] Buscando categoria com palavras-chave: $palavrasChave');
-    log('🔍 [DEBUG] Categorias disponíveis: ${categorias.map((c) => '${c.nome} (${c.id})').join(', ')}');
+    log('🔍 [FIND-CAT] Procurando categoria para palavras: $palavrasChave');
+    log('🔍 [FIND-CAT] Categorias disponíveis: ${categorias.map((c) => c.nome).toList()}');
 
+    // 🎯 ESTRATÉGIA 1: Match exato por nome
     for (var palavra in palavrasChave) {
       try {
         final match = categorias.firstWhere(
           (c) => c.nome.toLowerCase().contains(palavra.toLowerCase()),
         );
-        log('✅ [DEBUG] Categoria encontrada: ${match.nome} (ID: ${match.id}) para palavra "$palavra"');
+        log('✅ [FIND-CAT] Match direto: "${match.nome}" contém "$palavra"');
         return match;
       } catch (e) {
-        // Continuar procurando
-        log('⚠️ [DEBUG] Categoria não encontrada para palavra "$palavra"');
+        // Continuar procurando próxima palavra
       }
     }
-    log('❌ [DEBUG] Nenhuma categoria encontrada para palavras: $palavrasChave');
+
+    // 🎯 ESTRATÉGIA 2: Match semântico flexível (para qualquer categoria existente)
+    for (var palavra in palavrasChave) {
+      for (var categoria in categorias) {
+        final nomeCat = categoria.nome.toLowerCase();
+        final palavraLower = palavra.toLowerCase();
+
+        // Match por similaridade semântica para diferentes possibilidades
+        if (_isSimilarCategory(nomeCat, palavraLower)) {
+          log('✅ [FIND-CAT] Match semântico: "${categoria.nome}" é similar a "$palavra"');
+          return categoria;
+        }
+      }
+    }
+
+    log('❌ [FIND-CAT] Nenhuma categoria encontrada para: $palavrasChave');
     return null;
   }
+
+  /// Verifica se uma categoria é semanticamente similar a uma palavra-chave
+  bool _isSimilarCategory(String nomeCategoria, String palavraChave) {
+    // Mapeamentos semânticos comuns
+    final Map<String, List<String>> sinonimos = {
+      'alimentação': ['comida', 'restaurante', 'food', 'meal', 'refeição', 'alimento'],
+      'alimentacao': ['comida', 'restaurante', 'food', 'meal', 'refeição', 'alimento'],
+      'comida': ['alimentação', 'restaurante', 'food', 'meal', 'refeição'],
+      'transporte': ['mobilidade', 'uber', 'taxi', 'combustivel', 'combustível', 'gasolina'],
+      'saude': ['medicina', 'medico', 'médico', 'farmacia', 'farmácia', 'hospital'],
+      'saúde': ['medicina', 'medico', 'médico', 'farmacia', 'farmácia', 'hospital'],
+      'lazer': ['entretenimento', 'diversão', 'diversao', 'cinema', 'show'],
+      'moradia': ['casa', 'habitação', 'habitacao', 'aluguel', 'condominio', 'condomínio'],
+      'vestuario': ['roupa', 'vestuário', 'moda', 'roupas'],
+      'vestuário': ['roupa', 'vestuario', 'moda', 'roupas'],
+      'educacao': ['educação', 'estudo', 'escola', 'curso', 'faculdade'],
+      'educação': ['educacao', 'estudo', 'escola', 'curso', 'faculdade'],
+    };
+
+    // Verificar se a categoria contém a palavra ou seus sinônimos
+    for (var categoria in sinonimos.keys) {
+      if (nomeCategoria.contains(categoria)) {
+        if (sinonimos[categoria]!.contains(palavraChave)) {
+          return true;
+        }
+      }
+    }
+
+    // Verificar se a palavra-chave está nos sinônimos da categoria
+    if (sinonimos.containsKey(palavraChave)) {
+      for (var sinonimo in sinonimos[palavraChave]!) {
+        if (nomeCategoria.contains(sinonimo)) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
 
   SubcategoriaModel? _findSubcategoria(
     List<SubcategoriaModel> subcategorias,
@@ -429,17 +527,48 @@ class AutoCategorizationService {
       return null;
     }
 
-    // Tentar match exato
+    // 🎯 ESTRATÉGIA 1: Match exato
     try {
       final match = subsDisponiveis.firstWhere(
         (s) => s.nome.toLowerCase().contains(nomeSubcategoria) || nomeSubcategoria.contains(s.nome.toLowerCase()),
       );
-      log('✅ [DEBUG] Match encontrado: ${match.nome} (ID: ${match.id})');
+      log('✅ [DEBUG] Match exato encontrado: ${match.nome} (ID: ${match.id})');
       return match;
     } catch (e) {
-      // Se não encontrou match exato, retornar primeira disponível
-      log('⚠️ [DEBUG] Match exato não encontrado, usando primeira disponível: ${subsDisponiveis.first.nome}');
-      return subsDisponiveis.first;
+      log('⚠️ [DEBUG] Match exato não encontrado para "$nomeSubcategoria"');
     }
+
+    // 🎯 ESTRATÉGIA 2: Match flexível (palavras-chave)
+    final mapeamentoSubcategorias = {
+      'supermercado': ['mercado', 'atacado', 'hiper', 'extra'],
+      'restaurante': ['rest', 'comida', 'refeição', 'refeicao'],
+      'lanche': ['fast food', 'delivery', 'ifood', 'rappi'],
+      'combustível': ['combustivel', 'gasolina', 'posto', 'etanol'],
+      'taxi': ['uber', '99', 'corrida', 'viagem'],
+      'manutenção': ['manutencao', 'oficina', 'conserto', 'reparo'],
+      'farmacia': ['farmácia', 'remedio', 'medicamento', 'drogaria'],
+    };
+
+    for (var entry in mapeamentoSubcategorias.entries) {
+      final palavraChave = entry.key;
+      final sinonimos = entry.value;
+
+      if (nomeSubcategoria.toLowerCase().contains(palavraChave) ||
+          sinonimos.any((s) => nomeSubcategoria.toLowerCase().contains(s))) {
+
+        // Buscar subcategoria que contenha a palavra-chave
+        for (var sub in subsDisponiveis) {
+          if (sub.nome.toLowerCase().contains(palavraChave) ||
+              sinonimos.any((s) => sub.nome.toLowerCase().contains(s))) {
+            log('✅ [DEBUG FLEXÍVEL] Subcategoria encontrada: ${sub.nome} (ID: ${sub.id}) para "$nomeSubcategoria" → "$palavraChave"');
+            return sub;
+          }
+        }
+      }
+    }
+
+    // 🎯 ESTRATÉGIA 3: Se não encontrou nada, usar primeira disponível
+    log('⚠️ [DEBUG] Usando primeira subcategoria disponível: ${subsDisponiveis.first.nome}');
+    return subsDisponiveis.first;
   }
 }

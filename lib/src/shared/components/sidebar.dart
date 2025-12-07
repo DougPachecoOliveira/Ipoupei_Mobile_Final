@@ -5,6 +5,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../modules/shared/theme/app_colors.dart';
 import '../../modules/importacao/pages/importacao_modal.dart';
 import '../../modules/transacoes/pages/transferencia_form_page.dart';
+import '../../supabase_auth_service.dart';
+import '../../modules/auth/pages/login_ipoupei_page.dart';
 
 /// Sidebar lateral com navegação completa (baseada no iPoupei Device)
 class Sidebar extends StatelessWidget {
@@ -202,6 +204,29 @@ class Sidebar extends StatelessWidget {
                         Navigator.pop(context);
                         Navigator.pushNamed(context, '/configuracoes');
                       },
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // BOTÃO TESTE LOADING (TEMPORÁRIO)
+                    _buildMenuItem(
+                      context: context,
+                      icon: Icons.animation,
+                      label: '🧪 Testar Loading',
+                      route: '/test-loading',
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.pushNamed(context, '/test-loading');
+                      },
+                    ),
+
+                    // Botão de Logout
+                    _buildMenuItem(
+                      context: context,
+                      icon: Icons.logout,
+                      label: 'Sair',
+                      route: '/logout',
+                      onTap: () => _handleLogout(context),
                     ),
 
                     const SizedBox(height: 20),
@@ -421,6 +446,31 @@ class Sidebar extends StatelessWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Erro na importação: $e'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _handleLogout(BuildContext context) async {
+    Navigator.pop(context); // Fecha o drawer
+
+    try {
+      await SupabaseAuthService.instance.signOut();
+
+      if (context.mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const LoginIpoupeiPage()),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao sair: $e'),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
           ),

@@ -1075,12 +1075,16 @@ class _GestaoCategoriaPageState extends State<GestaoCategoriaPage> {
               constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
             ),
           ),
-          const Text(
-            'Gestão da Categoria',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
+          Expanded(
+            child: Text(
+              'Gerir Categoria',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+              overflow: TextOverflow.ellipsis, // ✅ Lidar com texto longo
+              maxLines: 1, // ✅ Manter uma linha
             ),
           ),
         ],
@@ -2477,10 +2481,10 @@ class _GestaoCategoriaPageState extends State<GestaoCategoriaPage> {
         ? 0.0 
         : _valoresPorSubcategoria.fold<double>(0, (sum, item) => sum + (item['valorTotal'] as double));
     
-    // Filtrar subcategorias com valores > 0 para o gráfico
-    final subcategoriasComValor = _valoresPorSubcategoria
-        .where((item) => (item['valorTotal'] as double) > 0)
-        .toList();
+    // ✅ CORREÇÃO ANTI-REGRESSÃO: Mostrar todas as subcategorias (incluindo zeradas)
+    // Subcategorias zeradas são informação valiosa para análise
+    final subcategoriasComValor = _valoresPorSubcategoria.toList();
+    // REMOVIDO: .where((item) => (item['valorTotal'] as double) > 0)
     
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -2634,9 +2638,9 @@ class _GestaoCategoriaPageState extends State<GestaoCategoriaPage> {
       Colors.blue
     ];
     
-    final subcategoriasComValor = _valoresPorSubcategoria
-        .where((item) => (item['valorTotal'] as double) > 0)
-        .toList();
+    // ✅ CORREÇÃO ANTI-REGRESSÃO: Mostrar todas as subcategorias (incluindo zeradas)
+    final subcategoriasComValor = _valoresPorSubcategoria.toList();
+    // REMOVIDO: .where((item) => (item['valorTotal'] as double) > 0)
     
     final totalGastos = subcategoriasComValor.fold<double>(
       0, (sum, item) => sum + (item['valorTotal'] as double)

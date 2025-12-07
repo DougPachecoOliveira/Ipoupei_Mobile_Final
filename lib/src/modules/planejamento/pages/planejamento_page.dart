@@ -710,7 +710,7 @@ class _PlanejamentoPageState extends State<PlanejamentoPage> with TickerProvider
         title: Row(
           children: [
             const Text(
-              'Planejar Orçamento',
+              'Planejamento',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 16,

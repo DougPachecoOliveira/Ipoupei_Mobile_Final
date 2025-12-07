@@ -60,7 +60,7 @@ class BusinessValidators {
       if (transacoes.isNotEmpty) {
         // Contar total de transações
         final totalTransacoes = await _localDB.database!.rawQuery(
-          'SELECT COUNT(*) as count FROM transacoes WHERE categoria_id = ?',
+          'SELECT COUNT(*) as count FROM transacoes WHERE categoria_id = ? AND (transferencia IS NULL OR transferencia = 0)',
           [categoriaId],
         );
         
@@ -128,7 +128,7 @@ class BusinessValidators {
 
       if (transacoes.isNotEmpty) {
         final totalTransacoes = await _localDB.database!.rawQuery(
-          'SELECT COUNT(*) as count FROM transacoes WHERE subcategoria_id = ?',
+          'SELECT COUNT(*) as count FROM transacoes WHERE subcategoria_id = ? AND (transferencia IS NULL OR transferencia = 0)',
           [subcategoriaId],
         );
         

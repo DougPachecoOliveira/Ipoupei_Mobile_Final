@@ -113,6 +113,7 @@ class _ValorHoraWidgetState extends State<ValorHoraWidget> {
           AND tipo = 'despesa'
           AND data >= ?
           AND data <= ?
+          AND (transferencia IS NULL OR transferencia = 0)
         ''',
         whereArgs: [
           userId,
@@ -180,6 +181,7 @@ class _ValorHoraWidgetState extends State<ValorHoraWidget> {
           AND cartao_id IS NOT NULL
           AND data >= ?
           AND data <= ?
+          AND (transferencia IS NULL OR transferencia = 0)
         ''',
         whereArgs: [
           userId,

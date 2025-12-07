@@ -522,6 +522,33 @@ class CategoriaIcons {
   // TREE-SHAKE SAFE ICON FUNCTIONS
   // ===============================================
 
+  /// 🚨 PRÉ-CARREGAR TODOS OS ÍCONES (RESOLVE TREE SHAKING iOS)
+  /// Chame este método no main() para forçar inclusão de todos os ícones na build
+  static void preloadAllIcons() {
+    // ✅ FORÇAR REGISTRO DE TODOS OS ÍCONES MATERIAL USADOS
+    final List<IconData> allIconsForceLoad = [
+      // Ícones para categorias zeradas (CRÍTICO para o problema)
+      Icons.remove_circle_outline,
+      Icons.info_outline,
+      Icons.warning_outlined,
+      Icons.help_outline,
+
+      // Ícones essenciais sempre carregados
+      Icons.category_outlined,
+      Icons.folder_outlined,
+      Icons.label_outlined,
+
+      // Todos os ícones das categorias principais
+      ...getAllSimpleIcons(),
+    ];
+
+    // ✅ Flutter irá incluir todos estes ícones na build
+    // Operação em memória para garantir que não sejam removidos pelo tree shaking
+    final _ = allIconsForceLoad.length;
+
+    debugPrint('🎯 CategoriaIcons: ${allIconsForceLoad.length} ícones pré-carregados para evitar tree shaking');
+  }
+
   /// Get simple icons by category using tree-shake safe approach
   static List<IconData> getSimpleIconsByCategory(String category) {
     return iconesSimples[category] ?? [

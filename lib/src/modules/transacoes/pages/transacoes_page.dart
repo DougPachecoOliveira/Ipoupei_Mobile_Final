@@ -58,6 +58,12 @@ enum TransacoesPageMode {
     icone: Icons.credit_card,
     filtroTipo: 'despesa',
     apenasCartao: true,
+  ),
+  transferencias(
+    titulo: 'Transf.',
+    corHeader: Color(0xFF0EA5E9), // sky-500
+    icone: Icons.swap_horiz,
+    filtroTipo: 'transferencia',
   );
 
   const TransacoesPageMode({
@@ -139,7 +145,7 @@ enum VisaoRapida {
     categoria: 'Origem',
   ),
   transferencias(
-    titulo: 'Transferências',
+    titulo: 'Transf.',
     icone: Icons.swap_horiz,
     categoria: 'Origem',
   ),
@@ -225,7 +231,7 @@ enum FiltroInteligente {
     categoria: 'Origem',
   ),
   transferencias(
-    titulo: 'Transferências',
+    titulo: 'Transf.',
     icone: Icons.swap_horiz,
     categoria: 'Origem',
   ),
@@ -488,17 +494,31 @@ class _TransacoesPageState extends State<TransacoesPage>
       List<TransacaoModel> transacoesFiltradas = transacoes;
 
       if (_modoAtual.apenasCartao) {
-        // Filtrar apenas transações de cartão
+        // Filtrar apenas transações de cartão E EXCLUIR transferências
         transacoesFiltradas = transacoes
-            .where((t) => t.cartaoId != null)
+            .where((t) => t.cartaoId != null && t.transferencia != true)
             .toList();
-        print('   Após filtro apenasCartao: ${transacoesFiltradas.length}');
+        print('   Após filtro apenasCartao (sem transferências): ${transacoesFiltradas.length}');
       } else if (_modoAtual.filtroTipo != null) {
-        // Filtrar por tipo específico (receita/despesa)
+        if (_modoAtual.filtroTipo == 'transferencia') {
+          // Filtrar APENAS transferências (usa campo transferencia = true)
+          transacoesFiltradas = transacoes
+              .where((t) => t.transferencia == true)
+              .toList();
+          print('   Após filtro de transferências: ${transacoesFiltradas.length}');
+        } else {
+          // Filtrar por tipo específico (receita/despesa) E EXCLUIR transferências
+          transacoesFiltradas = transacoes
+              .where((t) => t.tipo == _modoAtual.filtroTipo && t.transferencia != true)
+              .toList();
+          print('   Após filtro de tipo (sem transferências): ${transacoesFiltradas.length}');
+        }
+      } else {
+        // Modo "Todas": EXCLUIR transferências (seguindo padrão React)
         transacoesFiltradas = transacoes
-            .where((t) => t.tipo == _modoAtual.filtroTipo)
+            .where((t) => t.transferencia != true)
             .toList();
-        print('   Após filtro de tipo: ${transacoesFiltradas.length}');
+        print('   Após excluir transferências de "Todas": ${transacoesFiltradas.length}');
       }
 
       // Aplicar filtros personalizados
@@ -537,30 +557,39 @@ class _TransacoesPageState extends State<TransacoesPage>
       int quantidadeReceitas = 0;
       int quantidadeDespesas = 0;
       int quantidadeCartoes = 0;
+      int quantidadeTransferencias = 0;
+      double totalTransferencias = 0.0;
       double receitasPendentes = 0.0;
       double despesasPendentes = 0.0;
 
       for (final transacao in transacoesFiltradas) {
-        switch (transacao.tipo) {
-          case 'receita':
-            totalReceitas += transacao.valor;
-            quantidadeReceitas++;
-            if (!transacao.efetivado) {
-              receitasPendentes += transacao.valor;
-            }
-            break;
-          case 'despesa':
-            if (transacao.cartaoId != null) {
-              totalCartoes += transacao.valor;
-              quantidadeCartoes++;
-            } else {
-              totalDespesas += transacao.valor;
-              quantidadeDespesas++;
-            }
-            if (!transacao.efetivado) {
-              despesasPendentes += transacao.valor;
-            }
-            break;
+        // Primeiro, verificar se é transferência
+        if (transacao.transferencia == true) {
+          totalTransferencias += transacao.valor;
+          quantidadeTransferencias++;
+        } else {
+          // Se não for transferência, processar normalmente
+          switch (transacao.tipo) {
+            case 'receita':
+              totalReceitas += transacao.valor;
+              quantidadeReceitas++;
+              if (!transacao.efetivado) {
+                receitasPendentes += transacao.valor;
+              }
+              break;
+            case 'despesa':
+              if (transacao.cartaoId != null) {
+                totalCartoes += transacao.valor;
+                quantidadeCartoes++;
+              } else {
+                totalDespesas += transacao.valor;
+                quantidadeDespesas++;
+              }
+              if (!transacao.efetivado) {
+                despesasPendentes += transacao.valor;
+              }
+              break;
+          }
         }
       }
 
@@ -568,10 +597,12 @@ class _TransacoesPageState extends State<TransacoesPage>
         'totalReceitas': totalReceitas,
         'totalDespesas': totalDespesas,
         'totalCartoes': totalCartoes,
+        'totalTransferencias': totalTransferencias,
         'saldo': totalReceitas - totalDespesas - totalCartoes,
         'quantidadeReceitas': quantidadeReceitas.toDouble(),
         'quantidadeDespesas': quantidadeDespesas.toDouble(),
         'quantidadeCartoes': quantidadeCartoes.toDouble(),
+        'quantidadeTransferencias': quantidadeTransferencias.toDouble(),
         'receitasPendentes': receitasPendentes,
         'despesasPendentes': despesasPendentes,
         'mediaReceitas': quantidadeReceitas > 0 ? totalReceitas / quantidadeReceitas : 0.0,
@@ -1707,6 +1738,10 @@ class _TransacoesPageState extends State<TransacoesPage>
         titulo = 'Resumo dos Cartões';
         valorPrincipal = _estatisticas['totalCartoes'] ?? 0.0;
         break;
+      case TransacoesPageMode.transferencias:
+        titulo = 'Resumo das Transferências';
+        valorPrincipal = _estatisticas['totalTransferencias'] ?? 0.0;
+        break;
       default:
         titulo = 'Resumo Geral';
         valorPrincipal = _estatisticas['saldo'] ?? 0.0;
@@ -1752,6 +1787,8 @@ class _TransacoesPageState extends State<TransacoesPage>
         return _buildMetricasDespesas();
       case TransacoesPageMode.cartoes:
         return _buildMetricasCartoes();
+      case TransacoesPageMode.transferencias:
+        return _buildMetricasTransferencias();
     }
   }
   
@@ -1759,13 +1796,15 @@ class _TransacoesPageState extends State<TransacoesPage>
     final receitas = _estatisticas['totalReceitas'] ?? 0.0;
     final despesas = _estatisticas['totalDespesas'] ?? 0.0;
     final cartoes = _estatisticas['totalCartoes'] ?? 0.0;
-    
+    final transferencias = _estatisticas['totalTransferencias'] ?? 0.0;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
         _buildMetrica('Receitas', receitas, Icons.trending_up, Colors.green[600]!),
         _buildMetrica('Despesas', despesas, Icons.trending_down, Colors.red[600]!),
         _buildMetrica('Cartões', cartoes, Icons.credit_card, Colors.purple[600]!),
+        _buildMetrica('Transf.', transferencias, Icons.swap_horiz, Colors.blue[600]!),
       ],
     );
   }
@@ -1804,12 +1843,27 @@ class _TransacoesPageState extends State<TransacoesPage>
     final quantidade = _estatisticas['quantidadeCartoes']?.toInt() ?? 0;
     final pendente = _estatisticas['despesasPendentes'] ?? 0.0;
     final media = _estatisticas['mediaCartoes'] ?? 0.0;
-    
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
         _buildMetrica('Transações', quantidade.toDouble(), Icons.receipt, _modoAtual.corHeader, isQuantidade: true),
         _buildMetrica('Pendente', pendente, Icons.schedule, Colors.orange[600]!),
+        _buildMetrica('Média', media, Icons.trending_flat, Colors.grey[600]!),
+      ],
+    );
+  }
+
+  Widget _buildMetricasTransferencias() {
+    final quantidade = _estatisticas['quantidadeTransferencias']?.toInt() ?? 0;
+    final total = _estatisticas['totalTransferencias'] ?? 0.0;
+    final media = quantidade > 0 ? total / quantidade : 0.0;
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      children: [
+        _buildMetrica('Transações', quantidade.toDouble(), Icons.receipt, _modoAtual.corHeader, isQuantidade: true),
+        _buildMetrica('Total', total, Icons.swap_horiz, _modoAtual.corHeader),
         _buildMetrica('Média', media, Icons.trending_flat, Colors.grey[600]!),
       ],
     );
@@ -4619,33 +4673,44 @@ class _TransacoesPageState extends State<TransacoesPage>
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              _buildFABOption(
-                icon: Icons.swap_horiz,
-                label: "Transferência",
-                color: Colors.blue,
-                onTap: _navegarParaNovaTransferencia,
-              ),
-              const SizedBox(height: 12),
-              _buildFABOption(
-                icon: Icons.add,
-                label: "Receita",
-                color: AppColors.verdeSucesso,
-                onTap: _navegarParaNovaReceita,
-              ),
-              const SizedBox(height: 12),
-              _buildFABOption(
-                icon: Icons.remove,
-                label: "Despesa",
-                color: AppColors.vermelhoErro,
-                onTap: _navegarParaNovaDespesa,
-              ),
-              const SizedBox(height: 12),
-              _buildFABOption(
-                icon: Icons.credit_card,
-                label: "Despesa Cartão",
-                color: Colors.orange,
-                onTap: _navegarParaNovaDespesaCartao,
-              ),
+              // Mostrar apenas transferência se estiver na aba de transferências
+              if (_modoAtual == TransacoesPageMode.transferencias)
+                _buildFABOption(
+                  icon: Icons.swap_horiz,
+                  label: "Nova Transferência",
+                  color: _modoAtual.corHeader,
+                  onTap: _navegarParaNovaTransferencia,
+                )
+              else ...[
+                // Menu completo para outras abas
+                _buildFABOption(
+                  icon: Icons.swap_horiz,
+                  label: "Transferência",
+                  color: Colors.blue,
+                  onTap: _navegarParaNovaTransferencia,
+                ),
+                const SizedBox(height: 12),
+                _buildFABOption(
+                  icon: Icons.add,
+                  label: "Receita",
+                  color: AppColors.verdeSucesso,
+                  onTap: _navegarParaNovaReceita,
+                ),
+                const SizedBox(height: 12),
+                _buildFABOption(
+                  icon: Icons.remove,
+                  label: "Despesa",
+                  color: AppColors.vermelhoErro,
+                  onTap: _navegarParaNovaDespesa,
+                ),
+                const SizedBox(height: 12),
+                _buildFABOption(
+                  icon: Icons.credit_card,
+                  label: "Despesa Cartão",
+                  color: Colors.orange,
+                  onTap: _navegarParaNovaDespesaCartao,
+                ),
+              ],
             ],
           ),
         ),

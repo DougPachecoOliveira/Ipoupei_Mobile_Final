@@ -46,7 +46,12 @@
       "Read(//Users/DougOliveira/**)",
       "Bash(chmod:*)",
       "Bash(./build_release.sh)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(cd:*)",
+      "Bash(xcrun simctl list:*)",
+      "Bash(xcrun simctl boot:*)",
+      "Bash(printf \"r\\n\")"
     ],
     "deny": [],
     "ask": []

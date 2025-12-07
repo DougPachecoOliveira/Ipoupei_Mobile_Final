@@ -419,6 +419,17 @@ class _LoginIpoupeiPageState extends State<LoginIpoupeiPage>
 
                   // Links
                   _buildFooterLinks(),
+
+                  const SizedBox(height: 20),
+
+                  // BOTÃO TESTE LOADING (TEMPORÁRIO)
+                  TextButton(
+                    onPressed: () => Navigator.pushNamed(context, '/test-loading'),
+                    child: const Text(
+                      '🧪 Testar Loading',
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ),
                 ],
               ),
             ),

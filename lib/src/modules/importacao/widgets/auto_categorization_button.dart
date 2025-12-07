@@ -63,7 +63,10 @@ class _AutoCategorizationButtonState extends State<AutoCategorizationButton>
     final faltamCategorizar = widget.totalTransacoes - widget.categorizadasCount;
     final mostrarBotao = faltamCategorizar > 0;
 
+    debugPrint('🔥 [AUTO-CAT BUTTON] Build: total=${widget.totalTransacoes}, categorized=${widget.categorizadasCount}, faltam=$faltamCategorizar, mostrar=$mostrarBotao, processing=${widget.isProcessing}');
+
     if (!mostrarBotao) {
+      debugPrint('🔥 [AUTO-CAT BUTTON] Botão escondido - sem transações para categorizar');
       return const SizedBox.shrink();
     }
 
@@ -101,7 +104,10 @@ class _AutoCategorizationButtonState extends State<AutoCategorizationButton>
             child: Material(
               color: Colors.transparent,
               child: InkWell(
-                onTap: widget.isProcessing ? null : widget.onPressed,
+                onTap: widget.isProcessing ? null : () {
+                  debugPrint('🔥 [BUTTON DEBUG] Botão clicado! Chamando onPressed...');
+                  widget.onPressed();
+                },
                 borderRadius: BorderRadius.circular(12),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

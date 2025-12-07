@@ -478,9 +478,10 @@ class ContaAnalyticsService {
         MAX(CASE WHEN tipo = 'despesa' THEN valor ELSE 0 END) as maior_saida,
         SUM(CASE WHEN tipo = 'receita' AND data >= ? AND data <= ? THEN valor ELSE 0 END) as entrada_mes_atual,
         SUM(CASE WHEN tipo = 'despesa' AND data >= ? AND data <= ? THEN valor ELSE 0 END) as saida_mes_atual
-      FROM transacoes 
+      FROM transacoes
       WHERE usuario_id = ? AND conta_id = ? AND efetivado = 1
         AND data >= ? AND data <= ?
+        AND (transferencia IS NULL OR transferencia = 0)
     ''', [
       inicioMesAtual,
       fimMesAtual,
@@ -589,10 +590,11 @@ class ContaAnalyticsService {
       final result = await db.rawQuery('''
         SELECT 
           SUM(CASE WHEN tipo = 'receita' THEN valor WHEN tipo = 'despesa' THEN -valor END) as movimento_total
-        FROM transacoes 
+        FROM transacoes
         WHERE usuario_id = ? AND conta_id = ? $efetivoFilter
           AND data <= ?
           ${dataInicial.isNotEmpty ? 'AND data >= ?' : ''}
+          AND (transferencia IS NULL OR transferencia = 0)
       ''', dataInicial.isNotEmpty 
           ? [userId, contaId, fimMes.toIso8601String().split('T')[0], dataInicial]
           : [userId, contaId, fimMes.toIso8601String().split('T')[0]]);
@@ -638,9 +640,10 @@ class ContaAnalyticsService {
         SELECT 
           SUM(CASE WHEN tipo = 'receita' THEN valor ELSE 0 END) as entradas,
           SUM(CASE WHEN tipo = 'despesa' THEN valor ELSE 0 END) as saidas
-        FROM transacoes 
+        FROM transacoes
         WHERE usuario_id = ? AND conta_id = ? $efetivoFilter
           AND data >= ? AND data <= ?
+          AND (transferencia IS NULL OR transferencia = 0)
       ''', [
         userId,
         contaId,
@@ -682,9 +685,10 @@ class ContaAnalyticsService {
         SUM(t.valor) as total
       FROM transacoes t
       LEFT JOIN categorias c ON t.categoria_id = c.id
-      WHERE t.usuario_id = ? AND t.conta_id = ? AND t.tipo = 'despesa' 
+      WHERE t.usuario_id = ? AND t.conta_id = ? AND t.tipo = 'despesa'
         AND t.efetivado = 1 AND c.nome IS NOT NULL
         AND date(t.data) >= date(?) AND date(t.data) <= date(?)
+        AND (t.transferencia IS NULL OR t.transferencia = 0)
       GROUP BY c.id, c.nome, c.cor
       ORDER BY total DESC
       LIMIT 5
@@ -750,9 +754,10 @@ class ContaAnalyticsService {
       if (db == null) return false;
 
       final result = await db.rawQuery('''
-        SELECT COUNT(*) as count 
-        FROM transacoes 
+        SELECT COUNT(*) as count
+        FROM transacoes
         WHERE usuario_id = ? AND conta_id = ?
+          AND (transferencia IS NULL OR transferencia = 0)
       ''', [userId, contaId]);
 
       final count = result.first['count'] as int;

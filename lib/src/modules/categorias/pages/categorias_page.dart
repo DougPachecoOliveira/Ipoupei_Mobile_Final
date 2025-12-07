@@ -26,6 +26,7 @@ import 'gestao_categoria_page.dart';
 import '../../shared/theme/app_colors.dart';
 import '../../transacoes/pages/transacao_form_page.dart';
 import '../../transacoes/pages/transferencia_form_page.dart';
+import '../../../shared/validators/business_validators.dart'; // ✅ Para validações anti-regressão
 
 
 // ===============================================
@@ -346,32 +347,41 @@ class _CategoriasPageState extends State<CategoriasPage> with TickerProviderStat
   }
 
   /// Filtrar categorias por pesquisa
+  /// 🚨 REGRA ANTI-REGRESSÃO: NUNCA filtrar categorias por valor zero!
+  /// Categorias sem movimento são informação valiosa para o usuário.
   List<CategoriaModel> _filtrarCategorias(List<CategoriaModel> categorias) {
-    // Primeiro filtro: só categorias que têm valores no período atual
-    List<CategoriaModel> categoriasComValor = categorias.where((categoria) {
-      final temValor = _valoresPorCategoria.containsKey(categoria.id) &&
-                      (_valoresPorCategoria[categoria.id] ?? 0.0) > 0.0;
+    // ✅ CORREÇÃO: Mostrar TODAS as categorias ativas (incluindo zeradas)
+    // NUNCA FAÇA: .where((c) => valor > 0.0) - isso esconde informação importante!
 
-      // 🐛 DEBUG: Log de filtragem
-      if (!temValor) {
-        debugPrint('🔍 FILTRO: Removendo categoria "${categoria.nome}" por não ter valor no período');
-      }
-
-      return temValor;
+    List<CategoriaModel> categoriasAtivas = categorias.where((categoria) {
+      // Filtro 1: Apenas categorias ativas
+      return categoria.ativo;
     }).toList();
 
-    // Segundo filtro: busca por texto (se houver)
+    // Filtro 2: Busca por texto (se houver)
+    List<CategoriaModel> resultado;
     if (_searchQuery.isEmpty) {
-      debugPrint('🔍 FILTRO: Exibindo ${categoriasComValor.length} categorias com valor');
-      return categoriasComValor;
+      resultado = categoriasAtivas;
+      debugPrint('🔍 FILTRO: Exibindo ${resultado.length} categorias ativas (incluindo zeradas)');
+    } else {
+      resultado = categoriasAtivas.where((categoria) {
+        return categoria.nome.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+               (categoria.descricao?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false);
+      }).toList();
+      debugPrint('🔍 FILTRO: Após busca "${_searchQuery}", restaram ${resultado.length} categorias');
     }
 
-    final resultado = categoriasComValor.where((categoria) {
-      return categoria.nome.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-             (categoria.descricao?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false);
-    }).toList();
+    // ✅ VALIDAÇÃO ANTI-REGRESSÃO: Verificar se não estamos filtrando categorias por valor zero
+    try {
+      BusinessValidators.validateCategoriasNaoFiltradasPorValor(
+        categorias,
+        resultado,
+        'CategoriasPage._filtrarCategorias'
+      );
+    } catch (e) {
+      debugPrint('⚠️ Erro na validação anti-regressão: $e');
+    }
 
-    debugPrint('🔍 FILTRO: Após busca "${_searchQuery}", restaram ${resultado.length} categorias');
     return resultado;
   }
 
@@ -906,18 +916,19 @@ class _CategoriasPageState extends State<CategoriasPage> with TickerProviderStat
     final subcategorias = _subcategorias
         .where((sub) => sub.categoriaId == categoria.id)
         .toList();
-    
-    // DEBUG: Log para verificar ícone
-    debugPrint('🔍 Categoria: ${categoria.nome}, Ícone DB: "${categoria.icone}"');
-    final bool isEmoji = CategoriaIcons.isEmoji(categoria.icone);
-    final Color corCategoria = _parseColor(categoria.cor);
-    
+
     // Valores reais das transações do mês atual
     final valorMes = _getValorRealCategoria(categoria);
     final porcentagem = _getPorcentagemRealCategoria(categoria, valorMes);
+    final isZero = valorMes == 0.0;
+
+    // DEBUG: Log para verificar ícone
+    debugPrint('🔍 Categoria: ${categoria.nome}, Ícone DB: "${categoria.icone}", Valor: R\$ $valorMes, Zero: $isZero');
+    final bool isEmoji = CategoriaIcons.isEmoji(categoria.icone);
+    final Color corCategoria = _parseColor(categoria.cor);
 
     return Container(
-      color: Colors.white,
+      color: isZero ? Colors.grey.withOpacity(0.05) : Colors.white, // ✅ Fundo diferente para zeradas
       child: Column(
         children: [
           ListTile(
@@ -927,48 +938,78 @@ class _CategoriasPageState extends State<CategoriasPage> with TickerProviderStat
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: corCategoria, // Sempre usar cor de fundo
+            color: isZero
+                ? corCategoria.withOpacity(0.4) // ✅ Cor mais sutil para zeradas
+                : corCategoria,
             borderRadius: BorderRadius.circular(6),
           ),
           child: Center(
-            child: isEmoji 
-                ? Text(
-                    categoria.icone,
-                    style: const TextStyle(fontSize: 20),
-                  )
-                : Icon(
-                    CategoriaIcons.getIconFromName(categoria.icone),
+            child: isZero
+                ? Icon(
+                    Icons.remove_circle_outline, // ✅ ÍCONE FIXO para categorias zeradas (tree shake safe)
                     color: Colors.white,
                     size: 20,
-                  ),
+                  )
+                : (isEmoji
+                    ? Text(
+                        categoria.icone,
+                        style: const TextStyle(fontSize: 20),
+                      )
+                    : Icon(
+                        CategoriaIcons.getIconFromName(categoria.icone),
+                        color: Colors.white,
+                        size: 20,
+                      )),
           ),
         ),
-        title: Text(
-          categoria.nome,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-            color: Colors.black87,
-          ),
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                categoria.nome,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: isZero ? Colors.black54 : Colors.black87, // ✅ Texto mais sutil para zeradas
+                ),
+                overflow: TextOverflow.ellipsis, // ✅ Lidar com texto longo
+                maxLines: 1, // ✅ Manter uma linha como antes
+              ),
+            ),
+            if (isZero) ...[
+              const SizedBox(width: 8),
+              Icon(
+                Icons.info_outline, // ✅ Indicador visual para categorias zeradas
+                size: 16,
+                color: Colors.grey[600],
+              ),
+            ],
+          ],
         ),
         subtitle: Text(
-          '${porcentagem.toStringAsFixed(1)}%',
+          isZero
+              ? 'Sem movimento no período' // ✅ Texto explicativo para zeradas
+              : '${porcentagem.toStringAsFixed(1)}%',
           style: TextStyle(
             fontSize: 13,
             color: Colors.grey[600],
+            fontStyle: isZero ? FontStyle.italic : FontStyle.normal, // ✅ Estilo diferente
           ),
         ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              formatCurrency(valorMes),
+              isZero ? "R\$ 0,00" : formatCurrency(valorMes), // ✅ Formatação específica para zero
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: categoria.tipo == 'receita' 
-                    ? const Color(0xFF14B8A6) // Teal para receitas
-                    : const Color(0xFFEF4444), // Vermelho para despesas
+                color: isZero
+                    ? Colors.grey[500] // ✅ Cor cinza para valores zerados
+                    : (categoria.tipo == 'receita'
+                        ? const Color(0xFF14B8A6) // Teal para receitas
+                        : const Color(0xFFEF4444)), // Vermelho para despesas
+                fontStyle: isZero ? FontStyle.italic : FontStyle.normal, // ✅ Estilo diferente
               ),
             ),
             const SizedBox(width: 8),

@@ -18,6 +18,8 @@ import '../../transacoes/services/transacao_service.dart';
 import 'conectcar_extractor.dart';
 // import 'enhanced_excel_extractor.dart'; // Temporariamente desabilitado devido a problema com tipo Cell
 import '../../../auth_integration.dart';
+import 'extractors/factory/extractor_factory.dart';
+import 'extractors/base/bank_extractor.dart';
 import '../../cartoes/services/cartao_data_service.dart';
 import '../../cartoes/services/fatura_service.dart';
 import '../../../sync/sync_manager.dart';
@@ -129,7 +131,60 @@ class ImportacaoService {
       log('📄 Arquivo lido: ${content.length} caracteres');
       log('📄 Primeiras 200 chars: ${content.substring(0, content.length > 200 ? 200 : content.length)}');
 
-      // Contexto de importação para o JS
+      // ✨ NOVA LÓGICA: Usar ExtractorFactory para detectar banco específico
+      log('🔍 Detectando banco específico...');
+      final extractor = ExtractorFactory.detectExtractor(content, fileName);
+      log('🏦 Usando extractor: ${extractor.bankName} (${extractor.bankId})');
+
+      // Se for GenericExtractor, usar lógica legada diretamente
+      // (evita recursão infinita)
+      if (extractor.bankId == 'generic') {
+        log('⚠️ Usando processamento legado (sem extractor específico)');
+        return await _parseCSVSimples(
+          content,
+          fileName,
+          tipoImportacao,
+          contaId,
+          cartaoId,
+          faturaVencimento,
+        );
+      }
+
+      // Usar extractor específico
+      try {
+        final transacoes = await extractor.extract(
+          file,
+          content,
+          tipoImportacao: tipoImportacao,
+          contaId: contaId,
+          cartaoId: cartaoId,
+          faturaVencimento: faturaVencimento,
+        );
+
+        log('✅ CSV processado via ${extractor.bankName}: ${transacoes.length} transações');
+        return transacoes;
+
+      } catch (e) {
+        if (e is ExtractorException) {
+          log('❌ Erro no extractor ${extractor.bankName}: $e');
+          // Se extractor específico falhar, tentar fallback
+          log('🔄 Tentando fallback para método legado...');
+          return await _parseCSVSimples(
+            content,
+            fileName,
+            tipoImportacao,
+            contaId,
+            cartaoId,
+            faturaVencimento,
+          );
+        }
+        rethrow;
+      }
+
+      // CÓDIGO LEGADO ABAIXO (será usado apenas como fallback)
+      // TODO: Remover após validação completa dos extractors
+
+      // Contexto de importação para o JS (LEGACY)
       final context = jsonEncode({
         'tipoImportacao': tipoImportacao,
         'contaId': contaId ?? '',
@@ -223,7 +278,19 @@ class ImportacaoService {
     }
   }
 
-  /// Parser CSV simples para formatos comuns
+  /// Parser CSV simples para formatos comuns (público para GenericExtractor)
+  Future<List<TransacaoImportada>> parseCSVSimples(
+    String content,
+    String fileName,
+    String tipoImportacao,
+    String? contaId,
+    String? cartaoId,
+    DateTime? faturaVencimento,
+  ) async {
+    return await _parseCSVSimples(content, fileName, tipoImportacao, contaId, cartaoId, faturaVencimento);
+  }
+
+  /// Parser CSV simples para formatos comuns (interno)
   Future<List<TransacaoImportada>> _parseCSVSimples(
     String content,
     String fileName,
@@ -657,85 +724,29 @@ class ImportacaoService {
     DateTime? faturaVencimento,
   }) async {
     try {
-      log('📊 INICIANDO PROCESSAMENTO EXCEL ROBUSTO: ${file.path}');
+      log('📊 INICIANDO PROCESSAMENTO EXCEL: ${file.path}');
       log('📋 Contexto: tipo=$tipoImportacao, conta=$contaId, cartao=$cartaoId');
 
-      final fileName = file.path.split('/').last.toLowerCase();
+      final fileName = file.path.split('/').last;
 
-      // Primeiro tentar o extrator específico do Conectcar se aplicável
-      if (fileName.contains('conectcar') || fileName.contains('extrato_conectcar')) {
-        log('🚗 Detectado arquivo Conectcar específico, tentando extrator especializado');
+      // ✨ NOVA LÓGICA: Usar ExtractorFactory para detectar banco específico
+      // O ExcelExtractor será detectado primeiro por ter prioridade alta (90)
+      log('🔍 Detectando extractor para arquivo Excel...');
+      final extractor = ExtractorFactory.detectExtractor('', fileName);
+      log('🏦 Usando extractor: ${extractor.bankName} (${extractor.bankId})');
 
-        try {
-          final conectcarExtractor = ConectcarExtractor();
-          final transacoes = await conectcarExtractor.processarArquivoConectcar(
-            file,
-            tipoImportacao: tipoImportacao,
-            contaId: contaId,
-            cartaoId: cartaoId,
-            faturaVencimento: faturaVencimento,
-          );
-
-          if (transacoes.isNotEmpty) {
-            log('✅ Excel Conectcar processado: ${transacoes.length} transações');
-            return transacoes;
-          }
-
-        } catch (e) {
-          log('❌ Erro no extrator Conectcar: $e');
-
-          // Se é um erro de formato, mostrar mensagem específica
-          if (e.toString().contains('Header do arquivo não indica formato Excel válido') ||
-              e.toString().contains('Damaged Excel file') ||
-              e.toString().contains('Failed to decode data using encoding')) {
-            throw Exception(
-              '🚗 ARQUIVO CONECTCAR COM PROBLEMA DE FORMATO\n\n'
-              '💡 SOLUÇÕES RÁPIDAS:\n\n'
-              '1️⃣ CONVERTA PARA CSV:\n'
-              '   • Abra o arquivo no Excel\n'
-              '   • Arquivo → Salvar Como → CSV\n'
-              '   • Importe o arquivo CSV\n\n'
-              '2️⃣ BAIXE NOVAMENTE:\n'
-              '   • Site do Conectcar → Extrato\n'
-              '   • Baixe formato .xlsx\n\n'
-              '3️⃣ VERIFIQUE O ARQUIVO:\n'
-              '   • Abra no Excel primeiro\n'
-              '   • Se não abrir, está corrompido\n\n'
-              'Erro técnico: ${e.toString().split('\n').first}'
-            );
-          }
-
-          // Continue para extrator robusto para outros erros
-        }
-      }
-
-      // TODO: Usar o novo extrator robusto como método principal (temporariamente desabilitado)
-      log('⚠️ Enhanced Excel Extractor temporariamente desabilitado - usando método legado');
-      /*
-      final enhancedExtractor = EnhancedExcelExtractor.instance;
-      final transacoes = await enhancedExtractor.processarArquivoExcel(
+      // Usar extractor detectado
+      final transacoes = await extractor.extract(
         file,
+        '', // ExcelExtractor lê o arquivo diretamente
         tipoImportacao: tipoImportacao,
         contaId: contaId,
         cartaoId: cartaoId,
         faturaVencimento: faturaVencimento,
       );
 
-      if (transacoes.isNotEmpty) {
-        log('✅ Enhanced Excel processado: ${transacoes.length} transações');
-        return transacoes;
-      }
-      */
-
-      // Fallback para método genérico antigo apenas se o robusto falhar
-      log('⚠️ Enhanced Extractor não encontrou dados, tentando método legado');
-      return await _processarExcelGenerico(
-        file,
-        tipoImportacao: tipoImportacao,
-        contaId: contaId,
-        cartaoId: cartaoId,
-        faturaVencimento: faturaVencimento,
-      );
+      log('✅ Excel processado via ${extractor.bankName}: ${transacoes.length} transações');
+      return transacoes;
 
     } catch (e) {
       log('❌ Erro no processamento Excel: $e');
@@ -755,13 +766,24 @@ class ImportacaoService {
       final filePath = file.path;
       log('🚀 Iniciando processamento PDF: ${file.path}');
 
-      await _initializeJSEngine();
+      // MODO DIRETO: Pular JS Engine e usar APENAS parser Dart que funciona
+      log('🔧 [PDF_DIRECT] Usando parser Dart direto (sem JS Engine)');
 
       // Extrair texto real do PDF
       log('📄 Extraindo texto do PDF: $filePath');
-      final pdfText = await ReadPdfText.getPDFtext(filePath);
-      if (pdfText.isEmpty) {
-        throw Exception('Não foi possível extrair texto do PDF');
+      String pdfText;
+      try {
+        pdfText = await ReadPdfText.getPDFtext(filePath);
+        if (pdfText.isEmpty) {
+          throw Exception('Não foi possível extrair texto do PDF');
+        }
+      } catch (e) {
+        log('💥 [PDF_DEBUG] ERRO CRÍTICO ao extrair texto: ${e.runtimeType} - ${e.toString()}');
+        if (e.toString().contains('Pointer') || e.toString().contains('length')) {
+          log('🔧 [PDF_DEBUG] Erro de Pointer detectado - tentando fallback');
+          throw Exception('Erro na biblioteca PDF (Pointer issue). Tente converter o PDF para outro formato.');
+        }
+        rethrow;
       }
 
       log('📄 Texto extraído do PDF (${pdfText.length} chars)');
@@ -769,115 +791,16 @@ class ImportacaoService {
 
       final fileName = file.path.split('/').last;
 
-      // Força reinicialização completa do JS engine para carregar mudanças
-      _jsEngine = null;
-      _jsEngineInitialized = false;
-      await _initializeJSEngine();
-
-      // Usar JavaScript PDF extractor avançado
-      final extractorResult = await _jsEngine!.evaluate('''
-        (function() {
-          try {
-            const fileName = "${fileName}";
-            const pdfText = `${pdfText.replaceAll('`', '\\`').replaceAll('\\', '\\\\')}`;
-
-            console.log('📄 PDFExtractor: Processando', fileName);
-            console.log('📄 Texto recebido:', pdfText.length, 'chars');
-
-            // Criar resultado similar ao extractFromBase64 mas com texto real
-            const result = {
-              rawText: pdfText,
-              lines: pdfText.split('\\n').filter(line => line.trim()),
-              analysis: {
-                formatType: 'pdf',
-                separator: null,
-                hasHeader: false,
-                columnCount: 0,
-                pagesProcessed: 1
-              },
-              metadata: {
-                fileName: fileName,
-                fileType: 'PDF',
-                contentLength: pdfText.length,
-                extractedAt: new Date().toISOString()
-              }
-            };
-
-            console.log('✅ PDF estruturado:', result.lines.length, 'linhas');
-
-            // Usar PDFExtractor.parseTransactions com contexto
-            const context = {
-              tipoImportacao: "${tipoImportacao}",
-              contaId: "${contaId ?? ''}",
-              cartaoId: "${cartaoId ?? ''}",
-              faturaVencimento: "${faturaVencimento?.toIso8601String() ?? ''}"
-            };
-
-            const pdfExtractor = new PDFExtractor();
-            const transacoes = pdfExtractor.parseTransactions(result, context);
-
-            console.log('🎯 PDFExtractor: processadas', transacoes.length, 'transações');
-            return transacoes;
-
-          } catch (error) {
-            console.error('❌ Erro no PDFExtractor:', error);
-            return [];
-          }
-        })()
-      ''');
-
-      final transacoesJS = extractorResult.rawResult;
-      log('🎯 JavaScript retornou: ${transacoesJS?.length ?? 0} transações');
-
-      if (transacoesJS == null || transacoesJS.isEmpty) {
-        log('⚠️ JavaScript não retornou transações, tentando parser Dart simples...');
-        return _parseTextToTransactions(
-          pdfText,
-          fileName,
-          tipoImportacao: tipoImportacao,
-          contaId: contaId,
-          cartaoId: cartaoId,
-          faturaVencimento: faturaVencimento,
-        );
-      }
-
-      // Converter resultado JavaScript para TransacaoImportada
-      final transacoes = <TransacaoImportada>[];
-      for (final item in transacoesJS) {
-        if (item is Map<String, dynamic>) {
-          try {
-            final transacao = TransacaoImportada(
-              id: item['id']?.toString() ?? 'pdf_${DateTime.now().millisecondsSinceEpoch}',
-              data: _safeDateParse(item['data']?.toString()),
-              descricao: item['descricao']?.toString() ?? 'Transação PDF',
-              valor: _parseDoubleFromJS(item['valor']),
-              tipo: item['tipo']?.toString() ?? 'despesa',
-              origem: 'PDF',
-              usuarioId: _authIntegration.authService.currentUser?.id ?? '',
-              contaId: contaId,
-              cartaoId: cartaoId,
-              faturaVencimento: faturaVencimento,
-              efetivado: false,
-              observacoes: item['observacoes']?.toString() ?? '',
-              linhaBruta: item['linhaBruta']?.toString() ?? '',
-              indiceOriginal: item['indiceOriginal'] ?? 0,
-              metadados: {
-                ...((item['metadados'] as Map<String, dynamic>?) ?? {}),
-                'extractedAt': DateTime.now().toIso8601String(),
-                'fileName': fileName,
-                'sourceType': 'JavaScript PDF Extractor',
-              },
-            );
-            transacoes.add(transacao);
-          } catch (e) {
-            log('⚠️ Erro convertendo transação JS: $e');
-          }
-        }
-      }
-
-      log('✅ PDF processado com JS: ${transacoes.length} transações');
-
-      return transacoes;
+      // Usar APENAS parser Dart (que funciona perfeitamente)
+      log('⚡ [PDF_DIRECT] Usando parser Dart exclusivo...');
+      return _parseTextToTransactions(
+        pdfText,
+        fileName,
+        tipoImportacao: tipoImportacao,
+        contaId: contaId,
+        cartaoId: cartaoId,
+        faturaVencimento: faturaVencimento,
+      );
 
     } catch (e) {
       log('❌ Erro no processamento PDF: $e');
@@ -940,18 +863,53 @@ class ImportacaoService {
     return transacoes;
   }
 
-  /// Extrai dados de transação de uma linha de PDF
+  /// Extrai dados de transação de uma linha de PDF - VERSÃO NUBANK ESPECÍFICA
   Map<String, dynamic>? _extractTransactionFromPDFLine(String line) {
-    // Padrões comuns em PDFs de extrato/fatura
+    // PADRÃO ESPECÍFICO NUBANK que sabemos que funciona:
+    // "09 MAR 2025 Total de saídas Transferência enviada pelo Pix - 30,00"
+
+    log('🔍 Testando linha: "$line"');
+
+    // Padrão Nubank: DD MMM YYYY DESCRIÇÃO - VALOR
+    final nubankPattern = RegExp(r'(\d{1,2})\s+(JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)\s+(\d{4})\s+(.+?)\s+-\s+(\d+[.,]\d{2})');
+    final nubankMatch = nubankPattern.firstMatch(line);
+
+    if (nubankMatch != null) {
+      try {
+        final dia = int.parse(nubankMatch.group(1)!);
+        final mesStr = nubankMatch.group(2)!;
+        final ano = int.parse(nubankMatch.group(3)!);
+        final descricao = nubankMatch.group(4)!.trim();
+        final valorStr = nubankMatch.group(5)!.replaceAll(',', '.');
+
+        // Mapear mês
+        final meses = {
+          'JAN': 1, 'FEV': 2, 'MAR': 3, 'ABR': 4, 'MAI': 5, 'JUN': 6,
+          'JUL': 7, 'AGO': 8, 'SET': 9, 'OUT': 10, 'NOV': 11, 'DEZ': 12
+        };
+
+        final mes = meses[mesStr] ?? 3; // Default março
+        final data = DateTime(ano, mes, dia);
+        final valor = double.parse(valorStr) * -1; // Nubank usa - para despesa
+
+        log('✅ Match Nubank: data=$dia/$mes/$ano, desc="$descricao", valor=$valor');
+
+        return {
+          'data': data,
+          'descricao': descricao,
+          'valor': valor,
+        };
+      } catch (e) {
+        log('⚠️ Erro parse Nubank: $e');
+      }
+    }
+
+    // Fallback: padrões genéricos
     final patterns = [
       // DD/MM/YYYY DESCRIÇÃO VALOR
       RegExp(r'(\d{2}/\d{2}/\d{4})\s+(.+?)\s+([-+]?\d+[.,]\d{2})\s*$'),
       // DD/MM DESCRIÇÃO VALOR (ano implícito)
       RegExp(r'(\d{2}/\d{2})\s+(.+?)\s+([-+]?\d+[.,]\d{2})\s*$'),
-      // DESCRIÇÃO DD/MM/YYYY VALOR
-      RegExp(r'(.+?)\s+(\d{2}/\d{2}/\d{4})\s+([-+]?\d+[.,]\d{2})\s*$'),
-      // DESCRIÇÃO DD/MM VALOR
-      RegExp(r'(.+?)\s+(\d{2}/\d{2})\s+([-+]?\d+[.,]\d{2})\s*$'),
     ];
 
     for (final pattern in patterns) {
@@ -960,17 +918,9 @@ class ImportacaoService {
         try {
           String dataStr, descricao, valorStr;
 
-          if (pattern.pattern.startsWith(r'(\d{2}')) {
-            // Data no início
-            dataStr = match.group(1)!;
-            descricao = match.group(2)!.trim();
-            valorStr = match.group(3)!;
-          } else {
-            // Data no meio/fim
-            descricao = match.group(1)!.trim();
-            dataStr = match.group(2)!;
-            valorStr = match.group(3)!;
-          }
+          dataStr = match.group(1)!;
+          descricao = match.group(2)!.trim();
+          valorStr = match.group(3)!;
 
           // Processar data
           DateTime data;
@@ -1521,8 +1471,18 @@ class ImportacaoService {
 
   /// Estatísticas das transações importadas
   Map<String, dynamic> calcularEstatisticas(List<TransacaoImportada> transacoes) {
-    final receitas = transacoes.where((t) => t.tipo == 'receita').toList();
-    final despesas = transacoes.where((t) => t.tipo == 'despesa').toList();
+    // Excluir transferências das estatísticas financeiras
+    final transacoesSemTransferencias = transacoes.where((t) {
+      final descricaoLower = t.descricao.toLowerCase();
+      final observacoesLower = t.observacoes.toLowerCase();
+      return !(descricaoLower.contains('pix') ||
+               descricaoLower.contains('transferencia') ||
+               descricaoLower.contains('transferência') ||
+               observacoesLower.contains('transfer'));
+    }).toList();
+
+    final receitas = transacoesSemTransferencias.where((t) => t.tipo == 'receita').toList();
+    final despesas = transacoesSemTransferencias.where((t) => t.tipo == 'despesa').toList();
 
     final totalReceitas = receitas.fold<double>(0, (sum, t) => sum + t.valor);
     final totalDespesas = despesas.fold<double>(0, (sum, t) => sum + t.valor);
@@ -1539,11 +1499,11 @@ class ImportacaoService {
       },
       'saldo': totalReceitas - totalDespesas,
       'periodos': {
-        'dataInicial': transacoes.isNotEmpty
-            ? transacoes.map((t) => t.data).reduce((a, b) => a.isBefore(b) ? a : b)
+        'dataInicial': transacoesSemTransferencias.isNotEmpty
+            ? transacoesSemTransferencias.map((t) => t.data).reduce((a, b) => a.isBefore(b) ? a : b)
             : null,
-        'dataFinal': transacoes.isNotEmpty
-            ? transacoes.map((t) => t.data).reduce((a, b) => a.isAfter(b) ? a : b)
+        'dataFinal': transacoesSemTransferencias.isNotEmpty
+            ? transacoesSemTransferencias.map((t) => t.data).reduce((a, b) => a.isAfter(b) ? a : b)
             : null,
       },
     };

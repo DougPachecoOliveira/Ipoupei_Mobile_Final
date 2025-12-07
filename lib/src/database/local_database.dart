@@ -1360,7 +1360,7 @@ class LocalDatabase {
       final transfRecebidasResult = await _database!.rawQuery('''
         SELECT COALESCE(SUM(valor), 0) as total
         FROM transacoes
-        WHERE conta_destino_id = ? AND usuario_id = ? AND tipo = 'transferencia' AND efetivado = 1
+        WHERE conta_id = ? AND usuario_id = ? AND tipo = 'receita' AND transferencia = 1 AND efetivado = 1
       ''', [contaId, _currentUserId]);
       final totalTransfRecebidas = (transfRecebidasResult.first['total'] as num?)?.toDouble() ?? 0.0;
       
@@ -1368,7 +1368,7 @@ class LocalDatabase {
       final transfEnviadasResult = await _database!.rawQuery('''
         SELECT COALESCE(SUM(valor), 0) as total
         FROM transacoes
-        WHERE conta_id = ? AND usuario_id = ? AND tipo = 'transferencia' AND efetivado = 1
+        WHERE conta_id = ? AND usuario_id = ? AND tipo = 'despesa' AND transferencia = 1 AND efetivado = 1
       ''', [contaId, _currentUserId]);
       final totalTransfEnviadas = (transfEnviadasResult.first['total'] as num?)?.toDouble() ?? 0.0;
       
@@ -1684,7 +1684,7 @@ class LocalDatabase {
     final transfRecebidasResult = await _database!.rawQuery('''
       SELECT COALESCE(SUM(valor), 0) as total
       FROM transacoes
-      WHERE conta_destino_id = ? AND usuario_id = ? AND tipo = 'transferencia' AND efetivado = 1
+      WHERE conta_id = ? AND usuario_id = ? AND tipo = 'receita' AND transferencia = 1 AND efetivado = 1
     ''', [contaId, _currentUserId]);
     final totalTransfRecebidas = (transfRecebidasResult.first['total'] as num?)?.toDouble() ?? 0.0;
     
@@ -1692,7 +1692,7 @@ class LocalDatabase {
     final transfEnviadasResult = await _database!.rawQuery('''
       SELECT COALESCE(SUM(valor), 0) as total
       FROM transacoes
-      WHERE conta_id = ? AND usuario_id = ? AND tipo = 'transferencia' AND efetivado = 1
+      WHERE conta_id = ? AND usuario_id = ? AND tipo = 'despesa' AND transferencia = 1 AND efetivado = 1
     ''', [contaId, _currentUserId]);
     final totalTransfEnviadas = (transfEnviadasResult.first['total'] as num?)?.toDouble() ?? 0.0;
     
@@ -2069,7 +2069,7 @@ class LocalDatabase {
     final dataInicio = DateTime(ano, mes, 1);
     final dataFim = DateTime(ano, mes + 1, 0);
 
-    String whereClause = 'usuario_id = ? AND data >= ? AND data <= ?';
+    String whereClause = 'usuario_id = ? AND data >= ? AND data <= ? AND (transferencia IS NULL OR transferencia = 0)';
     List<dynamic> whereArgs = [
       _currentUserId,
       dataInicio.toIso8601String().split('T')[0],
@@ -2081,7 +2081,7 @@ class LocalDatabase {
       whereArgs.add(tipo);
     }
 
-    // Busca transações realizadas e previstas
+    // Busca transações realizadas e previstas (EXCLUINDO transferências)
     final result = await _database!.rawQuery('''
       SELECT
         categoria_id,
@@ -2215,13 +2215,13 @@ class LocalDatabase {
 
       final transfRecebidas = await _database!.rawQuery('''
         SELECT COALESCE(SUM(valor), 0) as total FROM transacoes
-        WHERE conta_destino_id = ? AND tipo = 'transferencia' AND efetivado = 1 AND usuario_id = ?
+        WHERE conta_id = ? AND tipo = 'receita' AND transferencia = 1 AND efetivado = 1 AND usuario_id = ?
       ''', [contaId, _currentUserId]);
       final totalTransfRecebidas = (transfRecebidas.first['total'] as num?)?.toDouble() ?? 0.0;
 
       final transfEnviadas = await _database!.rawQuery('''
         SELECT COALESCE(SUM(valor), 0) as total FROM transacoes
-        WHERE conta_id = ? AND tipo = 'transferencia' AND efetivado = 1 AND usuario_id = ?
+        WHERE conta_id = ? AND tipo = 'despesa' AND transferencia = 1 AND efetivado = 1 AND usuario_id = ?
       ''', [contaId, _currentUserId]);
       final totalTransfEnviadas = (transfEnviadas.first['total'] as num?)?.toDouble() ?? 0.0;
 
@@ -2261,8 +2261,9 @@ class LocalDatabase {
           COALESCE((
             SELECT SUM(valor)
             FROM transacoes
-            WHERE conta_destino_id = ?
-              AND tipo = 'transferencia'
+            WHERE conta_id = ?
+              AND tipo = 'receita'
+              AND transferencia = 1
               AND efetivado = 1
               AND usuario_id = ?
           ), 0) -
@@ -2270,7 +2271,8 @@ class LocalDatabase {
             SELECT SUM(valor)
             FROM transacoes
             WHERE conta_id = ?
-              AND tipo = 'transferencia'
+              AND tipo = 'despesa'
+              AND transferencia = 1
               AND efetivado = 1
               AND usuario_id = ?
           ), 0)

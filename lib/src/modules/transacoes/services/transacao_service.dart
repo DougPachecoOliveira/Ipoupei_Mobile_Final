@@ -641,8 +641,17 @@ class TransacaoService {
         whereArgs.add(dataFim.toIso8601String().split('T')[0]);
       }
       if (tipo != null && tipo.isNotEmpty) {
-        whereConditions.add('tipo = ?');
-        whereArgs.add(tipo);
+        if (tipo == 'transferencia') {
+          // Para transferências, usar o campo transferencia = true
+          whereConditions.add('transferencia = ?');
+          whereArgs.add(1); // SQLite boolean = 1
+          print('🔍 DEBUG QUERY: Buscando transferências com WHERE transferencia = 1');
+        } else {
+          // Para outros tipos, usar campo tipo normalmente
+          whereConditions.add('tipo = ?');
+          whereArgs.add(tipo);
+          print('🔍 DEBUG QUERY: Buscando tipo "$tipo" com WHERE tipo = $tipo');
+        }
       }
       if (contaId != null && contaId.isNotEmpty) {
         whereConditions.add('conta_id = ?');
@@ -667,6 +676,17 @@ class TransacaoService {
         limit: limit,
         offset: offset,
       );
+
+      // Debug: verificar se existem transferências no banco quando buscamos transferências
+      if (tipo == 'transferencia') {
+        final debugQuery = await db.rawQuery('SELECT COUNT(*) as total FROM transacoes WHERE transferencia = 1');
+        final totalTransferencias = debugQuery.isNotEmpty ? debugQuery.first['total'] ?? 0 : 0;
+        log('🔍 DEBUG: Total de transferências no banco: $totalTransferencias');
+
+        // Também verificar algumas transferências de exemplo
+        final exemploQuery = await db.rawQuery('SELECT id, descricao, tipo, transferencia FROM transacoes WHERE transferencia = 1 LIMIT 3');
+        log('🔍 DEBUG: Exemplos de transferências: $exemploQuery');
+      }
 
       log('💾 ${result.length} transações encontradas no SQLite');
 
@@ -1115,6 +1135,7 @@ class TransacaoService {
       final result = await db.rawQuery('''
         SELECT COUNT(*) as count FROM transacoes
         WHERE usuario_id = ? AND tipo = 'receita' AND recorrente = 1
+          AND (transferencia IS NULL OR transferencia = 0)
       ''', [userId]);
 
       final count = result.first['count'] as int;
@@ -1141,6 +1162,7 @@ class TransacaoService {
       final result = await db.rawQuery('''
         SELECT COUNT(*) as count FROM transacoes
         WHERE usuario_id = ? AND tipo = 'despesa' AND recorrente = 1
+          AND (transferencia IS NULL OR transferencia = 0)
       ''', [userId]);
 
       final count = result.first['count'] as int;
@@ -1167,6 +1189,7 @@ class TransacaoService {
       final result = await db.rawQuery('''
         SELECT COUNT(*) as count FROM transacoes
         WHERE usuario_id = ? AND tipo = 'despesa' AND (recorrente = 0 OR recorrente IS NULL)
+          AND (transferencia IS NULL OR transferencia = 0)
       ''', [userId]);
 
       final count = result.first['count'] as int;

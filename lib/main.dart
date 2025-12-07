@@ -22,14 +22,25 @@ import 'src/modules/categorias/pages/categorias_sugeridas_page.dart';
 import 'src/modules/diagnostico/pages/diagnostico_flow_page.dart';
 import 'src/modules/configuracoes/pages/configuracoes_page.dart';
 import 'src/routes/main_navigation.dart';
+import 'src/test_loading_page.dart';
 import 'src/modules/contas/services/conta_service.dart';
 import 'src/sync/sync_manager.dart';
+import 'src/modules/categorias/data/categoria_icons.dart'; // ✅ Para pré-carregar ícones
 import 'fix_database_categorias.dart';
 
 void main() async {
   // Garante que os widgets estão inicializados
   WidgetsFlutterBinding.ensureInitialized();
-  
+
+  // ✅ PRÉ-CARREGAR TODOS OS ÍCONES (RESOLVE TREE SHAKING iOS)
+  try {
+    debugPrint('🎯 Pré-carregando ícones para evitar tree shaking...');
+    CategoriaIcons.preloadAllIcons();
+    debugPrint('✅ Ícones pré-carregados com sucesso!');
+  } catch (e) {
+    debugPrint('⚠️ Erro ao pré-carregar ícones: $e (continuando...)');
+  }
+
   try {
     // Inicializa toda a infraestrutura de auth e database
     debugPrint('🚀 Inicializando iPoupei Mobile...');
@@ -37,20 +48,21 @@ void main() async {
     debugPrint('✅ iPoupei Mobile inicializado com sucesso!');
 
     // 🔧 FIX TEMPORÁRIO: Corrige subcategorias com categoria_id errado
-    try {
-      debugPrint('🔧 Executando fix de subcategorias...');
-      await fixSubcategoriasDatabase();
-      debugPrint('✅ Fix de subcategorias concluído!');
-    } catch (e) {
-      debugPrint('⚠️ Erro ao executar fix: $e');
-    }
+    // DESABILITADO - problema com nomes hardcoded que não existem no banco
+    // try {
+    //   debugPrint('🔧 Executando fix de subcategorias...');
+    //   await fixSubcategoriasDatabase();
+    //   debugPrint('✅ Fix de subcategorias concluído!');
+    // } catch (e) {
+    //   debugPrint('⚠️ Erro ao executar fix: $e');
+    // }
 
   } catch (e) {
     debugPrint('❌ Erro na inicialização: $e');
     // Continua execução mesmo com erro de inicialização
     // O app vai funcionar em modo degradado
   }
-  
+
   runApp(const IPoupeiApp());
 }
 
@@ -280,6 +292,7 @@ class _IPoupeiAppState extends State<IPoupeiApp> {
           '/categorias-sugeridas': (context) => const CategoriasSugeridasPage(),
           '/diagnostico': (context) => const DiagnosticoFlowPage(),
           '/configuracoes': (context) => const ConfiguracoesPage(),
+          '/test-loading': (context) => TestLoadingPage(),
         },
         
         // Rota desconhecida

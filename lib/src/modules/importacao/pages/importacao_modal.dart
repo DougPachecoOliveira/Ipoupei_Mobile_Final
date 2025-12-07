@@ -2502,12 +2502,20 @@ class _ImportacaoModalState extends State<ImportacaoModal>
         ),
 
         // Botão de auto-categorização (brilhante e pulsante)
-        AutoCategorizationButton(
-          onPressed: _executarAutoCategorizacao,
-          isProcessing: _autoCategorizando,
-          totalTransacoes: _transacoesPreview.length,
-          categorizadasCount: _contarTransacoesCategorizadas(),
-        ),
+        Builder(builder: (context) {
+          final totalTransacoes = _transacoesPreview.length;
+          final categorizadasCount = _contarTransacoesCategorizadas();
+          final faltamCategorizar = totalTransacoes - categorizadasCount;
+
+          debugPrint('🔥 [BUTTON DEBUG] Building: total=$totalTransacoes, categorizadas=$categorizadasCount, faltam=$faltamCategorizar');
+
+          return AutoCategorizationButton(
+            onPressed: _executarAutoCategorizacao,
+            isProcessing: _autoCategorizando,
+            totalTransacoes: totalTransacoes,
+            categorizadasCount: categorizadasCount,
+          );
+        }),
 
         // Lista de transações editáveis
         Expanded(
@@ -3029,41 +3037,68 @@ class _ImportacaoModalState extends State<ImportacaoModal>
   }
 
   /// Atualiza seleção de "todas"
-  /// Verifica se a transação tem categoria E subcategoria preenchidas
+  /// Verifica se a transação tem categoria preenchida (subcategoria é opcional)
   bool _temCategoriaCompleta(int index) {
-    if (index >= _transacoesPreview.length) return false;
+    if (index >= _transacoesPreview.length) {
+      debugPrint('🔥 [CATEGORIA DEBUG] [$index] Índice fora dos limites');
+      return false;
+    }
 
     final transacao = _transacoesPreview[index];
-    final categoriaPreenchida = transacao.categoriaId != null && transacao.categoriaId!.isNotEmpty;
-    final subcategoriaPreenchida = transacao.subcategoriaId != null && transacao.subcategoriaId!.isNotEmpty;
+    final categoriaId = transacao.categoriaId;
+    final categoriaPreenchida = categoriaId != null && categoriaId.isNotEmpty;
 
-    return categoriaPreenchida && subcategoriaPreenchida;
+    debugPrint('🔥 [CATEGORIA DEBUG] [$index] "${transacao.descricao}" -> categoriaId: "$categoriaId" -> tem categoria: $categoriaPreenchida');
+
+    // 🎯 FLEXIBILIZADA: Considera categorizada se tem pelo menos categoria
+    // Subcategoria é desejável mas não obrigatória
+    return categoriaPreenchida;
   }
 
   /// Conta quantas transações já estão categorizadas
   int _contarTransacoesCategorizadas() {
+    debugPrint('🔥 [COUNT DEBUG] Contando transações categorizadas...');
+    debugPrint('🔥 [COUNT DEBUG] Total transações: ${_transacoesPreview.length}');
+
     int count = 0;
     for (int i = 0; i < _transacoesPreview.length; i++) {
-      if (_temCategoriaCompleta(i)) {
+      final transacao = _transacoesPreview[i];
+      final temCategoria = _temCategoriaCompleta(i);
+      debugPrint('🔥 [COUNT DEBUG] [$i] "${transacao.descricao}" -> categoriaId: ${transacao.categoriaId} -> tem categoria: $temCategoria');
+      if (temCategoria) {
         count++;
       }
     }
+    debugPrint('🔥 [COUNT DEBUG] Resultado: $count/${_transacoesPreview.length} categorizadas');
     return count;
   }
 
   /// Executa auto-categorização inteligente
   Future<void> _executarAutoCategorizacao() async {
+    debugPrint('🚀 [AUTO-CAT] INICIANDO auto-categorização...');
+    debugPrint('🚀 [AUTO-CAT] Total transações para categorizar: ${_transacoesPreview.length}');
+
     setState(() => _autoCategorizando = true);
 
     try {
+      debugPrint('📂 [AUTO-CAT] Carregando categorias...');
       // Carregar categorias e subcategorias
       final categorias = await _categoriaService.fetchCategorias();
       final subcategorias = await _categoriaService.fetchSubcategorias();
 
-      debugPrint('📚 [DEBUG] Total categorias carregadas: ${categorias.length}');
-      for (final cat in categorias) {
-        debugPrint('   - ${cat.nome} (ID: ${cat.id})');
+      debugPrint('📚 [AUTO-CAT] Total categorias carregadas: ${categorias.length}');
+      debugPrint('📚 [AUTO-CAT] Total subcategorias carregadas: ${subcategorias.length}');
+
+      if (categorias.isEmpty) {
+        debugPrint('⚠️ [AUTO-CAT] PROBLEMA: Nenhuma categoria carregada!');
+        throw Exception('Nenhuma categoria encontrada. Verifique a conexão com o banco de dados.');
       }
+
+      for (final cat in categorias) {
+        debugPrint('   - ${cat.nome} (ID: ${cat.id}, Tipo: ${cat.tipo})');
+      }
+
+      debugPrint('🤖 [AUTO-CAT] Executando auto-categorização...');
 
       // Executar auto-categorização
       final transacoesCategorizadas = await AutoCategorizationService.instance.categorizarAutomaticamente(

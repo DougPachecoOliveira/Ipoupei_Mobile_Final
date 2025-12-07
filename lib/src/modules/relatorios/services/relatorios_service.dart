@@ -29,8 +29,8 @@ class RelatoriosService {
       final dataInicio = periodo['inicio']!.toIso8601String().split('T')[0];
       final dataFim = periodo['fim']!.toIso8601String().split('T')[0];
 
-      // Construir query base
-      var whereClause = 'usuario_id = ? AND data >= ? AND data <= ?';
+      // Construir query base (excluindo transferências)
+      var whereClause = 'usuario_id = ? AND data >= ? AND data <= ? AND (transferencia IS NULL OR transferencia = 0)';
       var whereArgs = <dynamic>[userId, dataInicio, dataFim];
 
       // Aplicar filtros
@@ -76,10 +76,10 @@ class RelatoriosService {
       final dataInicio = periodo['inicio']!.toIso8601String().split('T')[0];
       final dataFim = periodo['fim']!.toIso8601String().split('T')[0];
 
-      // Buscar transações do período
+      // Buscar transações do período (excluindo transferências)
       final transacoesResult = await _localDb.database?.query(
         'transacoes',
-        where: 'usuario_id = ? AND data >= ? AND data <= ?',
+        where: 'usuario_id = ? AND data >= ? AND data <= ? AND (transferencia IS NULL OR transferencia = 0)',
         whereArgs: [userId, dataInicio, dataFim],
         orderBy: 'data ASC',
       ) ?? [];
@@ -117,7 +117,7 @@ class RelatoriosService {
 
       // Buscar dados base para projeções
       final futures = await Future.wait([
-        _localDb.database?.query('transacoes', where: 'usuario_id = ? AND recorrente = 1', whereArgs: [userId]) ?? Future.value(<Map<String, dynamic>>[]),
+        _localDb.database?.query('transacoes', where: 'usuario_id = ? AND recorrente = 1 AND (transferencia IS NULL OR transferencia = 0)', whereArgs: [userId]) ?? Future.value(<Map<String, dynamic>>[]),
         _localDb.database?.query('contas', where: 'usuario_id = ? AND ativo = 1', whereArgs: [userId]) ?? Future.value(<Map<String, dynamic>>[]),
         _localDb.database?.query('cartoes', where: 'usuario_id = ? AND ativo = 1', whereArgs: [userId]) ?? Future.value(<Map<String, dynamic>>[]),
       ]);
