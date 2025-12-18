@@ -15,7 +15,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import '../models/conta_model.dart';
 import '../services/conta_service.dart';
-import '../../auth/components/loading_overlay.dart';
+import '../../../shared/components/loading/ipoupei_loading_system.dart';
 import '../../shared/theme/app_colors.dart';
 import '../../../shared/components/ui/smart_currency_input.dart';
 import 'correcao_saldo_page.dart';
@@ -1377,8 +1377,9 @@ class _ContaFormPageState extends State<ContaFormPage> {
   Widget build(BuildContext context) {
     final titulo = widget.modo == 'criar' ? 'Nova Conta' : 'Editar Conta';
 
-    return LoadingOverlay(
-      isLoading: _loading,
+    return IPoupeiProcessingOverlay(
+      isProcessing: _loading,
+      context: IPoupeiLoadingContext.saving,
       message: widget.modo == 'criar' ? 'Criando conta...' : 'Salvando alterações...',
       child: Scaffold(
         backgroundColor: AppColors.branco,

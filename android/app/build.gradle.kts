@@ -24,7 +24,7 @@ android {
         applicationId = "com.example.ipoupei_mobile"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = 21  // Mínimo para file_picker
+        minSdk = flutter.minSdkVersion  // Mínimo para file_picker
         targetSdk = 36  // Atualizado para image_cropper
         versionCode = flutter.versionCode
         versionName = flutter.versionName

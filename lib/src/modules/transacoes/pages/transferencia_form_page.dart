@@ -11,7 +11,7 @@ import 'package:intl/intl.dart';
 import '../services/transacao_service.dart';
 import '../../contas/models/conta_model.dart';
 import '../../contas/services/conta_service.dart';
-import '../../auth/components/loading_overlay.dart';
+import '../../../shared/components/loading/ipoupei_loading_system.dart';
 import '../components/smart_field.dart';
 import '../../../shared/components/ui/app_button.dart';
 import '../../shared/theme/app_colors.dart';
@@ -985,11 +985,10 @@ class _TransferenciaFormPageState extends State<TransferenciaFormPage> {
 
   @override
   Widget build(BuildContext context) {
-    return LoadingOverlay(
-      isLoading: _loading,
+    return IPoupeiProcessingOverlay(
+      isProcessing: _loading,
       message: 'Criando transferência...',
-      color: AppColors.azulHeader,
-      icon: Icons.swap_horiz,
+      context: IPoupeiLoadingContext.financial,
       child: Scaffold(
         backgroundColor: Colors.grey[50],
         appBar: AppBar(

@@ -79,22 +79,40 @@ class _MainNavigationState extends State<MainNavigation> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          IndexedStack(
-            index: _currentIndex,
-            children: _pages,
-          ),
-          // Indicador de sync no topo direito
-          const Positioned(
-            top: 40,
-            right: 10,
-            child: SyncStatusIndicator(),
-          ),
-        ],
-      ),
-      bottomNavigationBar: BottomNavigationBar(
+    return PopScope(
+      canPop: _currentIndex == 2, // Só permite sair do app se estiver na aba Relatórios
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop && _currentIndex != 2) {
+          // Se tentou sair mas não está em Relatórios, navega para Relatórios
+          setState(() {
+            _currentIndex = 2;
+          });
+
+          // Feedback visual opcional
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Pressione voltar novamente para sair'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      },
+      child: Scaffold(
+        body: Stack(
+          children: [
+            IndexedStack(
+              index: _currentIndex,
+              children: _pages,
+            ),
+            // Indicador de sync no topo direito
+            const Positioned(
+              top: 40,
+              right: 10,
+              child: SyncStatusIndicator(),
+            ),
+          ],
+        ),
+        bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         currentIndex: _currentIndex,
         onTap: (index) {
@@ -126,6 +144,7 @@ class _MainNavigationState extends State<MainNavigation> {
             label: 'Transações',
           ),
         ],
+        ),
       ),
     );
   }

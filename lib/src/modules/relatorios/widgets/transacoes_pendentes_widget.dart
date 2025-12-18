@@ -6,6 +6,7 @@
 // Design: Agrupamento por data + visual elegante + navegação para transações
 
 import 'package:flutter/material.dart';
+import '../../../shared/components/loading/ipoupei_loading_system.dart';
 import '../../shared/theme/app_colors.dart';
 import '../../shared/utils/currency_formatter.dart';
 import '../models/transacao_pendente_model.dart';
@@ -216,36 +217,36 @@ class _TransacoesPendentesWidgetState extends State<TransacoesPendentesWidget> {
                 });
               },
               child: Container(
-                width: 24,
-                height: 24,
+                width: 32,
+                height: 32,
                 decoration: BoxDecoration(
                   color: AppColors.cinzaClaro,
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(6),
                 ),
                 child: Icon(
                   _minimizado ? Icons.expand_more : Icons.expand_less,
                   color: AppColors.cinzaMedio,
-                  size: 14,
+                  size: 18,
                 ),
               ),
             ),
 
-            const SizedBox(width: 6),
+            const SizedBox(width: 8),
 
             // Botão refresh
             GestureDetector(
               onTap: _carregarTransacoes,
               child: Container(
-                width: 24,
-                height: 24,
+                width: 32,
+                height: 32,
                 decoration: BoxDecoration(
                   color: AppColors.cinzaClaro,
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(6),
                 ),
                 child: const Icon(
                   Icons.refresh,
                   color: AppColors.cinzaMedio,
-                  size: 14,
+                  size: 18,
                 ),
               ),
             ),
@@ -260,10 +261,8 @@ class _TransacoesPendentesWidgetState extends State<TransacoesPendentesWidget> {
     return const Padding(
       padding: EdgeInsets.all(20),
       child: Center(
-        child: SizedBox(
-          width: 20,
-          height: 20,
-          child: CircularProgressIndicator(strokeWidth: 2),
+        child: IPoupeiMicroLoading(
+          context: IPoupeiLoadingContext.defaultState,
         ),
       ),
     );
@@ -368,20 +367,22 @@ class _TransacoesPendentesWidgetState extends State<TransacoesPendentesWidget> {
     return InkWell(
       onTap: () => _mostrarOpcoesRapidas(transacao),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         child: Row(
           children: [
             // Ícone da categoria
             Container(
-              width: 32,
-              height: 32,
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
                 color: transacao.corCategoria,
-                borderRadius: BorderRadius.circular(6),
+                borderRadius: BorderRadius.circular(8),
               ),
-              child: transacao.renderIconeCategoria(
-                size: 14,
-                color: Colors.white,
+              child: Center(
+                child: transacao.renderIconeCategoria(
+                  size: 20,
+                  color: Colors.white,
+                ),
               ),
             ),
             const SizedBox(width: 12),
@@ -407,7 +408,7 @@ class _TransacoesPendentesWidgetState extends State<TransacoesPendentesWidget> {
                         child: Text(
                           transacao.descricao,
                           style: const TextStyle(
-                            fontSize: 14,
+                            fontSize: 15,
                             fontWeight: FontWeight.w600,
                             color: AppColors.cinzaEscuro,
                           ),
@@ -418,7 +419,7 @@ class _TransacoesPendentesWidgetState extends State<TransacoesPendentesWidget> {
                     ],
                   ),
 
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 4),
 
                   // Data e atraso (se for item único ou crítico)
                   if (mostrarData || transacao.isCritica)
@@ -427,7 +428,7 @@ class _TransacoesPendentesWidgetState extends State<TransacoesPendentesWidget> {
                           ? '${transacao.dataCompacta} - ${transacao.textoAtraso}'
                           : transacao.textoAtraso,
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: 12,
                         color: transacao.isCritica
                             ? AppColors.vermelhoErro
                             : AppColors.cinzaTexto,
@@ -445,7 +446,7 @@ class _TransacoesPendentesWidgetState extends State<TransacoesPendentesWidget> {
                 Text(
                   CurrencyFormatter.format(transacao.valor),
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 15,
                     fontWeight: FontWeight.w600,
                     color: transacao.corTipo,
                   ),
@@ -481,9 +482,9 @@ class _TransacoesPendentesWidgetState extends State<TransacoesPendentesWidget> {
   /// ➖ Divider compacto
   Widget _buildDivider() {
     return const Padding(
-      padding: EdgeInsets.only(left: 62), // Alinhado com texto
+      padding: EdgeInsets.only(left: 72), // Alinhado com texto (40px ícone + 12px spacing + 20px horizontal)
       child: Divider(
-        height: 1,
+        height: 8,
         thickness: 1,
         color: AppColors.cinzaBorda,
       ),

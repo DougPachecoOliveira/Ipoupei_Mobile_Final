@@ -13,6 +13,7 @@ import 'package:app_links/app_links.dart';
 import 'src/auth_integration.dart';
 import 'src/supabase_auth_service.dart';
 import 'src/modules/auth/pages/login_ipoupei_page.dart';
+import 'src/shared/components/ui/enhanced_splash_screen.dart';
 import 'src/modules/auth/pages/signup_page.dart';
 import 'src/modules/auth/pages/reset_password_page.dart';
 // import 'src/modules/dashboard/pages/home_page.dart'; // DEPRECATED: Use /navigation
@@ -26,7 +27,6 @@ import 'src/test_loading_page.dart';
 import 'src/modules/contas/services/conta_service.dart';
 import 'src/sync/sync_manager.dart';
 import 'src/modules/categorias/data/categoria_icons.dart'; // ✅ Para pré-carregar ícones
-import 'fix_database_categorias.dart';
 
 void main() async {
   // Garante que os widgets estão inicializados
@@ -339,20 +339,10 @@ class _AuthWrapperState extends State<AuthWrapper> {
     
     // Mostra loading enquanto verifica autenticação
     if (authService.isLoading) {
-      return const Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text(
-                'Carregando iPoupei...',
-                style: TextStyle(fontSize: 16),
-              ),
-            ],
-          ),
-        ),
+      return const EnhancedSplashScreen(
+        message: 'Carregando iPoupei...',
+        subtitle: 'Verificando autenticação e inicializando o sistema',
+        showProgress: true,
       );
     }
     
@@ -374,34 +364,14 @@ class AuthenticatedWrapper extends StatefulWidget {
   State<AuthenticatedWrapper> createState() => _AuthenticatedWrapperState();
 }
 
-class _AuthenticatedWrapperState extends State<AuthenticatedWrapper> with TickerProviderStateMixin {
+class _AuthenticatedWrapperState extends State<AuthenticatedWrapper> {
   bool _syncCompleted = false;
   bool _syncError = false;
   String _syncMessage = 'Sincronizando dados...';
-  late AnimationController _pulseController;
-  late Animation<double> _pulseAnimation;
 
   @override
   void initState() {
     super.initState();
-
-    // Inicializar animação de pulse
-    _pulseController = AnimationController(
-      duration: const Duration(milliseconds: 1500),
-      vsync: this,
-    );
-
-    _pulseAnimation = Tween<double>(
-      begin: 1.0,
-      end: 1.05,
-    ).animate(CurvedAnimation(
-      parent: _pulseController,
-      curve: Curves.easeInOut,
-    ));
-
-    // Iniciar animação repetida
-    _pulseController.repeat(reverse: true);
-
     _forcarSyncCompleto();
   }
 
@@ -464,11 +434,6 @@ class _AuthenticatedWrapperState extends State<AuthenticatedWrapper> with Ticker
     }
   }
 
-  @override
-  void dispose() {
-    _pulseController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -477,65 +442,42 @@ class _AuthenticatedWrapperState extends State<AuthenticatedWrapper> with Ticker
       return const MainNavigation();
     }
     
-    // Senão, mostra loading de sync
+    // Senão, mostra loading de sync elegante
+    if (!_syncError) {
+      return EnhancedSplashScreen(
+        message: _syncMessage,
+        subtitle: 'Sincronizando todos os dados: contas, categorias, cartões e transações...\nGarantindo dados atualizados do Servidor',
+        showProgress: true,
+      );
+    }
+
+    // Tela de erro de sync
     return Scaffold(
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            if (!_syncError) ...[
-              AnimatedBuilder(
-                animation: _pulseAnimation,
-                builder: (context, child) {
-                  return Transform.scale(
-                    scale: _pulseAnimation.value,
-                    child: Image.asset(
-                      'assets/images/Logo.png',
-                      width: 240,
-                      height: 240,
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(height: 24),
-              const CircularProgressIndicator(),
-              const SizedBox(height: 16),
-              Text(
-                _syncMessage,
-                style: const TextStyle(fontSize: 16),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Sincronizando todos os dados: contas, categorias, cartões e transações...\nGarantindo dados atualizados do Servidor',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ] else ...[
-              const Icon(
-                Icons.error_outline,
-                size: 64,
-                color: Colors.red,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                _syncMessage,
-                style: const TextStyle(fontSize: 16),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    _syncError = false;
-                    _syncCompleted = false;
-                  });
-                  _forcarSyncCompleto();
-                },
-                child: const Text('Tentar Novamente'),
-              ),
-            ],
+            const Icon(
+              Icons.error_outline,
+              size: 64,
+              color: Colors.red,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              _syncMessage,
+              style: const TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  _syncError = false;
+                  _syncCompleted = false;
+                });
+                _forcarSyncCompleto();
+              },
+              child: const Text('Tentar Novamente'),
+            ),
           ],
         ),
       ),

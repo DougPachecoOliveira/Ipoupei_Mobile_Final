@@ -25,6 +25,7 @@ import '../../relatorios/pages/relatorios_page.dart';
 import '../../../routes/main_navigation.dart';
 import '../../transacoes/pages/transacao_form_page.dart';
 import '../../transacoes/pages/transferencia_form_page.dart';
+import '../../cartoes/pages/despesa_cartao_page.dart';
 import '../../relatorios/services/transacoes_pendentes_service.dart';
 import '../../relatorios/models/transacao_pendente_model.dart';
 import '../../../database/local_database.dart';
@@ -279,14 +280,10 @@ class _ContasPageState extends State<ContasPage> {
   void _navegarParaNovaDespesaCartao() async {
     setState(() => _fabExpanded = false);
 
-    // TODO: Implementar página específica para despesas de cartão
-    // Por ora, usar a mesma página de transação com indicação de cartão
+    // ✅ Usar página específica para despesas de cartão
     final resultado = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
-        builder: (context) => const TransacaoFormPage(
-          modo: 'criar',
-          tipo: 'despesa', // TODO: Adicionar tipo 'despesa_cartao'
-        ),
+        builder: (context) => const DespesaCartaoPage(),
       ),
     );
 

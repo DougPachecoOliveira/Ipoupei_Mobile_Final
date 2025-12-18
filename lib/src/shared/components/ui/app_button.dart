@@ -12,6 +12,7 @@
 
 import 'package:flutter/material.dart';
 import '../../../modules/shared/theme/app_colors.dart';
+import '../loading/ipoupei_loading_system.dart';
 
 enum AppButtonVariant { primary, secondary, outline, text, danger }
 enum AppButtonSize { small, medium, large }
@@ -234,16 +235,27 @@ class AppButton extends StatelessWidget {
 
   Widget _buildChild(BuildContext context) {
     if (isLoading) {
+      // Determinar contexto baseado na variante do botão
+      IPoupeiLoadingContext loadingContext;
+      switch (variant) {
+        case AppButtonVariant.danger:
+          loadingContext = IPoupeiLoadingContext.error;
+          break;
+        case AppButtonVariant.primary:
+          loadingContext = customColor == AppColors.verdeSucesso
+              ? IPoupeiLoadingContext.saving
+              : IPoupeiLoadingContext.defaultState;
+          break;
+        default:
+          loadingContext = IPoupeiLoadingContext.defaultState;
+      }
+
       return SizedBox(
-        height: 16,
-        width: 16,
-        child: CircularProgressIndicator(
-          strokeWidth: 2,
-          valueColor: AlwaysStoppedAnimation<Color>(
-            variant == AppButtonVariant.outline || variant == AppButtonVariant.text
-                ? (customColor ?? Colors.blue)
-                : Colors.white,
-          ),
+        height: 18,
+        width: 18,
+        child: IPoupeiButtonLoading(
+          context: loadingContext,
+          size: 18,
         ),
       );
     }

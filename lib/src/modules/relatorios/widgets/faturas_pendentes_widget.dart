@@ -6,6 +6,7 @@
 // Design: 50% menor que widgets normais, informação essencial apenas
 
 import 'package:flutter/material.dart';
+import '../../../shared/components/loading/ipoupei_loading_system.dart';
 import '../../shared/theme/app_colors.dart';
 import '../../shared/utils/currency_formatter.dart';
 import '../models/fatura_pendente_model.dart';
@@ -173,22 +174,22 @@ class _FaturasPendentesWidgetState extends State<FaturasPendentesWidget> {
               ),
             ),
 
-          // Botão refresh (pequeno)
+          // Botão refresh
           const SizedBox(width: 8),
           if (!_loading)
             GestureDetector(
               onTap: _carregarFaturas,
               child: Container(
-                width: 24,
-                height: 24,
+                width: 32,
+                height: 32,
                 decoration: BoxDecoration(
                   color: AppColors.cinzaClaro,
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(6),
                 ),
                 child: const Icon(
                   Icons.refresh,
                   color: AppColors.cinzaMedio,
-                  size: 14,
+                  size: 18,
                 ),
               ),
             ),
@@ -202,10 +203,8 @@ class _FaturasPendentesWidgetState extends State<FaturasPendentesWidget> {
     return const Padding(
       padding: EdgeInsets.all(20),
       child: Center(
-        child: SizedBox(
-          width: 20,
-          height: 20,
-          child: CircularProgressIndicator(strokeWidth: 2),
+        child: IPoupeiMicroLoading(
+          context: IPoupeiLoadingContext.financial,
         ),
       ),
     );

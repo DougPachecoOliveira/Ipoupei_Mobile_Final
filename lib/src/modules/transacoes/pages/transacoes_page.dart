@@ -24,6 +24,7 @@ import '../../categorias/models/categoria_model.dart';
 import '../../categorias/services/categoria_service.dart';
 import 'transacao_form_page.dart';
 import 'transferencia_form_page.dart';
+import '../../cartoes/pages/despesa_cartao_page.dart';
 import '../components/filtros_transacoes_modal.dart';
 import '../components/timeline_transacoes.dart';
 import '../../../services/grupos_metadados_service.dart';
@@ -32,6 +33,7 @@ import '../../../routes/main_navigation.dart';
 import '../components/transaction_detail_card.dart';
 import '../../importacao/pages/importacao_modal.dart';
 import '../../../shared/components/modals/transacao_opcoes_modal.dart';
+import '../../../shared/components/navigation/app_bottom_navigation.dart';
 
 /// Enum para modos de visualização - Padrão Device
 enum TransacoesPageMode {
@@ -262,11 +264,13 @@ enum FiltroInteligente {
 class TransacoesPage extends StatefulWidget {
   final TransacoesPageMode modoInicial;
   final Map<String, dynamic>? filtrosIniciais;
+  final bool showNavigationBar;
 
   const TransacoesPage({
     super.key,
     this.modoInicial = TransacoesPageMode.todas,
     this.filtrosIniciais,
+    this.showNavigationBar = false,
   });
 
   @override
@@ -286,6 +290,7 @@ class _TransacoesPageState extends State<TransacoesPage>
   List<ContaModel> _contas = [];
   List<CartaoModel> _cartoes = [];
   List<CategoriaModel> _categorias = [];
+  List<SubcategoriaModel> _subcategorias = [];
   bool _loading = false;
   
   // Controles de navegação - Padrão Device
@@ -405,9 +410,19 @@ class _TransacoesPageState extends State<TransacoesPage>
         debugPrint('🎯 Aplicando filtro de categoria: ${filtros['categoria_id']}');
       }
 
+      // Aplicar filtros de subcategoria individual (contexto de navegação)
+      if (filtros.containsKey('subcategoria_id')) {
+        _filtrosPersonalizados['subcategorias'] = [filtros['subcategoria_id']];
+        debugPrint('🎯 Aplicando filtro de subcategoria: ${filtros['subcategoria_id']}');
+      }
+
       // Aplicar outros filtros se necessário
       if (filtros.containsKey('categorias')) {
         _filtrosPersonalizados['categorias'] = List<String>.from(filtros['categorias']);
+      }
+
+      if (filtros.containsKey('subcategorias')) {
+        _filtrosPersonalizados['subcategorias'] = List<String>.from(filtros['subcategorias']);
       }
 
       if (filtros.containsKey('contas')) {
@@ -475,12 +490,14 @@ class _TransacoesPageState extends State<TransacoesPage>
         _contaService.fetchContas(),
         _cartaoService.listarCartoesAtivos(),
         _categoriaService.fetchCategorias(),
+        _categoriaService.fetchSubcategorias(),
       ]);
 
       final transacoes = futures[0] as List<TransacaoModel>;
       final contas = futures[1] as List<ContaModel>;
       final cartoes = futures[2] as List<CartaoModel>;
       final categorias = futures[3] as List<CategoriaModel>;
+      final subcategorias = futures[4] as List<SubcategoriaModel>;
 
       print('🔍 DEBUG _carregarDados:');
       print('   Total de transações buscadas: ${transacoes.length}');
@@ -532,6 +549,8 @@ class _TransacoesPageState extends State<TransacoesPage>
         _contas = contas.where((c) => c.ativo).toList();
         _cartoes = cartoes.where((c) => c.ativo).toList();
         _categorias = categorias.where((c) => c.ativo).toList()
+          ..sort((a, b) => a.nome.compareTo(b.nome));
+        _subcategorias = subcategorias.where((s) => s.ativo).toList()
           ..sort((a, b) => a.nome.compareTo(b.nome));
         _estatisticas = estatisticas;
       });
@@ -1933,7 +1952,7 @@ class _TransacoesPageState extends State<TransacoesPage>
         : null;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(bottom: BorderSide(color: Color(0xFFE5E7EB))),
@@ -1989,19 +2008,21 @@ class _TransacoesPageState extends State<TransacoesPage>
                 _buildValor(transacao),
               ],
             ),
-            const SizedBox(height: 2),
+            const SizedBox(height: 8),
 
             // LINHA 3: Chips de informações
             Row(
               children: [
                 Expanded(
                   child: Wrap(
-                    spacing: 4,
+                    spacing: 8,
+                    runSpacing: 6,
                     children: _buildChipsInformacoes(transacao),
                   ),
                 ),
               ],
             ),
+            const SizedBox(height: 6),
           ],
         ),
       ),
@@ -2148,7 +2169,7 @@ class _TransacoesPageState extends State<TransacoesPage>
   // CHIP RECORRENTE - Azul sólido
   Widget _buildChipRecorrente(String? tipoRecorrencia) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       decoration: BoxDecoration(
         color: const Color(0xFF3B82F6), // Azul sólido
         borderRadius: BorderRadius.circular(8),
@@ -2174,7 +2195,7 @@ class _TransacoesPageState extends State<TransacoesPage>
   // CHIP PARCELADO - Laranja sólido
   Widget _buildChipParcelado(int parcelaAtual, int totalParcelas) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       decoration: BoxDecoration(
         color: Colors.orange, // Laranja sólido
         borderRadius: BorderRadius.circular(8),
@@ -2200,7 +2221,7 @@ class _TransacoesPageState extends State<TransacoesPage>
   // CHIP PREVISÍVEL - Roxo sólido
   Widget _buildChipPrevisivel() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       decoration: BoxDecoration(
         color: Colors.purple, // Roxo sólido
         borderRadius: BorderRadius.circular(8),
@@ -2229,7 +2250,7 @@ class _TransacoesPageState extends State<TransacoesPage>
     
     if (categoria == null) {
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
         decoration: BoxDecoration(
           color: const Color(0xFF6B7280), // Cinza como padrão
           borderRadius: BorderRadius.circular(8),
@@ -2254,7 +2275,7 @@ class _TransacoesPageState extends State<TransacoesPage>
     }
     
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       decoration: BoxDecoration(
         color: corCategoria,
         borderRadius: BorderRadius.circular(8),
@@ -2279,10 +2300,18 @@ class _TransacoesPageState extends State<TransacoesPage>
     }
   }
 
+  SubcategoriaModel? _encontrarSubcategoria(String subcategoriaId) {
+    try {
+      return _subcategorias.firstWhere((s) => s.id == subcategoriaId);
+    } catch (e) {
+      return null;
+    }
+  }
+
   // CHIP TAG - Teal sólido
   Widget _buildChipTag(String tag) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       decoration: BoxDecoration(
         color: const Color(0xFF14B8A6), // Teal sólido
         borderRadius: BorderRadius.circular(8),
@@ -2352,6 +2381,16 @@ class _TransacoesPageState extends State<TransacoesPage>
           final categoria = _encontrarCategoria(categoriaId);
           if (categoria != null) {
             chips.add(_buildChipCategoriaFiltro(categoria));
+          }
+        }
+      }
+
+      // Subcategorias
+      if (_filtrosPersonalizados['subcategorias']?.isNotEmpty ?? false) {
+        for (final subcategoriaId in _filtrosPersonalizados['subcategorias']) {
+          final subcategoria = _encontrarSubcategoria(subcategoriaId);
+          if (subcategoria != null) {
+            chips.add(_buildChipSubcategoriaFiltro(subcategoriaId, subcategoria.nome));
           }
         }
       }
@@ -2512,6 +2551,25 @@ class _TransacoesPageState extends State<TransacoesPage>
       ),
       child: Text(
         categoria.nome,
+        style: const TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w500,
+          color: Colors.white,
+        ),
+      ),
+    );
+  }
+
+  /// Chip para subcategoria filtrada
+  Widget _buildChipSubcategoriaFiltro(String subcategoriaId, String subcategoriaNome) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: AppColors.tealPrimary.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        subcategoriaNome,
         style: const TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.w500,
@@ -4083,6 +4141,12 @@ class _TransacoesPageState extends State<TransacoesPage>
           child: Icon(_fabExpanded ? Icons.close : Icons.add),
         ),
       ),
+      bottomNavigationBar: widget.showNavigationBar
+          ? AppBottomNavigation(
+              currentIndex: 4,
+              onTap: _onBottomNavigationTap,
+            )
+          : null,
     );
   }
 
@@ -4149,6 +4213,7 @@ class _TransacoesPageState extends State<TransacoesPage>
 
   bool _temFiltrosAtivos() {
     return (_filtrosPersonalizados['categorias']?.isNotEmpty ?? false) ||
+           (_filtrosPersonalizados['subcategorias']?.isNotEmpty ?? false) ||
            (_filtrosPersonalizados['contas']?.isNotEmpty ?? false) ||
            (_filtrosPersonalizados['cartoes']?.isNotEmpty ?? false) ||
            (_filtrosPersonalizados['status']?.isNotEmpty ?? false) ||
@@ -4200,6 +4265,14 @@ class _TransacoesPageState extends State<TransacoesPage>
       // Filtro por categoria
       if (_filtrosPersonalizados['categorias']?.isNotEmpty ?? false) {
         if (!_filtrosPersonalizados['categorias'].contains(transacao.categoriaId)) {
+          return false;
+        }
+      }
+
+      // Filtro por subcategoria
+      if (_filtrosPersonalizados['subcategorias']?.isNotEmpty ?? false) {
+        if (transacao.subcategoriaId == null ||
+            !_filtrosPersonalizados['subcategorias'].contains(transacao.subcategoriaId)) {
           return false;
         }
       }
@@ -4635,12 +4708,10 @@ class _TransacoesPageState extends State<TransacoesPage>
   void _navegarParaNovaDespesaCartao() async {
     setState(() => _fabExpanded = false);
 
+    // ✅ Usar página específica para despesas de cartão
     final resultado = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
-        builder: (context) => const TransacaoFormPage(
-          modo: 'criar',
-          tipo: 'despesa',
-        ),
+        builder: (context) => const DespesaCartaoPage(),
       ),
     );
 
@@ -4735,5 +4806,14 @@ class _TransacoesPageState extends State<TransacoesPage>
         (route) => false, // Remove todas as rotas anteriores
       );
     }
+  }
+
+  void _onBottomNavigationTap(int index) {
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (context) => MainNavigation(initialIndex: index),
+      ),
+      (route) => false,
+    );
   }
 }

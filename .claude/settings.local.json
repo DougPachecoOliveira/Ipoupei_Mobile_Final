@@ -51,7 +51,13 @@
       "Bash(cd:*)",
       "Bash(xcrun simctl list:*)",
       "Bash(xcrun simctl boot:*)",
-      "Bash(printf \"r\\n\")"
+      "Bash(printf \"r\\n\")",
+      "Bash(git push:*)",
+      "Bash(ssh:*)",
+      "Bash(grep:*)",
+      "Bash(git checkout:*)",
+      "Bash(printf:*)",
+      "Read(///**)"
     ],
     "deny": [],
     "ask": []

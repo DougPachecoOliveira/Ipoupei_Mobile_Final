@@ -25,8 +25,8 @@ import '../components/migrar_categoria_modal.dart';
 import '../components/excluir_categoria_modal.dart';
 import '../data/categoria_icons.dart';
 import '../../transacoes/services/transacao_service.dart';
-import '../../transacoes/models/transacao_model.dart';
-import '../../../shared/services/navigation_context_service.dart';
+import '../../transacoes/pages/transacoes_page.dart';
+import '../../../shared/components/navigation/app_bottom_navigation.dart';
 import '../../../routes/main_navigation.dart';
 
 /// Página de gestão completa da categoria com insights e métricas
@@ -989,21 +989,19 @@ class _GestaoCategoriaPageState extends State<GestaoCategoriaPage> {
   }
 
   void _navegarParaTransacoes() {
-    // 🧭 Garante que o contexto está definido com a categoria e mês atuais
-    navigationContext.setCategoriaSelecionada(widget.categoria.id);
-    navigationContext.setMesSelecionado(_mesAtual);
-
     debugPrint('🧭 Navegando para transações da categoria: ${widget.categoria.nome} (${widget.categoria.id})');
     debugPrint('🧭 Mês selecionado: ${_mesAtual.month}/${_mesAtual.year}');
 
-    // Navega para a MainNavigation com TransacoesPage selecionada (índice 4)
-    // Isso preserva o navigation bar e permite navegação entre abas
-    Navigator.pushAndRemoveUntil(
+    // Navegar diretamente para TransacoesPage com filtro da categoria (preserva navegação anterior)
+    Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const MainNavigation(initialIndex: 4), // Índice 4 = TransacoesPage
+        builder: (context) => TransacoesPage(
+          filtrosIniciais: {
+            'categoria_id': widget.categoria.id,
+          },
+        ),
       ),
-      (route) => false, // Remove todas as rotas anteriores
     );
   }
 
@@ -1054,6 +1052,10 @@ class _GestaoCategoriaPageState extends State<GestaoCategoriaPage> {
                   ),
                 )
               : _buildBody(cor, headerColor),
+      bottomNavigationBar: AppBottomNavigation(
+        currentIndex: 3, // Categorias é o índice 3
+        onTap: _onBottomNavigationTap,
+      ),
     );
   }
 
@@ -1478,44 +1480,60 @@ class _GestaoCategoriaPageState extends State<GestaoCategoriaPage> {
           ),
         ],
       ),
-      child: Column(
-        children: [
-          // Valor em cima
-          Text(
-            valor,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-              color: cor,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 4),
-          // Título + quantidade (se houver)
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                titulo,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppColors.cinzaTexto,
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Valor em cima - com scroll horizontal se necessário
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Text(
+                valor,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: cor,
                 ),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.visible,
               ),
-              if (quantidade != null) ...[
-                const SizedBox(width: 4),
-                Text(
-                  '($quantidade)',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.cinzaTexto,
-                    fontWeight: FontWeight.w600,
+            ),
+            const SizedBox(height: 4),
+            // Título + quantidade (se houver) - com scroll horizontal se necessário
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    titulo,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.cinzaTexto,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.visible,
                   ),
-                ),
-              ],
-            ],
-          ),
-        ],
+                  if (quantidade != null) ...[
+                    const SizedBox(width: 4),
+                    Text(
+                      '($quantidade)',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.cinzaTexto,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.visible,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -2943,9 +2961,7 @@ class _GestaoCategoriaPageState extends State<GestaoCategoriaPage> {
                 subtitle: Text('${subcategoriaCompleta['qtd_efetivados'] + subcategoriaCompleta['qtd_pendentes']} transações'),
                 onTap: () {
                   Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Transações da subcategoria - Em desenvolvimento')),
-                  );
+                  _navegarParaTransacoesSubcategoria(id, nome);
                 },
               )
             else
@@ -3018,9 +3034,7 @@ class _GestaoCategoriaPageState extends State<GestaoCategoriaPage> {
               title: const Text('Ver Transações'),
               onTap: () {
                 Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Transações da subcategoria - Em desenvolvimento')),
-                );
+                _navegarParaTransacoesSubcategoria(subcategoria.id, subcategoria.nome);
               },
             ),
             
@@ -3039,10 +3053,23 @@ class _GestaoCategoriaPageState extends State<GestaoCategoriaPage> {
   }
 
   Future<void> _abrirModalEditarSubcategoria(SubcategoriaModel subcategoria) async {
-    // TODO: Implementar modal de edição de subcategoria
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Editar subcategoria - Em desenvolvimento')),
+    final resultado = await showModalBottomSheet<Map<String, dynamic>>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => CriarSubcategoriaModal(
+        categoria: widget.categoria,
+        nomeInicial: subcategoria.nome, // Pré-preenche com nome atual
+        subcategoriaIdEditando: subcategoria.id, // Passa ID para edição
+        onSubcategoriaCriada: (dadosAtualizados) {
+          debugPrint('✅ Subcategoria editada: ${dadosAtualizados['nome']}');
+        },
+      ),
     );
+
+    if (resultado != null) {
+      await _carregarSubcategorias();
+    }
   }
 
   Future<void> _excluirSubcategoria(SubcategoriaModel subcategoria) async {
@@ -3104,6 +3131,34 @@ class _GestaoCategoriaPageState extends State<GestaoCategoriaPage> {
           ),
         ),
       ),
+    );
+  }
+
+  /// 🔍 NAVEGAR PARA TRANSAÇÕES DA SUBCATEGORIA
+  void _navegarParaTransacoesSubcategoria(String subcategoriaId, String subcategoriaNome) {
+    debugPrint('🎯 Navegando para transações: categoria=${widget.categoria.nome}, subcategoria=$subcategoriaNome');
+
+    // Navegar diretamente para TransacoesPage com filtros
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => TransacoesPage(
+          filtrosIniciais: {
+            'categoria_id': widget.categoria.id,
+            'subcategoria_id': subcategoriaId,
+          },
+          showNavigationBar: true,
+        ),
+      ),
+    );
+  }
+
+  void _onBottomNavigationTap(int index) {
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (context) => MainNavigation(initialIndex: index),
+      ),
+      (route) => false,
     );
   }
 }

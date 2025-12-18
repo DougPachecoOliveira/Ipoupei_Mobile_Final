@@ -15,7 +15,7 @@ import '../../contas/models/conta_model.dart';
 import '../../contas/services/conta_service.dart';
 import '../../categorias/models/categoria_model.dart';
 import '../../categorias/services/categoria_service.dart';
-import '../../auth/components/loading_overlay.dart';
+import '../../../shared/components/loading/ipoupei_loading_system.dart';
 import '../components/smart_field.dart';
 import '../../transacoes/components/smart_field.dart' as TransacaoSmartField;
 // import '../../../shared/utils/money_input_formatter.dart'; // TODO: Criar formatter
@@ -127,6 +127,7 @@ class _TransacaoFormPageState extends State<TransacaoFormPage> {
   String? _contaDestinoSelecionada;
   DateTime? _dataSelecionada;
   bool _efetivado = true;
+  bool _statusManualmenteAlterado = false; // Flag para controlar override manual
   bool _temParcelas = false; // Compatibilidade com código antigo
   bool _ehRecorrente = false;
   
@@ -155,7 +156,7 @@ class _TransacaoFormPageState extends State<TransacaoFormPage> {
     return int.parse(opcao['maxRepeticoes']!);
   }
   int _totalRecorrencias = 12;
-  bool _primeiroEfetivado = true;
+  bool _primeiroEfetivado = false; // Por padrão, primeira não efetivada
   
   // 🎨 ESTADOS DE UI E PREVIEW (IGUAL CARTÃO)
   Map<String, dynamic>? _preview;
@@ -199,6 +200,8 @@ class _TransacaoFormPageState extends State<TransacaoFormPage> {
     if (widget.modo == 'criar' && widget.tipo != null) {
       _tipoSelecionado = widget.tipo!;
       _dataSelecionada = DateTime.now(); // Data atual apenas para criação
+      // ✅ Aplicar auto-status baseado na data inicial
+      _atualizarStatusPorData(_dataSelecionada!);
     } else if (widget.modo == 'editar' && widget.transacao != null) {
       final transacao = widget.transacao!;
       _descricaoController.text = transacao.descricao;
@@ -243,7 +246,12 @@ class _TransacaoFormPageState extends State<TransacaoFormPage> {
     
     // Garantir que _dataSelecionada tenha um valor padrão se ainda for null
     _dataSelecionada ??= DateTime.now();
-    
+
+    // ✅ Para casos onde data não foi definida antes, aplicar auto-status
+    if (widget.modo == 'criar' && !_statusManualmenteAlterado) {
+      _atualizarStatusPorData(_dataSelecionada!);
+    }
+
     // Inicializar data controller após configurar a data
     _dataController.text = _formatarDataBr(_dataSelecionada!);
   }
@@ -449,9 +457,8 @@ class _TransacaoFormPageState extends State<TransacaoFormPage> {
       setState(() {
         _dataSelecionada = data;
         _dataController.text = _formatarDataBr(data);
-        // Atualizar automaticamente o status baseado na data
-        _efetivado = data.isBefore(DateTime.now()) || 
-                    _isMesmaData(data, DateTime.now());
+        // ✅ Usar método centralizado para atualizar status
+        _atualizarStatusPorData(data);
       });
       _atualizarPreview();
       
@@ -472,9 +479,20 @@ class _TransacaoFormPageState extends State<TransacaoFormPage> {
 
   /// 📅 VERIFICAR SE É A MESMA DATA (ignorando horas)
   bool _isMesmaData(DateTime data1, DateTime data2) {
-    return data1.year == data2.year && 
-           data1.month == data2.month && 
+    return data1.year == data2.year &&
+           data1.month == data2.month &&
            data1.day == data2.day;
+  }
+
+  /// 🎯 ATUALIZAR STATUS BASEADO NA DATA (Sistema Inteligente)
+  void _atualizarStatusPorData(DateTime data) {
+    // Só atualiza automaticamente se usuário não alterou manualmente
+    if (!_statusManualmenteAlterado) {
+      _efetivado = data.isBefore(DateTime.now()) || _isMesmaData(data, DateTime.now());
+      debugPrint('📊 Auto-status por data: $_efetivado (data: ${_formatarDataBr(data)})');
+    } else {
+      debugPrint('🚫 Status não atualizado - usuário alterou manualmente');
+    }
   }
 
   /// 🎨 ATUALIZAR PREVIEW (IGUAL CARTÃO)
@@ -1106,7 +1124,7 @@ class _TransacaoFormPageState extends State<TransacaoFormPage> {
             categoriaId: categoriaId,
             subcategoriaId: subcategoriaId,
             tipoReceita: _tipoTransacao,
-            efetivado: _primeiroEfetivado, // Usar configuração específica
+            efetivado: _efetivado, // ✅ CORRIGIDO: Usar valor do toggle automático
             observacoes: observacoes.isEmpty ? null : observacoes,
             numeroParcelas: _tipoTransacao == 'parcelada' ? _numeroParcelas : null,
             frequenciaParcelada: _tipoTransacao == 'parcelada' ? _frequenciaParcelada : null,
@@ -1123,7 +1141,7 @@ class _TransacaoFormPageState extends State<TransacaoFormPage> {
             categoriaId: categoriaId,
             subcategoriaId: subcategoriaId,
             tipoDespesa: _tipoTransacao,
-            efetivado: _primeiroEfetivado, // Usar configuração específica
+            efetivado: _efetivado, // ✅ CORRIGIDO: Usar valor do toggle automático
             observacoes: observacoes.isEmpty ? null : observacoes,
             numeroParcelas: _tipoTransacao == 'parcelada' ? _numeroParcelas : null,
             frequenciaParcelada: _tipoTransacao == 'parcelada' ? _frequenciaParcelada : null,
@@ -1978,11 +1996,10 @@ class _TransacaoFormPageState extends State<TransacaoFormPage> {
         ? 'Nova ${_formatarTipoTransacao(_tipoSelecionado)}'
         : 'Editar ${_formatarTipoTransacao(_tipoSelecionado)}';
 
-    return LoadingOverlay(
-      isLoading: _loading,
+    return IPoupeiProcessingOverlay(
+      isProcessing: _loading,
       message: widget.modo == 'criar' ? 'Criando transação...' : 'Salvando alterações...',
-      color: _tipoSelecionado == 'receita' ? AppColors.tealPrimary : AppColors.vermelhoHeader,
-      icon: _tipoSelecionado == 'receita' ? Icons.trending_up : Icons.trending_down,
+      context: _tipoSelecionado == 'receita' ? IPoupeiLoadingContext.saving : IPoupeiLoadingContext.processing,
       child: Scaffold(
         backgroundColor: AppColors.backgroundPrimary,
         appBar: AppBar(
@@ -2251,7 +2268,10 @@ class _TransacaoFormPageState extends State<TransacaoFormPage> {
                               onChanged: (value) {
                                 setState(() {
                                   _efetivado = value;
+                                  // ✅ Marcar que usuário alterou manualmente
+                                  _statusManualmenteAlterado = true;
                                 });
+                                debugPrint('🎯 Status alterado manualmente: $value');
                                 _atualizarPreview();
                               },
                               activeColor: _tipoSelecionado == 'receita' ? AppColors.tealPrimary : AppColors.vermelhoHeader,
@@ -2390,6 +2410,7 @@ class _TransacaoFormPageState extends State<TransacaoFormPage> {
                         icon: Icons.note,
                         maxLines: 3,
                         isCartaoContext: false,
+                        transactionContext: _tipoSelecionado, // ✅ Seguir cor do tipo
                         textInputAction: TextInputAction.done,
                         onEditingComplete: () {
                           debugPrint('🔔 Observações completas, indo para botão salvar...');

@@ -22,6 +22,7 @@ import '../../../routes/main_navigation.dart';
 import '../../../shared/components/ui/app_button.dart';
 import '../../transacoes/pages/transacao_form_page.dart';
 import '../../transacoes/pages/transferencia_form_page.dart';
+import '../../transacoes/pages/transacoes_page.dart';
 import '../../relatorios/services/graficos_categoria_service.dart';
 import '../../../shared/services/navigation_context_service.dart';
 
@@ -270,20 +271,20 @@ class _CartoesConsolidadoPageState extends State<CartoesConsolidadoPage> with Si
 
   /// 🧭 Navegar para TransacoesPage com filtro de categoria
   Future<void> _navegarParaTransacoesComFiltroCategoria(String nomeCategoria) async {
-    // Limpar contexto anterior
-    navigationContext.limparContexto();
+    debugPrint('🧭 Navegando para transações com filtro: categoria=$nomeCategoria, cartões');
 
-    // Definir filtros específicos para cartões
-    navigationContext.adicionarFiltro('categoria', nomeCategoria);
-    navigationContext.adicionarFiltro('forma_pagamento', 'cartao');
-    navigationContext.setMesSelecionado(_periodoAtual);
-
-    // Navegar para a aba de transações
+    // Navegar diretamente para TransacoesPage com filtros (preserva navegação anterior)
     if (mounted) {
-      await Navigator.pushReplacement(
+      Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => const MainNavigation(initialIndex: 4), // Aba transações
+          builder: (context) => TransacoesPage(
+            modoInicial: TransacoesPageMode.cartoes, // Modo cartões
+            filtrosIniciais: {
+              // Filtrar por categoria específica se necessário
+              // Nota: o modo cartões já filtra automaticamente por cartões
+            },
+          ),
         ),
       );
     }
@@ -1887,13 +1888,19 @@ class _CartoesConsolidadoPageState extends State<CartoesConsolidadoPage> with Si
           // Botão VOLTAR (lado esquerdo)
           Expanded(
             child: OutlinedButton(
-              onPressed: () => Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const MainNavigation(initialIndex: 2), // Índice 2 = Relatórios
-                ),
-                (route) => false,
-              ),
+              onPressed: () {
+                if (Navigator.canPop(context)) {
+                  Navigator.pop(context);
+                } else {
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const MainNavigation(initialIndex: 2), // Índice 2 = Relatórios
+                    ),
+                    (route) => false,
+                  );
+                }
+              },
               style: OutlinedButton.styleFrom(
                 side: BorderSide(color: AppColors.roxoHeader, width: 1.5),
                 padding: const EdgeInsets.symmetric(vertical: 16),

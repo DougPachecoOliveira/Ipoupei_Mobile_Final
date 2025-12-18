@@ -78,7 +78,7 @@ class _IPoupeiLoadingState extends State<IPoupeiLoading>
                   },
                   blendMode: BlendMode.dstIn,
                   child: Image.asset(
-                    'assets/images/Ipoupei_logo.jpg',
+                    'assets/images/Logo.png',
                     width: widget.size,
                     height: widget.size,
                     fit: BoxFit.contain,

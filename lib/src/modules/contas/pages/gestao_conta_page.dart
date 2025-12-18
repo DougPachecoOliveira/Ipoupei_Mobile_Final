@@ -24,10 +24,12 @@ import '../services/conta_service.dart';
 import '../widgets/conta_card.dart';
 import '../../relatorios/pages/relatorios_page.dart';
 import '../../transacoes/pages/transferencia_form_page.dart';
+import '../../transacoes/pages/transacoes_page.dart';
 import 'contas_page.dart';
 import '../../../routes/main_navigation.dart';
 import '../../../shared/services/navigation_context_service.dart';
 import '../../../shared/services/contas_refresh_notifier.dart';
+import '../../../shared/components/navigation/app_bottom_navigation.dart';
 
 /// Página de gestão completa da conta com insights e métricas
 class GestaoContaPage extends StatefulWidget {
@@ -413,14 +415,17 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
     debugPrint('🧭 Navegando para transações da conta: ${_contaAtual.nome} (${_contaAtual.id})');
     debugPrint('🧭 Mês selecionado: ${_mesAtual.month}/${_mesAtual.year}');
 
-    // Navega para a MainNavigation com TransacoesPage selecionada (índice 4)
-    // Isso preserva o navigation bar e permite navegação entre abas
-    Navigator.pushAndRemoveUntil(
+    Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const MainNavigation(initialIndex: 4), // Índice 4 = TransacoesPage
+        builder: (context) => TransacoesPage(
+          filtrosIniciais: {
+            'contas': [_contaAtual.id],
+            'mes': _mesAtual,
+          },
+          showNavigationBar: true,
+        ),
       ),
-      (route) => false, // Remove todas as rotas anteriores
     );
   }
 
@@ -590,6 +595,10 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
                 onRefresh: _carregarDados,
                 child: _buildBody(),
               ),
+      bottomNavigationBar: AppBottomNavigation(
+        currentIndex: 0, // Contas é o índice 0
+        onTap: _onBottomNavigationTap,
+      ),
     );
   }
 
@@ -1964,10 +1973,15 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
 
     // Navegar para a aba de transações
     if (mounted) {
-      await Navigator.pushReplacement(
+      await Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => const MainNavigation(initialIndex: 4), // Aba transações
+          builder: (context) => TransacoesPage(
+            filtrosIniciais: {
+              'contas': [widget.conta.id],
+            },
+            showNavigationBar: true,
+          ),
         ),
       );
     }
@@ -1983,10 +1997,16 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
 
     // Navegar para a aba de transações
     if (mounted) {
-      await Navigator.pushReplacement(
+      await Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => const MainNavigation(initialIndex: 4), // Aba transações
+          builder: (context) => TransacoesPage(
+            filtrosIniciais: {
+              'contas': [widget.conta.id],
+              'categoria': nomeCategoria,
+            },
+            showNavigationBar: true,
+          ),
         ),
       );
     }
@@ -2183,6 +2203,17 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
       default:
         return Icons.account_balance;
     }
+  }
+
+  /// 🧭 Handler para navegação do bottom navigation
+  void _onBottomNavigationTap(int index) {
+    // Navegar para MainNavigation com o índice selecionado
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (context) => MainNavigation(initialIndex: index),
+      ),
+      (route) => false, // Remove todas as rotas anteriores
+    );
   }
 }
 

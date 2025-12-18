@@ -5,17 +5,19 @@ import '../services/categoria_service.dart';
 import '../models/categoria_model.dart';
 import '../data/categoria_icons.dart';
 
-/// Modal compacto para criar subcategorias
+/// Modal compacto para criar/editar subcategorias
 /// Muito mais simples que categoria - só nome + preview da categoria pai
 class CriarSubcategoriaModal extends StatefulWidget {
   final CategoriaModel categoria; // Categoria pai (para cores/ícone)
   final String? nomeInicial; // Pré-preenchimento opcional
+  final String? subcategoriaIdEditando; // ID da subcategoria sendo editada (null = criação)
   final Function(Map<String, dynamic>)? onSubcategoriaCriada;
 
   const CriarSubcategoriaModal({
     super.key,
     required this.categoria,
     this.nomeInicial,
+    this.subcategoriaIdEditando,
     this.onSubcategoriaCriada,
   });
 
@@ -110,8 +112,8 @@ class _CriarSubcategoriaModalState extends State<CriarSubcategoriaModal> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Nova Subcategoria',
+                Text(
+                  widget.subcategoriaIdEditando != null ? 'Editar Subcategoria' : 'Nova Subcategoria',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
@@ -350,9 +352,9 @@ class _CriarSubcategoriaModalState extends State<CriarSubcategoriaModal> {
                       strokeWidth: 2,
                     ),
                   )
-                : const Text(
-                    'SALVAR SUBCATEGORIA',
-                    style: TextStyle(
+                : Text(
+                    widget.subcategoriaIdEditando != null ? 'SALVAR ALTERAÇÕES' : 'SALVAR SUBCATEGORIA',
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -386,24 +388,41 @@ class _CriarSubcategoriaModalState extends State<CriarSubcategoriaModal> {
     try {
       final categoriaService = CategoriaService.instance;
       
-      // Verificar se nome já existe nesta categoria
+      final isEdicao = widget.subcategoriaIdEditando != null;
+
+      // Verificar se nome já existe nesta categoria (exceto se for o próprio nome atual)
       final subcategorias = await categoriaService.fetchSubcategorias(categoriaId: widget.categoria.id);
-      final nomeJaExiste = subcategorias.any((sub) => 
+      final nomeJaExiste = subcategorias.any((sub) =>
+        sub.id != widget.subcategoriaIdEditando && // Ignora a própria subcategoria em edição
         sub.nome.toLowerCase().trim() == _nomeController.text.trim().toLowerCase());
-      
+
       if (nomeJaExiste) {
         _mostrarErro('Já existe uma subcategoria com este nome');
         return;
       }
 
-      final resultado = await categoriaService.addSubcategoria(
-        categoriaId: widget.categoria.id,
-        nome: _nomeController.text.trim(),
-        cor: widget.categoria.cor,     // Herda da categoria
-        icone: widget.categoria.icone, // Herda da categoria
-      );
+      final dynamic resultado;
 
-      _mostrarSucesso('Subcategoria criada com sucesso!');
+      if (isEdicao) {
+        // Edição: usar updateSubcategoria
+        resultado = await categoriaService.updateSubcategoria(
+          categoriaId: widget.categoria.id,
+          subcategoriaId: widget.subcategoriaIdEditando!,
+          nome: _nomeController.text.trim(),
+          cor: widget.categoria.cor,     // Mantém da categoria
+          icone: widget.categoria.icone, // Mantém da categoria
+        );
+        _mostrarSucesso('Subcategoria editada com sucesso!');
+      } else {
+        // Criação: usar addSubcategoria
+        resultado = await categoriaService.addSubcategoria(
+          categoriaId: widget.categoria.id,
+          nome: _nomeController.text.trim(),
+          cor: widget.categoria.cor,     // Herda da categoria
+          icone: widget.categoria.icone, // Herda da categoria
+        );
+        _mostrarSucesso('Subcategoria criada com sucesso!');
+      }
       
       // Dados para retornar
       final subcategoriaCriada = {

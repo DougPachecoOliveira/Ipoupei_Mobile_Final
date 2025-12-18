@@ -26,6 +26,7 @@ import 'gestao_categoria_page.dart';
 import '../../shared/theme/app_colors.dart';
 import '../../transacoes/pages/transacao_form_page.dart';
 import '../../transacoes/pages/transferencia_form_page.dart';
+import '../../cartoes/pages/despesa_cartao_page.dart';
 import '../../../shared/validators/business_validators.dart'; // ✅ Para validações anti-regressão
 
 
@@ -1404,13 +1405,10 @@ class _CategoriasPageState extends State<CategoriasPage> with TickerProviderStat
   void _navegarParaNovaDespesaCartao() async {
     setState(() => _fabExpanded = false);
 
+    // ✅ Usar página específica para despesas de cartão
     final resultado = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
-        builder: (context) => const TransacaoFormPage(
-          modo: 'criar',
-          tipo: 'despesa',
-          // TODO: Adicionar indicação de cartão se necessário
-        ),
+        builder: (context) => const DespesaCartaoPage(),
       ),
     );
 

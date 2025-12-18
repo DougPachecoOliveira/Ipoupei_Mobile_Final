@@ -20,9 +20,12 @@ import '../../../sync/sync_manager.dart';
 import 'cartao_form_page.dart';
 import '../widgets/cartao_card.dart';
 import 'pagamento_fatura_page.dart';
+import 'despesa_cartao_page.dart';
 import '../../../shared/services/navigation_context_service.dart';
-import '../../../routes/main_navigation.dart';
 import '../../transacoes/pages/transacao_form_page.dart';
+import '../../transacoes/pages/transacoes_page.dart';
+import '../../../shared/components/navigation/app_bottom_navigation.dart';
+import '../../../routes/main_navigation.dart';
 
 class GestaoCartoesMobilePage extends StatefulWidget {
   final CartaoModel cartao;
@@ -414,6 +417,10 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
                   ),
                 )
               : _buildBody(),
+      bottomNavigationBar: AppBottomNavigation(
+        currentIndex: 1, // Cartões é o índice 1
+        onTap: _onBottomNavigationTap,
+      ),
     );
   }
 
@@ -2236,12 +2243,16 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
     navigationContext.setMesSelecionado(_mesAtual);
     debugPrint('🧭 Navegando para transações do cartão: ${widget.cartao.nome} (${widget.cartao.id})');
 
-    Navigator.pushAndRemoveUntil(
+    Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const MainNavigation(initialIndex: 4),
+        builder: (context) => TransacoesPage(
+          filtrosIniciais: {
+            'cartoes': [widget.cartao.id],
+            'mes': _mesAtual,
+          },
+        ),
       ),
-      (route) => false,
     );
   }
 
@@ -2262,13 +2273,12 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
 
   /// 💰 Criar nova despesa no cartão
   void _novaDespesa() {
-    debugPrint('💰 Navegando para criar nova despesa no cartão');
+    debugPrint('💰 Navegando para criar nova despesa de cartão');
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const TransacaoFormPage(
-          modo: 'criar',
-          tipo: 'despesa',
+        builder: (context) => DespesaCartaoPage(
+          cartaoInicial: widget.cartao,
         ),
       ),
     ).then((result) {
@@ -2314,6 +2324,15 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
         content: Text('Funcionalidade em desenvolvimento'),
         backgroundColor: Colors.blue,
       ),
+    );
+  }
+
+  void _onBottomNavigationTap(int index) {
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (context) => MainNavigation(initialIndex: index),
+      ),
+      (route) => false,
     );
   }
 

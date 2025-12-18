@@ -8,7 +8,7 @@
 import 'package:flutter/material.dart';
 import '../models/conta_model.dart';
 import '../services/conta_service.dart';
-import '../../auth/components/loading_overlay.dart';
+import '../../../shared/components/loading/ipoupei_loading_system.dart';
 import '../../shared/theme/app_colors.dart';
 import 'package:flutter/services.dart';
 
@@ -688,9 +688,10 @@ class _CorrecaoSaldoPageState extends State<CorrecaoSaldoPage> {
 
   @override
   Widget build(BuildContext context) {
-    return LoadingOverlay(
-      isLoading: _loading,
+    return IPoupeiProcessingOverlay(
+      isProcessing: _loading,
       message: 'Processando ajuste...',
+      context: IPoupeiLoadingContext.financial,
       child: Material(
         color: Colors.transparent,
         child: Container(

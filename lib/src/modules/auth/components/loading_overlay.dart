@@ -1,18 +1,19 @@
-// ⏳ Loading Overlay - iPoupei Mobile
+// ⏳ Loading Overlay - iPoupei Mobile (Atualizado)
 //
-// Componente de loading que sobrepõe o conteúdo
-// Versão melhorada com cores e ícones contextuais
+// Wrapper para compatibilidade com sistema novo de loading
+// Redireciona para IPoupeiProcessingOverlay com design moderno
 //
-// Baseado em: Material Design + Overlay Pattern
+// DEPRECATED: Use IPoupeiProcessingOverlay diretamente
 
 import 'package:flutter/material.dart';
+import '../../../shared/components/loading/ipoupei_loading_system.dart';
 
 class LoadingOverlay extends StatelessWidget {
   final Widget child;
   final bool isLoading;
   final String? message;
-  final Color? color; // ✨ Cor customizável do loading
-  final IconData? icon; // ✨ Ícone contextual opcional
+  final Color? color;
+  final IconData? icon;
 
   const LoadingOverlay({
     super.key,
@@ -25,89 +26,41 @@ class LoadingOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Cor padrão: azul do tema
-    final loadingColor = color ?? Theme.of(context).colorScheme.primary;
+    // Mapeia contexto baseado na cor ou ícone
+    IPoupeiLoadingContext loadingContext;
 
-    return Stack(
-      children: [
-        child,
+    if (color != null) {
+      // Mapeia cor para contexto apropriado
+      if (color == Colors.green || color == const Color(0xFF4CAF50)) {
+        loadingContext = IPoupeiLoadingContext.saving;
+      } else if (color == Colors.orange || color == const Color(0xFFFF9800)) {
+        loadingContext = IPoupeiLoadingContext.processing;
+      } else if (color == Colors.red || color == const Color(0xFFF44336)) {
+        loadingContext = IPoupeiLoadingContext.error;
+      } else {
+        loadingContext = IPoupeiLoadingContext.defaultState;
+      }
+    } else if (icon != null) {
+      // Mapeia ícone para contexto apropriado
+      if (icon == Icons.save || icon == Icons.check_circle) {
+        loadingContext = IPoupeiLoadingContext.saving;
+      } else if (icon == Icons.sync || icon == Icons.cloud_sync) {
+        loadingContext = IPoupeiLoadingContext.sync;
+      } else if (icon == Icons.error_outline) {
+        loadingContext = IPoupeiLoadingContext.error;
+      } else {
+        loadingContext = IPoupeiLoadingContext.processing;
+      }
+    } else {
+      loadingContext = IPoupeiLoadingContext.defaultState;
+    }
 
-        // Overlay de loading
-        if (isLoading)
-          Container(
-            color: Colors.black.withValues(alpha: 0.5),
-            child: Center(
-              child: Container(
-                padding: const EdgeInsets.all(32),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: loadingColor.withValues(alpha: 0.3),
-                    width: 2,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: loadingColor.withValues(alpha: 0.2),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Ícone contextual (se fornecido)
-                    if (icon != null) ...[
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: loadingColor.withValues(alpha: 0.1),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          icon,
-                          size: 32,
-                          color: loadingColor,
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                    ],
-
-                    // CircularProgressIndicator com cor customizada
-                    SizedBox(
-                      width: 40,
-                      height: 40,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 4,
-                        valueColor: AlwaysStoppedAnimation<Color>(loadingColor),
-                      ),
-                    ),
-
-                    // Mensagem
-                    if (message != null) ...[
-                      const SizedBox(height: 20),
-                      Text(
-                        message!,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: loadingColor,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-          ),
-      ],
+    // Usa o novo sistema de loading
+    return IPoupeiProcessingOverlay(
+      isProcessing: isLoading,
+      message: message,
+      context: loadingContext,
+      child: child,
     );
   }
 }

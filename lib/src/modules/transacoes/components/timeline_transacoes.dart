@@ -252,7 +252,7 @@ class TimelineTransacoes extends StatelessWidget {
 
     return Container(
       margin: const EdgeInsets.only(right: 16, bottom: 12),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(8),
@@ -311,18 +311,20 @@ class TimelineTransacoes extends StatelessWidget {
               ],
             ),
             
-            const SizedBox(height: 8),
-            
+            const SizedBox(height: 12),
+
             // LINHA 3: Chips de informações - Padrão Device
             Wrap(
-              spacing: 6,
-              runSpacing: 4,
+              spacing: 8,
+              runSpacing: 6,
               children: _buildChipsInformacoes(transacao),
             ),
-            
+
+            const SizedBox(height: 8),
+
             // Saldo corrente (se habilitado)
             if (mostrarSaldoCorrente) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: 4),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
@@ -354,7 +356,7 @@ class TimelineTransacoes extends StatelessWidget {
             
             // Observações (se houver)
             if (transacao.observacoes != null && transacao.observacoes!.isNotEmpty) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: 4),
               Text(
                 transacao.observacoes!,
                 style: TextStyle(
@@ -543,7 +545,7 @@ class TimelineTransacoes extends StatelessWidget {
   // CHIP RECORRENTE - Azul sólido
   Widget _buildChipRecorrente(String? tipoRecorrencia) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: const Color(0xFF3B82F6), // Azul sólido
         borderRadius: BorderRadius.circular(12),
@@ -569,7 +571,7 @@ class TimelineTransacoes extends StatelessWidget {
   // CHIP PARCELADO - Laranja sólido
   Widget _buildChipParcelado(int parcelaAtual, int totalParcelas) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: Colors.orange, // Laranja sólido
         borderRadius: BorderRadius.circular(12),
@@ -595,7 +597,7 @@ class TimelineTransacoes extends StatelessWidget {
   // CHIP PREVISÍVEL - Roxo sólido
   Widget _buildChipPrevisivel() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: Colors.purple, // Roxo sólido
         borderRadius: BorderRadius.circular(12),
@@ -624,7 +626,7 @@ class TimelineTransacoes extends StatelessWidget {
     
     if (categoria == null) {
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: BoxDecoration(
           color: const Color(0xFF6B7280), // Cinza como padrão
           borderRadius: BorderRadius.circular(12),
@@ -649,7 +651,7 @@ class TimelineTransacoes extends StatelessWidget {
     }
     
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: corCategoria,
         borderRadius: BorderRadius.circular(12),
@@ -677,7 +679,7 @@ class TimelineTransacoes extends StatelessWidget {
   // CHIP TAG - Teal sólido
   Widget _buildChipTag(String tag) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: const Color(0xFF14B8A6), // Teal sólido
         borderRadius: BorderRadius.circular(12),

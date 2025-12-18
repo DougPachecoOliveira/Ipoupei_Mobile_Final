@@ -36,6 +36,7 @@ import '../../shared/theme/responsive_sizes.dart';
 import '../../importacao/widgets/importar_dados_widget.dart';
 import '../../transacoes/pages/transacao_form_page.dart';
 import '../../transacoes/pages/transferencia_form_page.dart';
+import '../../cartoes/pages/despesa_cartao_page.dart';
 import '../../transacoes/pages/transacoes_page.dart';
 import '../../contas/pages/contas_page.dart';
 
@@ -908,12 +909,10 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
   void _navegarParaNovaDespesaCartao() async {
     setState(() => _fabExpanded = false);
 
+    // ✅ Usar página específica para despesas de cartão
     final resultado = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
-        builder: (context) => const TransacaoFormPage(
-          modo: 'criar',
-          tipo: 'despesa',
-        ),
+        builder: (context) => const DespesaCartaoPage(),
       ),
     );
 

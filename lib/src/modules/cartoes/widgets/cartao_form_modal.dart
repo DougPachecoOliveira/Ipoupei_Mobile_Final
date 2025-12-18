@@ -6,6 +6,7 @@ import '../../contas/models/conta_model.dart';
 import '../../contas/services/conta_service.dart';
 import '../../transacoes/components/smart_field.dart';
 import '../../shared/theme/app_colors.dart';
+import '../../../shared/components/loading/ipoupei_loading_system.dart';
 
 /// MoneyInputFormatter para formatação de moeda
 class MoneyInputFormatter extends TextInputFormatter {
@@ -584,7 +585,10 @@ class _CartaoFormModalState extends State<CartaoFormModal> {
                           ),
                         ),
                         child: _isLoading
-                            ? const CircularProgressIndicator(color: Colors.white)
+                            ? IPoupeiButtonLoading(
+                                context: IPoupeiLoadingContext.saving,
+                                size: 20,
+                              )
                             : Text(
                                 widget.cartao == null ? 'Criar Cartão' : 'Salvar Alterações',
                                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),

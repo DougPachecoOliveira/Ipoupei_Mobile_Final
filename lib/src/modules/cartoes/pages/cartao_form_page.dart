@@ -21,7 +21,7 @@ import '../../contas/services/conta_service.dart';
 // Removido import do SmartField para não quebrar outros modais
 import '../../shared/theme/app_colors.dart';
 import '../../shared/theme/cartao_color_palette.dart';
-import '../../auth/components/loading_overlay.dart';
+import '../../../shared/components/loading/ipoupei_loading_system.dart';
 
 /// MoneyInputFormatter para formatação de moeda
 class MoneyInputFormatter extends TextInputFormatter {
@@ -479,8 +479,10 @@ class _CartaoFormPageState extends State<CartaoFormPage> {
 
   @override
   Widget build(BuildContext context) {
-    return LoadingOverlay(
-      isLoading: _isLoading,
+    return IPoupeiProcessingOverlay(
+      isProcessing: _isLoading,
+      message: widget.cartao == null ? 'Criando cartão...' : 'Salvando alterações...',
+      context: IPoupeiLoadingContext.saving,
       child: Scaffold(
         backgroundColor: Colors.white,
         appBar: _buildAppBar(),

@@ -7,15 +7,16 @@
 // Extraído de: transacoes_page.dart
 
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+// import 'package:intl/intl.dart'; // Usado apenas pelos métodos legacy comentados
 import '../../../modules/shared/theme/app_colors.dart';
 import '../../../modules/transacoes/models/transacao_model.dart';
 import '../../../modules/transacoes/components/transaction_detail_card.dart';
 import '../../../modules/transacoes/services/transacao_service.dart';
 import '../../../modules/transacoes/services/transacao_edit_service.dart';
+import '../../../routes/main_navigation.dart';
 import '../../../modules/transacoes/pages/editar_transacao_page.dart';
 import '../../../modules/categorias/models/categoria_model.dart';
-import '../ui/app_button.dart';
+// import '../ui/app_button.dart'; // Removido - usando OutlinedButton e ElevatedButton nativos
 
 /// Classe principal para exibir o modal de opções da transação
 class TransacaoOpcoesModal {
@@ -341,9 +342,13 @@ class _TransacaoOpcoesModalContent extends StatelessWidget {
 
     if (confirmacao == true) {
       try {
-        await TransacaoService.instance.deleteTransacao(transacao.id);
+        // Atualizar lista após exclusão
         onAtualizarLista();
+
+        // Fechar modal de opções se ainda estiver aberto
         if (context.mounted) {
+          Navigator.of(context).pop(); // Fechar modal de opções
+
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Transação "${transacao.descricao}" excluída')),
           );
@@ -352,6 +357,14 @@ class _TransacaoOpcoesModalContent extends StatelessWidget {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Erro ao excluir transação: $e')),
+          );
+
+          // Em caso de erro crítico, navegar para tela segura
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (context) => const MainNavigation(initialIndex: 2),
+            ),
+            (route) => false,
           );
         }
       }
@@ -373,62 +386,20 @@ class _TransacaoOpcoesModalContent extends StatelessWidget {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (BuildContext context) {
-        return Container(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom +
-                MediaQuery.of(context).padding.bottom,
-          ),
-          decoration: const BoxDecoration(
-            color: AppColors.branco,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildExclusaoHeader(context),
-              _buildExclusaoBody(context, transacao, categorias),
-            ],
-          ),
+        return _ModalExclusaoContent(
+          transacao: transacao,
+          categorias: categorias,
         );
       },
     );
   }
 
-  static Widget _buildExclusaoHeader(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: const BoxDecoration(
-        color: AppColors.vermelhoErro,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      child: Row(
-        children: [
-          const Icon(
-            Icons.delete_forever,
-            color: AppColors.branco,
-            size: 24,
-          ),
-          const SizedBox(width: 12),
-          const Expanded(
-            child: Text(
-              'Excluir Transação',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: AppColors.branco,
-              ),
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.close, color: AppColors.branco),
-            onPressed: () => Navigator.pop(context, false),
-          ),
-        ],
-      ),
-    );
-  }
+  // Método _buildExclusaoHeader removido - usando nova implementação _ModalExclusaoContent
 
-  static Widget _buildExclusaoBody(
+  // Métodos legacy _buildExclusaoBody e _buildExclusaoBotoes removidos
+  // Usando nova implementação _ModalExclusaoContent
+  /*
+  static Widget _buildExclusaoBodyLegacy(
     BuildContext context,
     TransacaoModel transacao,
     List<CategoriaModel> categorias,
@@ -558,11 +529,14 @@ class _TransacaoOpcoesModalContent extends StatelessWidget {
       ],
     );
   }
+  */
 
   // ======================================================================
   // HELPERS
   // ======================================================================
 
+  // Método _getIconeTransacao removido - usado apenas pelos métodos legacy comentados
+  /*
   /// 🎨 OBTER ÍCONE DA TRANSAÇÃO
   static IconData _getIconeTransacao(TransacaoModel transacao) {
     if (transacao.tipo == 'receita') {
@@ -571,6 +545,445 @@ class _TransacaoOpcoesModalContent extends StatelessWidget {
       return transacao.cartaoId != null ? Icons.credit_card : Icons.trending_down;
     } else {
       return Icons.swap_horiz; // transferência
+    }
+  }
+  */
+}
+
+// ======================================================================
+// MODAL DE EXCLUSÃO COM OPÇÕES DE ESCOPO
+// ======================================================================
+
+class _ModalExclusaoContent extends StatefulWidget {
+  final TransacaoModel transacao;
+  final List<CategoriaModel> categorias;
+
+  const _ModalExclusaoContent({
+    required this.transacao,
+    required this.categorias,
+  });
+
+  @override
+  State<_ModalExclusaoContent> createState() => _ModalExclusaoContentState();
+}
+
+class _ModalExclusaoContentState extends State<_ModalExclusaoContent> {
+  EscopoEdicao? _escopoSelecionado;
+  bool _processando = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Se não tem grupo, só pode excluir esta transação
+    if (widget.transacao.grupoRecorrencia == null) {
+      _escopoSelecionado = EscopoEdicao.apenasEsta;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      contentPadding: EdgeInsets.zero,
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildHeader(),
+          _buildBody(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.vermelhoErro.withValues(alpha: 0.1),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: const BoxDecoration(
+              color: AppColors.vermelhoErro,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.delete_forever,
+              color: Colors.white,
+              size: 24,
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Excluir Transação',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: AppColors.vermelhoErro,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Esta ação não pode ser desfeita',
+            style: TextStyle(
+              fontSize: 14,
+              color: AppColors.cinzaTexto,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBody() {
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildTransacaoResumo(),
+          const SizedBox(height: 20),
+          if (widget.transacao.grupoRecorrencia != null) ...[
+            const Text(
+              'Esta transação faz parte de um grupo:',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppColors.cinzaEscuro,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            _buildOpcoesEscopo(),
+            const SizedBox(height: 20),
+          ] else ...[
+            const Text(
+              'Tem certeza que deseja excluir esta transação?',
+              style: TextStyle(
+                fontSize: 16,
+                color: AppColors.cinzaTexto,
+                height: 1.4,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+          ],
+          _buildBotoes(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTransacaoResumo() {
+    final categoria = widget.categorias.firstWhere(
+      (c) => c.id == widget.transacao.categoriaId,
+      orElse: () => CategoriaModel(
+        id: '',
+        usuarioId: '',
+        nome: 'Sem categoria',
+        tipo: widget.transacao.tipo,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      ),
+    );
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.vermelhoTransparente10,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColors.vermelhoTransparente20,
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            _getIconeTransacao(),
+            color: AppColors.vermelhoErro,
+            size: 20,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.transacao.descricao,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                    color: AppColors.cinzaEscuro,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  categoria.nome,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.cinzaTexto,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            'R\$ ${widget.transacao.valor.abs().toStringAsFixed(2)}',
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: AppColors.vermelhoErro,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOpcoesEscopo() {
+    return Column(
+      children: [
+        _buildOpcaoEscopo(
+          escopo: EscopoEdicao.apenasEsta,
+          titulo: 'Apenas esta transação',
+          subtitulo: 'Excluir somente esta ocorrência',
+        ),
+        const SizedBox(height: 12),
+        _buildOpcaoEscopo(
+          escopo: EscopoEdicao.estasEFuturas,
+          titulo: 'Esta e futuras transações',
+          subtitulo: 'Excluir esta e todas as próximas do grupo',
+        ),
+      ],
+    );
+  }
+
+  Widget _buildOpcaoEscopo({
+    required EscopoEdicao escopo,
+    required String titulo,
+    required String subtitulo,
+  }) {
+    final selecionado = _escopoSelecionado == escopo;
+
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: selecionado ? AppColors.vermelhoErro : AppColors.cinzaBorda,
+          width: 2,
+        ),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            setState(() {
+              _escopoSelecionado = escopo;
+            });
+          },
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  width: 20,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: selecionado ? AppColors.vermelhoErro : AppColors.cinzaTexto,
+                      width: 2,
+                    ),
+                    color: selecionado ? AppColors.vermelhoErro : Colors.transparent,
+                  ),
+                  child: selecionado
+                      ? const Icon(
+                          Icons.check,
+                          size: 12,
+                          color: AppColors.branco,
+                        )
+                      : null,
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        titulo,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: selecionado ? AppColors.vermelhoErro : AppColors.cinzaEscuro,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitulo,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: AppColors.cinzaTexto,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (selecionado)
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.vermelhoErro.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.arrow_forward_ios,
+                      color: AppColors.vermelhoErro,
+                      size: 16,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBotoes() {
+    final podeExcluir = widget.transacao.grupoRecorrencia == null || _escopoSelecionado != null;
+
+    return Row(
+      children: [
+        // Botão Cancelar
+        Expanded(
+          child: OutlinedButton(
+            onPressed: _processando ? null : () => Navigator.of(context).pop(false),
+            style: OutlinedButton.styleFrom(
+              side: BorderSide(color: Colors.grey[400]!),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text(
+              'Cancelar',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppColors.cinzaTexto,
+              ),
+            ),
+          ),
+        ),
+
+        const SizedBox(width: 16),
+
+        // Botão Excluir
+        Expanded(
+          child: ElevatedButton(
+            onPressed: (podeExcluir && !_processando) ? _executarExclusao : null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.vermelhoErro,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              elevation: 0,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (_processando)
+                  const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                else
+                  const Icon(Icons.delete_forever, size: 18),
+                const SizedBox(width: 8),
+                Text(
+                  _processando ? 'Excluindo...' : 'Excluir',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _executarExclusao() async {
+    setState(() {
+      _processando = true;
+    });
+
+    try {
+      if (widget.transacao.grupoRecorrencia != null && _escopoSelecionado != null) {
+        // Exclusão por escopo para transação recorrente
+        final resultado = await TransacaoEditService.instance.excluirGrupo(
+          widget.transacao,
+          _escopoSelecionado!,
+        );
+
+        if (!resultado.sucesso) {
+          throw Exception(resultado.erro ?? 'Erro ao excluir grupo');
+        }
+      } else {
+        // Exclusão simples
+        await TransacaoService.instance.deleteTransacao(widget.transacao.id);
+      }
+
+      // Navegação segura após exclusão
+      if (mounted) {
+        Navigator.of(context).pop(true);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _processando = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao excluir: $e')),
+        );
+
+        // Em caso de erro grave, navegar para tela segura
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (context) => const MainNavigation(initialIndex: 2),
+          ),
+          (route) => false,
+        );
+      }
+    }
+  }
+
+  IconData _getIconeTransacao() {
+    if (widget.transacao.tipo == 'receita') {
+      return Icons.trending_up;
+    } else if (widget.transacao.tipo == 'despesa') {
+      return widget.transacao.cartaoId != null ? Icons.credit_card : Icons.trending_down;
+    } else {
+      return Icons.swap_horiz;
     }
   }
 }
@@ -609,12 +1022,12 @@ class EditOptionCardModal extends StatelessWidget {
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: cor.withOpacity(0.2),
+            color: cor.withValues(alpha: 0.2),
             width: 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -636,7 +1049,7 @@ class EditOptionCardModal extends StatelessWidget {
                       gradient: LinearGradient(
                         colors: [
                           cor,
-                          cor.withOpacity(0.8),
+                          cor.withValues(alpha: 0.8),
                         ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
@@ -644,7 +1057,7 @@ class EditOptionCardModal extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: cor.withOpacity(0.3),
+                          color: cor.withValues(alpha: 0.3),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
@@ -684,7 +1097,7 @@ class EditOptionCardModal extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: cor.withOpacity(0.1),
+                        color: cor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
