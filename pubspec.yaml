@@ -31,6 +31,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
   
   # Supabase para auth e database - mais recente
   supabase_flutter: ^2.10.0
@@ -74,6 +76,11 @@ dependencies:
 
   # Share - para compartilhar arquivos
   share_plus: ^12.0.0
+
+  # SVG e paths
+  flutter_svg: ^2.0.10+1
+  path_drawing: ^1.0.1
+  xml: ^6.5.0
 
   # File handling - para importação
   file_picker: ^8.1.6

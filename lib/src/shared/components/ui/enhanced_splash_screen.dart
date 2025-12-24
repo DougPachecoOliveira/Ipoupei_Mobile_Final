@@ -12,7 +12,7 @@
 
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
-import '../loading/ipoupei_loading_system.dart';
+import '../loading/ipoupei_wave_loader.dart';
 import '../../theme/app_colors.dart';
 
 class EnhancedSplashScreen extends StatefulWidget {
@@ -33,7 +33,6 @@ class EnhancedSplashScreen extends StatefulWidget {
 
 class _EnhancedSplashScreenState extends State<EnhancedSplashScreen>
     with TickerProviderStateMixin {
-
   late AnimationController _gradientController;
   late AnimationController _logoController;
   late AnimationController _particlesController;
@@ -79,58 +78,35 @@ class _EnhancedSplashScreenState extends State<EnhancedSplashScreen>
 
   void _setupAnimations() {
     // Gradiente animado
-    _gradientAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _gradientController,
-      curve: Curves.easeInOut,
-    ));
+    _gradientAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _gradientController, curve: Curves.easeInOut),
+    );
 
     // Logo: rotação suave
     _logoRotation = Tween<double>(
       begin: 0,
       end: 2 * math.pi,
-    ).animate(CurvedAnimation(
-      parent: _logoController,
-      curve: Curves.linear,
-    ));
+    ).animate(CurvedAnimation(parent: _logoController, curve: Curves.linear));
 
     // Logo: breathing effect
-    _logoScale = Tween<double>(
-      begin: 0.9,
-      end: 1.1,
-    ).animate(CurvedAnimation(
-      parent: _logoController,
-      curve: Curves.easeInOut,
-    ));
+    _logoScale = Tween<double>(begin: 0.9, end: 1.1).animate(
+      CurvedAnimation(parent: _logoController, curve: Curves.easeInOut),
+    );
 
     // Logo: glow pulsante
-    _logoGlow = Tween<double>(
-      begin: 0.3,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _logoController,
-      curve: Curves.easeInOut,
-    ));
+    _logoGlow = Tween<double>(begin: 0.3, end: 1.0).animate(
+      CurvedAnimation(parent: _logoController, curve: Curves.easeInOut),
+    );
 
     // Partículas flutuantes
-    _particleOffset = Tween<double>(
-      begin: 0,
-      end: 2 * math.pi,
-    ).animate(CurvedAnimation(
-      parent: _particlesController,
-      curve: Curves.linear,
-    ));
+    _particleOffset = Tween<double>(begin: 0, end: 2 * math.pi).animate(
+      CurvedAnimation(parent: _particlesController, curve: Curves.linear),
+    );
 
     // Fade dos textos
-    _textFade = Tween<double>(
-      begin: 0.6,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _textController,
-      curve: Curves.easeInOut,
-    ));
+    _textFade = Tween<double>(begin: 0.6, end: 1.0).animate(
+      CurvedAnimation(parent: _textController, curve: Curves.easeInOut),
+    );
   }
 
   @override
@@ -189,11 +165,7 @@ class _EnhancedSplashScreenState extends State<EnhancedSplashScreen>
                   _gradientAnimation.value * 0.1,
                 )!,
               ],
-              stops: [
-                0.0,
-                0.5 + (_gradientAnimation.value * 0.2),
-                1.0,
-              ],
+              stops: [0.0, 0.5 + (_gradientAnimation.value * 0.2), 1.0],
             ),
           ),
         );
@@ -208,14 +180,17 @@ class _EnhancedSplashScreenState extends State<EnhancedSplashScreen>
       builder: (context, child) {
         return Stack(
           children: List.generate(12, (index) {
-            final angle = (index * 30.0) + (_particleOffset.value * 180 / math.pi);
+            final angle =
+                (index * 30.0) + (_particleOffset.value * 180 / math.pi);
             final radius = 100 + (index * 20);
             final size = 4.0 + (index % 3);
 
-            final x = MediaQuery.of(context).size.width / 2 +
-                      radius * math.cos(angle * math.pi / 180);
-            final y = MediaQuery.of(context).size.height / 2 +
-                      radius * math.sin(angle * math.pi / 180) * 0.6;
+            final x =
+                MediaQuery.of(context).size.width / 2 +
+                radius * math.cos(angle * math.pi / 180);
+            final y =
+                MediaQuery.of(context).size.height / 2 +
+                radius * math.sin(angle * math.pi / 180) * 0.6;
 
             return Positioned(
               left: x,
@@ -252,15 +227,9 @@ class _EnhancedSplashScreenState extends State<EnhancedSplashScreen>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Logo com múltiplos efeitos
-          _buildEnhancedLogo(),
+          if (widget.showProgress) _buildEnhancedLogo(),
 
-          const SizedBox(height: 40),
-
-          // Loading indicator personalizado
-          if (widget.showProgress) _buildCustomLoadingIndicator(),
-
-          const SizedBox(height: 20),
+          if (widget.showProgress) const SizedBox(height: 24),
 
           // Textos animados
           _buildAnimatedTexts(),
@@ -271,115 +240,23 @@ class _EnhancedSplashScreenState extends State<EnhancedSplashScreen>
 
   /// Logo com múltiplos efeitos simultâneos
   Widget _buildEnhancedLogo() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final loaderWidth = math.min(screenWidth * 0.9, 360.0);
+
     return AnimatedBuilder(
       animation: Listenable.merge([_logoRotation, _logoScale, _logoGlow]),
       builder: (context, child) {
         return Transform.scale(
           scale: _logoScale.value,
           child: Transform.rotate(
-            angle: _logoRotation.value * 0.1, // Rotação muito suave
-            child: Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(30),
-                gradient: RadialGradient(
-                  colors: [
-                    AppColors.tealPrimary.withValues(alpha: 0.1),
-                    AppColors.tealPrimary.withValues(alpha: 0.05),
-                    Colors.transparent,
-                  ],
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.tealPrimary.withValues(alpha: _logoGlow.value * 0.3),
-                    blurRadius: 30 * _logoGlow.value,
-                    spreadRadius: 5 * _logoGlow.value,
-                  ),
-                  BoxShadow(
-                    color: Colors.white.withValues(alpha: 0.5),
-                    blurRadius: 10,
-                    offset: const Offset(-2, -2),
-                  ),
-                  BoxShadow(
-                    color: Colors.grey.shade300.withValues(alpha: 0.5),
-                    blurRadius: 10,
-                    offset: const Offset(2, 2),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(30),
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    // Shimmer effect
-                    Positioned.fill(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment(-1.0, -1.0),
-                            end: Alignment(1.0, 1.0),
-                            colors: [
-                              Colors.transparent,
-                              Colors.white.withValues(alpha: _logoGlow.value * 0.3),
-                              Colors.transparent,
-                            ],
-                            transform: GradientRotation(_logoRotation.value),
-                          ),
-                        ),
-                      ),
-                    ),
-                    // Logo
-                    Center(
-                      child: Image.asset(
-                        'assets/images/Logo.png',
-                        width: 80,
-                        height: 80,
-                        fit: BoxFit.contain, // Para manter transparência
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            width: 80,
-                            height: 80,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(20),
-                              color: AppColors.tealPrimary.withValues(alpha: 0.1),
-                            ),
-                            child: Icon(
-                              Icons.savings,
-                              size: 40,
-                              color: AppColors.tealPrimary,
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+            angle: _logoRotation.value * 0.05,
+            child: Opacity(
+              opacity: _logoGlow.value.clamp(0.6, 1.0),
+              child: IPoupeiWaveLoader(width: loaderWidth, height: 240),
             ),
           ),
         );
       },
-    );
-  }
-
-  /// Loading indicator personalizado
-  Widget _buildCustomLoadingIndicator() {
-    return const IPoupeiBaseLoading(
-      size: IPoupeiLoadingSize.medium,
-      context: IPoupeiLoadingContext.sync,
-      showMessage: false,
-      showLogo: false,
-      customChild: SizedBox(
-        width: 40,
-        height: 40,
-        child: CircularProgressIndicator(
-          strokeWidth: 3,
-          color: AppColors.tealPrimary,
-          backgroundColor: Colors.grey,
-        ),
-      ),
     );
   }
 
