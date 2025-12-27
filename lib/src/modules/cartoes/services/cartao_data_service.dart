@@ -184,23 +184,36 @@ class CartaoDataService {
         final cartao = cartoes[i];
         
         // Buscar gasto atual (transações não efetivadas)
+        // 🎯 LIMITE INTELIGENTE: Distinguir parceladas vs recorrentes
+        final mesAtual = DateTime.now().month;
         final gastoResult = await _localDb.database?.query(
           'transacoes',
           columns: ['valor'],
-          where: 'cartao_id = ? AND usuario_id = ? AND efetivado = 0',
-          whereArgs: [cartao.id, userId],
+          where: '''
+            cartao_id = ? AND usuario_id = ? AND efetivado = 0
+            AND (
+              eh_recorrente = 0 OR eh_recorrente IS NULL
+              OR
+              (eh_recorrente = 1 AND tipo_despesa = 'previsivel' AND parcela_atual = ?)
+              OR
+              (eh_recorrente = 1 AND tipo_despesa = 'parcelada')
+            )
+          ''',
+          whereArgs: [cartao.id, userId, mesAtual],
         ) ?? [];
 
         final gastoAtual = gastoResult.fold<double>(
-          0.0, 
+          0.0,
           (total, row) => total + ((row['valor'] as num?)?.toDouble() ?? 0.0),
         );
 
         // Calcular próximo vencimento
         final proximaFatura = _calcularProximaFatura(cartao);
 
-        // Logs reduzidos - apenas se necessário para debug específico
-        // log('✅ ${cartao.nome}: R\$ ${gastoAtual.toStringAsFixed(2)}');
+        // 🎯 Log para debug do limite inteligente
+        if (gastoResult.isNotEmpty) {
+          log('🎯 ${cartao.nome}: R\$ ${gastoAtual.toStringAsFixed(2)} (mês $mesAtual - ${gastoResult.length} transações) - Recorrentes só parcela atual, Parceladas valor completo');
+        }
       }
 
       return cartoes;
@@ -1069,20 +1082,13 @@ class CartaoDataService {
   Future<DateTime> _calcularDataVencimentoMes(String cartaoId, DateTime mes) async {
     final cartao = await fetchCartao(cartaoId);
     final diaVencimento = cartao?.diaVencimento ?? 13;
-    
-    // Calcular data de vencimento para o mês especificado
-    var dataVencimento = DateTime(mes.year, mes.month, diaVencimento);
-    
-    // Se a data já passou neste mês, ir para o próximo
-    if (dataVencimento.isBefore(DateTime.now()) && mes.month == DateTime.now().month) {
-      if (mes.month == 12) {
-        dataVencimento = DateTime(mes.year + 1, 1, diaVencimento);
-      } else {
-        dataVencimento = DateTime(mes.year, mes.month + 1, diaVencimento);
-      }
-    }
-    
-    return dataVencimento;
+
+    // Sempre fixa na combinação ano/mês solicitada; se o dia não existir (ex: 31/02),
+    // usa o último dia do mês para garantir que a fatura de referência permaneça no mês alvo.
+    final ultimoDiaDoMes = DateTime(mes.year, mes.month + 1, 0).day;
+    final diaSeguro = diaVencimento > ultimoDiaDoMes ? ultimoDiaDoMes : diaVencimento;
+
+    return DateTime(mes.year, mes.month, diaSeguro);
   }
 
   /// 🎯 OBTER DIA DE FECHAMENTO DO CARTÃO
@@ -1617,75 +1623,10 @@ class CartaoDataService {
         transacoes[i] = transacao;
       }
 
-      // 🌐 Tentar sincronizar com Supabase se estiver online
-      final isOnline = await ConnectivityHelper.instance.isOnline();
-      log('🌐 Status conectividade: ${isOnline ? "ONLINE" : "OFFLINE"}');
-
-      if (isOnline) {
-        try {
-          // Preparar dados para Supabase (sem campos específicos do SQLite)
-          final transacoesSupabase = transacoes.map((transacao) {
-            final transacaoSupabase = Map<String, dynamic>.from(transacao);
-
-            // Remover campos específicos do SQLite
-            transacaoSupabase.remove('sincronizado');
-            transacaoSupabase.remove('sync_status');
-            transacaoSupabase.remove('last_sync');
-
-            // Restaurar formato de data para Supabase
-            if (transacaoSupabase['data'] != null) {
-              final dateStr = transacaoSupabase['data'] as String;
-              if (!dateStr.contains('T')) {
-                transacaoSupabase['data'] = '${dateStr}T00:00:00Z';
-              }
-            }
-
-            // Remover ID para deixar Supabase auto-gerar
-            transacaoSupabase.remove('id');
-
-            return transacaoSupabase;
-          }).toList();
-
-          // Inserir todas as transações no Supabase de uma vez
-          await _supabaseClient.from('transacoes').insert(transacoesSupabase);
-
-          // Marcar todas como sincronizadas no banco local
-          for (final transacao in transacoes) {
-            await LocalDatabase.instance.updateTransacaoLocal(
-              transacao['id'],
-              {'sincronizado': true}
-            );
-          }
-
-          // Atualizar faturas no Supabase
-          for (final transacao in transacoes) {
-            try {
-              await _atualizarValorFatura(
-                transacao['fatura_vencimento'] as String,
-                cartaoId,
-                valorMensal
-              );
-            } catch (faturaError) {
-              log('⚠️ Erro ao atualizar fatura: $faturaError');
-            }
-          }
-
-          log('☁️ ${transacoes.length} transação(ões) ${isParcela ? "parcelada(s)" : "recorrente(s)"} sincronizada(s) com Supabase');
-
-        } catch (onlineError) {
-          log('⚠️ Erro ao sincronizar online (dados salvos offline): $onlineError');
-
-          // Marca como não sincronizado para tentar depois
-          for (final transacao in transacoes) {
-            await LocalDatabase.instance.updateTransacaoLocal(
-              transacao['id'],
-              {'sincronizado': false}
-            );
-          }
-        }
-      } else {
-        log('📱 Modo OFFLINE: ${transacoes.length} despesa(s) ${isParcela ? "parcelada(s)" : "recorrente(s)"} salva(s) localmente para sincronizar depois');
-      }
+      // 🔥 OFFLINE-FIRST: Não sincronizar imediatamente para evitar duplicação
+      // A sync queue irá gerenciar a sincronização adequadamente
+      log('📱 OFFLINE-FIRST: ${transacoes.length} despesa(s) ${isParcela ? "parcelada(s)" : "recorrente(s)"} salva(s) localmente');
+      log('⏳ Sync queue irá sincronizar automaticamente quando apropriado');
 
       log('✅ Despesa ${isParcela ? "parcelada" : "recorrente"} criada OFFLINE-FIRST: ${transacoes.length} itens');
 
