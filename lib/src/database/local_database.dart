@@ -46,7 +46,7 @@ class LocalDatabase {
 
       _database = await openDatabase(
         path,
-        version: 7,
+        version: 8,
         onCreate: _createTables,
         onUpgrade: _upgradeTables,
       );
@@ -132,6 +132,11 @@ class LocalDatabase {
         aceita_comunic_email INTEGER DEFAULT 1,
         aceita_comunic_whatsapp INTEGER DEFAULT 1,
         precisa_onboarding INTEGER DEFAULT 1,
+        asaas_customer_id TEXT,
+        asaas_subscription_id TEXT,
+        cpf TEXT,
+        trial_ja_usado INTEGER DEFAULT 0,
+        trial_primeira_vez_em TEXT,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
         sync_status TEXT DEFAULT 'synced',
@@ -689,6 +694,46 @@ class LocalDatabase {
         debugPrint('✅ Coluna precisa_onboarding adicionada');
       } else {
         debugPrint('✅ Coluna precisa_onboarding já existe');
+      }
+    }
+
+    if (oldVersion < 8) {
+      debugPrint('🔄 Adicionando colunas de billing na versão 8...');
+
+      final tableInfo = await db.rawQuery('PRAGMA table_info(perfil_usuario)');
+      final columnNames = tableInfo.map((column) => column['name']).toSet();
+
+      if (!columnNames.contains('asaas_customer_id')) {
+        await db.execute(
+          'ALTER TABLE perfil_usuario ADD COLUMN asaas_customer_id TEXT',
+        );
+        debugPrint('✅ Coluna asaas_customer_id adicionada');
+      }
+
+      if (!columnNames.contains('asaas_subscription_id')) {
+        await db.execute(
+          'ALTER TABLE perfil_usuario ADD COLUMN asaas_subscription_id TEXT',
+        );
+        debugPrint('✅ Coluna asaas_subscription_id adicionada');
+      }
+
+      if (!columnNames.contains('cpf')) {
+        await db.execute('ALTER TABLE perfil_usuario ADD COLUMN cpf TEXT');
+        debugPrint('✅ Coluna cpf adicionada');
+      }
+
+      if (!columnNames.contains('trial_ja_usado')) {
+        await db.execute(
+          'ALTER TABLE perfil_usuario ADD COLUMN trial_ja_usado INTEGER DEFAULT 0',
+        );
+        debugPrint('✅ Coluna trial_ja_usado adicionada');
+      }
+
+      if (!columnNames.contains('trial_primeira_vez_em')) {
+        await db.execute(
+          'ALTER TABLE perfil_usuario ADD COLUMN trial_primeira_vez_em TEXT',
+        );
+        debugPrint('✅ Coluna trial_primeira_vez_em adicionada');
       }
     }
   }
