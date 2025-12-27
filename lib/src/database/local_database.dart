@@ -1,8 +1,8 @@
 // 💾 Local Database - iPoupei Mobile
-// 
+//
 // Gerencia SQLite local como mirror do Supabase
 // Armazena dados offline e sincroniza quando online
-// 
+//
 // Baseado em: Tabelas principais do Supabase
 // Arquitetura: SQLite + Mirror Pattern
 
@@ -22,18 +22,18 @@ class LocalDatabase {
     _instance ??= LocalDatabase._internal();
     return _instance!;
   }
-  
+
   LocalDatabase._internal();
-  
+
   Database? _database;
   String? _currentUserId;
   bool _initialized = false;
-  
+
   /// Getters públicos
   bool get isInitialized => _initialized;
   String? get currentUserId => _currentUserId;
   Database? get database => _database;
-  
+
   /// 🚀 INICIALIZA DATABASE
   Future<void> initialize() async {
     if (_initialized && _database != null) return;
@@ -46,14 +46,13 @@ class LocalDatabase {
 
       _database = await openDatabase(
         path,
-        version: 6,
+        version: 7,
         onCreate: _createTables,
         onUpgrade: _upgradeTables,
       );
 
       _initialized = true;
       debugPrint('✅ Local Database inicializado: $path');
-
     } catch (e) {
       debugPrint('❌ Erro ao inicializar Local Database: $e');
       rethrow;
@@ -82,7 +81,6 @@ class LocalDatabase {
       // Reinicializar
       await initialize();
       debugPrint('✅ Banco de dados recriado com sucesso!');
-
     } catch (e) {
       debugPrint('❌ Erro ao deletar e recriar banco: $e');
       rethrow;
@@ -92,7 +90,7 @@ class LocalDatabase {
   /// 📋 CRIA TABELAS ESPELHO DO SUPABASE
   Future<void> _createTables(Database db, int version) async {
     debugPrint('📋 Criando tabelas locais...');
-    
+
     // Tabela perfil_usuario - espelho exato do Supabase
     await db.execute('''
       CREATE TABLE perfil_usuario (
@@ -133,13 +131,14 @@ class LocalDatabase {
         diagnostico_resultado_json TEXT,
         aceita_comunic_email INTEGER DEFAULT 1,
         aceita_comunic_whatsapp INTEGER DEFAULT 1,
+        precisa_onboarding INTEGER DEFAULT 1,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
         sync_status TEXT DEFAULT 'synced',
         last_sync TEXT
       )
     ''');
-    
+
     // Tabela notificacoes - espelho exato do Supabase
     await db.execute('''
       CREATE TABLE notificacoes (
@@ -163,7 +162,7 @@ class LocalDatabase {
         FOREIGN KEY (user_id) REFERENCES perfil_usuario (id)
       )
     ''');
-    
+
     // Tabela contas - espelho exato do Supabase
     await db.execute('''
       CREATE TABLE contas (
@@ -191,7 +190,7 @@ class LocalDatabase {
         FOREIGN KEY (usuario_id) REFERENCES perfil_usuario (id)
       )
     ''');
-    
+
     // Tabela categorias - espelho exato do Supabase
     await db.execute('''
       CREATE TABLE categorias (
@@ -212,7 +211,7 @@ class LocalDatabase {
         FOREIGN KEY (usuario_id) REFERENCES perfil_usuario (id)
       )
     ''');
-    
+
     // Tabela subcategorias - espelho exato do Supabase
     await db.execute('''
       CREATE TABLE subcategorias (
@@ -230,7 +229,7 @@ class LocalDatabase {
         FOREIGN KEY (categoria_id) REFERENCES categorias (id)
       )
     ''');
-    
+
     // Tabela cartoes - espelho exato do Supabase
     await db.execute('''
       CREATE TABLE cartoes (
@@ -255,7 +254,7 @@ class LocalDatabase {
         FOREIGN KEY (conta_debito_id) REFERENCES contas (id)
       )
     ''');
-    
+
     // Tabela transacoes - espelho exato do Supabase
     await db.execute('''
       CREATE TABLE transacoes (
@@ -308,7 +307,7 @@ class LocalDatabase {
         FOREIGN KEY (conta_destino_id) REFERENCES contas (id)
       )
     ''');
-    
+
     // Tabela faturas - espelho exato do Supabase
     await db.execute('''
       CREATE TABLE faturas (
@@ -335,7 +334,7 @@ class LocalDatabase {
         FOREIGN KEY (usuario_id) REFERENCES perfil_usuario (id)
       )
     ''');
-    
+
     // Tabela planejamentos - espelho exato do Supabase
     await db.execute('''
       CREATE TABLE planejamentos (
@@ -396,33 +395,57 @@ class LocalDatabase {
         FOREIGN KEY (usuario_id) REFERENCES perfil_usuario (id)
       )
     ''');
-    
+
     // Índices para melhor performance
     await db.execute('CREATE INDEX idx_contas_usuario ON contas(usuario_id)');
-    await db.execute('CREATE INDEX idx_categorias_usuario ON categorias(usuario_id)');
-    await db.execute('CREATE INDEX idx_subcategorias_categoria ON subcategorias(categoria_id)');
+    await db.execute(
+      'CREATE INDEX idx_categorias_usuario ON categorias(usuario_id)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_subcategorias_categoria ON subcategorias(categoria_id)',
+    );
     await db.execute('CREATE INDEX idx_cartoes_usuario ON cartoes(usuario_id)');
-    await db.execute('CREATE INDEX idx_transacoes_usuario ON transacoes(usuario_id)');
+    await db.execute(
+      'CREATE INDEX idx_transacoes_usuario ON transacoes(usuario_id)',
+    );
     await db.execute('CREATE INDEX idx_transacoes_data ON transacoes(data)');
     await db.execute('CREATE INDEX idx_transacoes_tipo ON transacoes(tipo)');
     await db.execute('CREATE INDEX idx_faturas_usuario ON faturas(usuario_id)');
     await db.execute('CREATE INDEX idx_faturas_cartao ON faturas(cartao_id)');
     await db.execute('CREATE INDEX idx_faturas_periodo ON faturas(ano, mes)');
-    await db.execute('CREATE INDEX idx_planejamentos_usuario ON planejamentos(usuario_id)');
-    await db.execute('CREATE INDEX idx_planejamentos_periodo ON planejamentos(ano, mes)');
-    await db.execute('CREATE INDEX idx_planejamentos_categoria ON planejamentos(categoria_id)');
-    await db.execute('CREATE INDEX idx_sync_queue_table ON sync_queue(table_name)');
-    await db.execute('CREATE INDEX idx_grupos_metadados_usuario ON grupos_metadados(usuario_id)');
-    await db.execute('CREATE INDEX idx_grupos_metadados_grupo ON grupos_metadados(grupo_id)');
-    await db.execute('CREATE INDEX idx_grupos_metadados_tipo ON grupos_metadados(tipo_grupo)');
-    
+    await db.execute(
+      'CREATE INDEX idx_planejamentos_usuario ON planejamentos(usuario_id)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_planejamentos_periodo ON planejamentos(ano, mes)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_planejamentos_categoria ON planejamentos(categoria_id)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_sync_queue_table ON sync_queue(table_name)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_grupos_metadados_usuario ON grupos_metadados(usuario_id)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_grupos_metadados_grupo ON grupos_metadados(grupo_id)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_grupos_metadados_tipo ON grupos_metadados(tipo_grupo)',
+    );
+
     debugPrint('✅ Tabelas locais criadas com estrutura espelho do Supabase');
   }
-  
+
   /// 🔄 UPGRADE DE TABELAS
-  Future<void> _upgradeTables(Database db, int oldVersion, int newVersion) async {
+  Future<void> _upgradeTables(
+    Database db,
+    int oldVersion,
+    int newVersion,
+  ) async {
     debugPrint('🔄 Upgrade de tabelas: $oldVersion -> $newVersion');
-    
+
     if (oldVersion < 2) {
       debugPrint('🔄 Adicionando tabela faturas na versão 2...');
 
@@ -454,7 +477,9 @@ class LocalDatabase {
       ''');
 
       // Índices para a tabela faturas
-      await db.execute('CREATE INDEX idx_faturas_usuario ON faturas(usuario_id)');
+      await db.execute(
+        'CREATE INDEX idx_faturas_usuario ON faturas(usuario_id)',
+      );
       await db.execute('CREATE INDEX idx_faturas_cartao ON faturas(cartao_id)');
       await db.execute('CREATE INDEX idx_faturas_periodo ON faturas(ano, mes)');
 
@@ -465,21 +490,39 @@ class LocalDatabase {
       debugPrint('🔄 Adicionando campos do diagnóstico na versão 3...');
 
       // Adicionar novos campos de diagnóstico na tabela perfil_usuario
-      await db.execute('ALTER TABLE perfil_usuario ADD COLUMN diagnostico_progresso_json TEXT');
-      await db.execute('ALTER TABLE perfil_usuario ADD COLUMN diagnostico_score_total INTEGER DEFAULT 0');
-      await db.execute('ALTER TABLE perfil_usuario ADD COLUMN diagnostico_score_percepcao INTEGER DEFAULT 0');
-      await db.execute('ALTER TABLE perfil_usuario ADD COLUMN diagnostico_score_organizacao INTEGER DEFAULT 0');
-      await db.execute('ALTER TABLE perfil_usuario ADD COLUMN diagnostico_score_controle INTEGER DEFAULT 0');
-      await db.execute('ALTER TABLE perfil_usuario ADD COLUMN diagnostico_score_planejamento INTEGER DEFAULT 0');
-      await db.execute('ALTER TABLE perfil_usuario ADD COLUMN diagnostico_score_investimento INTEGER DEFAULT 0');
-      await db.execute('ALTER TABLE perfil_usuario ADD COLUMN diagnostico_resultado_json TEXT');
+      await db.execute(
+        'ALTER TABLE perfil_usuario ADD COLUMN diagnostico_progresso_json TEXT',
+      );
+      await db.execute(
+        'ALTER TABLE perfil_usuario ADD COLUMN diagnostico_score_total INTEGER DEFAULT 0',
+      );
+      await db.execute(
+        'ALTER TABLE perfil_usuario ADD COLUMN diagnostico_score_percepcao INTEGER DEFAULT 0',
+      );
+      await db.execute(
+        'ALTER TABLE perfil_usuario ADD COLUMN diagnostico_score_organizacao INTEGER DEFAULT 0',
+      );
+      await db.execute(
+        'ALTER TABLE perfil_usuario ADD COLUMN diagnostico_score_controle INTEGER DEFAULT 0',
+      );
+      await db.execute(
+        'ALTER TABLE perfil_usuario ADD COLUMN diagnostico_score_planejamento INTEGER DEFAULT 0',
+      );
+      await db.execute(
+        'ALTER TABLE perfil_usuario ADD COLUMN diagnostico_score_investimento INTEGER DEFAULT 0',
+      );
+      await db.execute(
+        'ALTER TABLE perfil_usuario ADD COLUMN diagnostico_resultado_json TEXT',
+      );
       // await db.execute('ALTER TABLE perfil_usuario ADD COLUMN diagnostico_dividas_json TEXT'); // Campo não existe no Supabase
 
       debugPrint('✅ Campos do diagnóstico adicionados na versão 3');
     }
 
     if (oldVersion < 4) {
-      debugPrint('🔄 Adicionando tabelas planejamentos e grupos_metadados na versão 4...');
+      debugPrint(
+        '🔄 Adicionando tabelas planejamentos e grupos_metadados na versão 4...',
+      );
 
       // Tabela planejamentos - espelho exato do Supabase
       await db.execute('''
@@ -530,16 +573,30 @@ class LocalDatabase {
       ''');
 
       // Índices para a tabela planejamentos
-      await db.execute('CREATE INDEX idx_planejamentos_usuario ON planejamentos(usuario_id)');
-      await db.execute('CREATE INDEX idx_planejamentos_periodo ON planejamentos(ano, mes)');
-      await db.execute('CREATE INDEX idx_planejamentos_categoria ON planejamentos(categoria_id)');
+      await db.execute(
+        'CREATE INDEX idx_planejamentos_usuario ON planejamentos(usuario_id)',
+      );
+      await db.execute(
+        'CREATE INDEX idx_planejamentos_periodo ON planejamentos(ano, mes)',
+      );
+      await db.execute(
+        'CREATE INDEX idx_planejamentos_categoria ON planejamentos(categoria_id)',
+      );
 
       // Índices para a tabela grupos_metadados
-      await db.execute('CREATE INDEX idx_grupos_metadados_usuario ON grupos_metadados(usuario_id)');
-      await db.execute('CREATE INDEX idx_grupos_metadados_grupo ON grupos_metadados(grupo_id)');
-      await db.execute('CREATE INDEX idx_grupos_metadados_tipo ON grupos_metadados(tipo_grupo)');
+      await db.execute(
+        'CREATE INDEX idx_grupos_metadados_usuario ON grupos_metadados(usuario_id)',
+      );
+      await db.execute(
+        'CREATE INDEX idx_grupos_metadados_grupo ON grupos_metadados(grupo_id)',
+      );
+      await db.execute(
+        'CREATE INDEX idx_grupos_metadados_tipo ON grupos_metadados(tipo_grupo)',
+      );
 
-      debugPrint('✅ Tabelas planejamentos e grupos_metadados criadas na versão 4');
+      debugPrint(
+        '✅ Tabelas planejamentos e grupos_metadados criadas na versão 4',
+      );
     }
 
     if (oldVersion < 5) {
@@ -547,7 +604,7 @@ class LocalDatabase {
 
       // Verifica se a tabela planejamentos existe (casos de upgrade falhado)
       final result = await db.rawQuery(
-        "SELECT name FROM sqlite_master WHERE type='table' AND name='planejamentos';"
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='planejamentos';",
       );
 
       if (result.isEmpty) {
@@ -575,9 +632,15 @@ class LocalDatabase {
         ''');
 
         // Índices para a tabela planejamentos
-        await db.execute('CREATE INDEX idx_planejamentos_usuario ON planejamentos(usuario_id)');
-        await db.execute('CREATE INDEX idx_planejamentos_periodo ON planejamentos(ano, mes)');
-        await db.execute('CREATE INDEX idx_planejamentos_categoria ON planejamentos(categoria_id)');
+        await db.execute(
+          'CREATE INDEX idx_planejamentos_usuario ON planejamentos(usuario_id)',
+        );
+        await db.execute(
+          'CREATE INDEX idx_planejamentos_periodo ON planejamentos(ano, mes)',
+        );
+        await db.execute(
+          'CREATE INDEX idx_planejamentos_categoria ON planejamentos(categoria_id)',
+        );
 
         debugPrint('✅ Tabela planejamentos criada na versão 5');
       } else {
@@ -593,14 +656,18 @@ class LocalDatabase {
       final columnNames = tableInfo.map((column) => column['name']).toSet();
 
       if (!columnNames.contains('aceita_comunic_email')) {
-        await db.execute('ALTER TABLE perfil_usuario ADD COLUMN aceita_comunic_email INTEGER DEFAULT 1');
+        await db.execute(
+          'ALTER TABLE perfil_usuario ADD COLUMN aceita_comunic_email INTEGER DEFAULT 1',
+        );
         debugPrint('✅ Coluna aceita_comunic_email adicionada');
       } else {
         debugPrint('✅ Coluna aceita_comunic_email já existe');
       }
 
       if (!columnNames.contains('aceita_comunic_whatsapp')) {
-        await db.execute('ALTER TABLE perfil_usuario ADD COLUMN aceita_comunic_whatsapp INTEGER DEFAULT 1');
+        await db.execute(
+          'ALTER TABLE perfil_usuario ADD COLUMN aceita_comunic_whatsapp INTEGER DEFAULT 1',
+        );
         debugPrint('✅ Coluna aceita_comunic_whatsapp adicionada');
       } else {
         debugPrint('✅ Coluna aceita_comunic_whatsapp já existe');
@@ -608,8 +675,24 @@ class LocalDatabase {
 
       debugPrint('✅ Colunas de comunicação processadas na versão 6');
     }
+
+    if (oldVersion < 7) {
+      debugPrint('🔄 Adicionando coluna precisa_onboarding na versão 7...');
+
+      final tableInfo = await db.rawQuery('PRAGMA table_info(perfil_usuario)');
+      final columnNames = tableInfo.map((column) => column['name']).toSet();
+
+      if (!columnNames.contains('precisa_onboarding')) {
+        await db.execute(
+          'ALTER TABLE perfil_usuario ADD COLUMN precisa_onboarding INTEGER DEFAULT 1',
+        );
+        debugPrint('✅ Coluna precisa_onboarding adicionada');
+      } else {
+        debugPrint('✅ Coluna precisa_onboarding já existe');
+      }
+    }
   }
-  
+
   /// 👤 DEFINE USUÁRIO ATUAL
   Future<void> setCurrentUser(String userId) async {
     if (!_initialized) await initialize();
@@ -623,21 +706,21 @@ class LocalDatabase {
       await _ensureUserProfile(userId);
     }
   }
-  
+
   /// 🚪 LIMPA USUÁRIO ATUAL
   Future<void> clearCurrentUser() async {
     if (!_initialized) return;
-    
+
     debugPrint('🧹 Limpando dados do usuário atual...');
-    
+
     _currentUserId = null;
-    
+
     // TODO: Implementar limpeza seletiva de dados sensíveis
     // Por enquanto, mantemos os dados para funcionamento offline
-    
+
     debugPrint('✅ Dados do usuário limpos');
   }
-  
+
   /// 👤 GARANTE QUE PERFIL DO USUÁRIO EXISTE
   Future<void> _ensureUserProfile(String userId) async {
     try {
@@ -647,15 +730,18 @@ class LocalDatabase {
         whereArgs: [userId],
         limit: 1,
       );
-      
+
       if (result.isEmpty) {
         debugPrint('👤 Criando perfil de usuário local: $userId');
-        
+
         // ✅ OBTER DADOS DO USUÁRIO AUTENTICADO
         final user = Supabase.instance.client.auth.currentUser;
         final email = user?.email ?? 'usuario@app.com';
-        final nome = user?.userMetadata?['nome'] ?? user?.userMetadata?['name'] ?? 'Usuário';
-        
+        final nome =
+            user?.userMetadata?['nome'] ??
+            user?.userMetadata?['name'] ??
+            'Usuário';
+
         await _database!.insert('perfil_usuario', {
           'id': userId,
           'nome': nome, // ✅ CAMPO OBRIGATÓRIO - dados reais do usuário
@@ -666,12 +752,11 @@ class LocalDatabase {
           'last_sync': null,
         });
       }
-      
     } catch (e) {
       debugPrint('❌ Erro ao garantir perfil do usuário: $e');
     }
   }
-  
+
   /// 🔧 GARANTE INICIALIZAÇÃO ANTES DE QUALQUER OPERAÇÃO
   Future<void> _ensureInitialized() async {
     if (!_initialized || _database == null) {
@@ -681,7 +766,7 @@ class LocalDatabase {
   }
 
   /// 📊 MÉTODOS BÁSICOS DE CRUD COM AUTO-INICIALIZAÇÃO
-  
+
   /// Busca registros de uma tabela
   Future<List<Map<String, dynamic>>> select(
     String table, {
@@ -691,7 +776,7 @@ class LocalDatabase {
     int? limit,
   }) async {
     await _ensureInitialized(); // ✅ AUTO-INICIALIZAÇÃO
-    
+
     return await _database!.query(
       table,
       where: where,
@@ -700,25 +785,28 @@ class LocalDatabase {
       limit: limit,
     );
   }
-  
+
   /// Executa uma query SQL customizada
-  Future<List<Map<String, dynamic>>> rawQuery(String sql, [List<dynamic>? arguments]) async {
+  Future<List<Map<String, dynamic>>> rawQuery(
+    String sql, [
+    List<dynamic>? arguments,
+  ]) async {
     await _ensureInitialized(); // ✅ AUTO-INICIALIZAÇÃO
     return await _database!.rawQuery(sql, arguments);
   }
-  
+
   /// Insere registro em uma tabela
   Future<int> insert(String table, Map<String, dynamic> values) async {
     await _ensureInitialized(); // ✅ AUTO-INICIALIZAÇÃO
-    
+
     // Adiciona metadados de sync
     values['created_at'] = DateTime.now().toIso8601String();
     values['updated_at'] = DateTime.now().toIso8601String();
     values['sync_status'] = 'pending';
-    
+
     return await _database!.insert(table, values);
   }
-  
+
   /// Atualiza registro em uma tabela
   Future<int> update(
     String table,
@@ -727,11 +815,11 @@ class LocalDatabase {
     required List<dynamic> whereArgs,
   }) async {
     await _ensureInitialized(); // ✅ AUTO-INICIALIZAÇÃO
-    
+
     // Atualiza metadados de sync
     values['updated_at'] = DateTime.now().toIso8601String();
     values['sync_status'] = 'pending';
-    
+
     return await _database!.update(
       table,
       values,
@@ -739,7 +827,7 @@ class LocalDatabase {
       whereArgs: whereArgs,
     );
   }
-  
+
   /// Deleta registro de uma tabela
   Future<int> delete(
     String table, {
@@ -747,16 +835,12 @@ class LocalDatabase {
     required List<dynamic> whereArgs,
   }) async {
     await _ensureInitialized(); // ✅ AUTO-INICIALIZAÇÃO
-    
-    return await _database!.delete(
-      table,
-      where: where,
-      whereArgs: whereArgs,
-    );
+
+    return await _database!.delete(table, where: where, whereArgs: whereArgs);
   }
-  
+
   /// 🔄 MÉTODOS DE SINCRONIZAÇÃO
-  
+
   /// Adiciona operação à fila de sincronização E DISPARA SYNC AUTOMÁTICO
   Future<void> addToSyncQueue(
     String tableName,
@@ -767,13 +851,15 @@ class LocalDatabase {
   }) async {
     debugPrint('🔔 addToSyncQueue CHAMADO: $operation em $tableName.$recordId');
     debugPrint('📊 Dados: ${data.keys.join(', ')}');
-    debugPrint('🏗️ Initialized: $_initialized, Database: ${_database != null}');
-    
+    debugPrint(
+      '🏗️ Initialized: $_initialized, Database: ${_database != null}',
+    );
+
     if (!_initialized || _database == null) {
       debugPrint('❌ ERRO: Database não inicializado!');
       return;
     }
-    
+
     try {
       await _database!.insert('sync_queue', {
         'table_name': tableName,
@@ -783,48 +869,65 @@ class LocalDatabase {
         'created_at': DateTime.now().toIso8601String(),
       });
       debugPrint('✅ Item inserido na sync_queue com sucesso');
-      
+
       // Verificar se foi inserido
-      final count = await _database!.query('sync_queue', where: 'record_id = ?', whereArgs: [recordId]);
-      debugPrint('🔍 Verificação: ${count.length} itens na queue para $recordId');
-      
+      final count = await _database!.query(
+        'sync_queue',
+        where: 'record_id = ?',
+        whereArgs: [recordId],
+      );
+      debugPrint(
+        '🔍 Verificação: ${count.length} itens na queue para $recordId',
+      );
     } catch (e) {
       debugPrint('❌ ERRO ao inserir na sync_queue: $e');
       return;
     }
-    
+
     // 🚀 DISPARA SINCRONIZAÇÃO AUTOMÁTICA APÓS ADICIONAR À QUEUE (SE NÃO FOR OPERAÇÃO EM LOTE)
     if (!skipAutoSync) {
-      debugPrint('📡 Item adicionado à sync queue - disparando sincronização automática');
+      debugPrint(
+        '📡 Item adicionado à sync queue - disparando sincronização automática',
+      );
       _triggerAutoSync(tableName, operation, recordId);
     } else {
       debugPrint('⏸️ Auto sync pulado - operação em lote');
     }
   }
-  
+
   /// 🚀 DISPARA SINCRONIZAÇÃO AUTOMÁTICA (SEM AWAIT PARA NÃO BLOQUEAR)
   void _triggerAutoSync(String tableName, String operation, String recordId) {
     // Executa de forma assíncrona para não bloquear a operação principal
     Future.microtask(() async {
       try {
-        debugPrint('🔄 Iniciando sync automático para $operation em $tableName.$recordId');
-        
+        debugPrint(
+          '🔄 Iniciando sync automático para $operation em $tableName.$recordId',
+        );
+
         // Acessa o SyncManager e dispara sincronização
         final syncManager = SyncManager.instance;
-        
+
         // DEBUG: Verificar status do sync manager
-        debugPrint('🔍 SYNC DEBUG: isOnline=${syncManager.isOnline}, status=${syncManager.status}');
+        debugPrint(
+          '🔍 SYNC DEBUG: isOnline=${syncManager.isOnline}, status=${syncManager.status}',
+        );
 
         // Só sincroniza se estiver online e não estiver já sincronizando
         if (syncManager.isOnline && syncManager.status != SyncStatus.syncing) {
-          debugPrint('🔄 Executando sync automático para $operation em $tableName.$recordId');
+          debugPrint(
+            '🔄 Executando sync automático para $operation em $tableName.$recordId',
+          );
           await syncManager.syncAll();
-          debugPrint('✅ Sync automático concluído para $operation em $tableName.$recordId');
+          debugPrint(
+            '✅ Sync automático concluído para $operation em $tableName.$recordId',
+          );
 
           // 🔄 AGENDA REFRESH INTELIGENTE: Notifica UI após 3 segundos
           _agendarNotificacaoRefresh(tableName, operation, recordId);
         } else {
-          debugPrint('⏸️ Sync automático ignorado - isOnline: ${syncManager.isOnline}, status: ${syncManager.status}');
+          debugPrint(
+            '⏸️ Sync automático ignorado - isOnline: ${syncManager.isOnline}, status: ${syncManager.status}',
+          );
 
           // 🚨 FORÇAR SYNC se for planejamentos (temporário para debug)
           if (tableName == 'planejamentos') {
@@ -839,7 +942,6 @@ class LocalDatabase {
             }
           }
         }
-        
       } catch (e) {
         debugPrint('❌ Erro no sync automático: $e');
         // Não propaga o erro para não afetar a operação principal
@@ -848,65 +950,67 @@ class LocalDatabase {
   }
 
   /// 📡 AGENDA NOTIFICAÇÃO DE REFRESH PARA UIs
-  void _agendarNotificacaoRefresh(String tableName, String operation, String recordId) {
+  void _agendarNotificacaoRefresh(
+    String tableName,
+    String operation,
+    String recordId,
+  ) {
     Future.delayed(const Duration(seconds: 3), () {
       debugPrint('📡 Refresh recomendado para $tableName após $operation');
       // Aqui poderia ter um StreamController global para notificar UIs
       // Por enquanto, apenas log para debug
     });
   }
-  
+
   /// Busca itens pendentes de sincronização
   Future<List<Map<String, dynamic>>> getPendingSyncItems() async {
     if (!_initialized || _database == null) return [];
-    
+
     return await _database!.query(
       'sync_queue',
       orderBy: 'created_at ASC',
       limit: 50,
     );
   }
-  
+
   /// Remove item da fila de sincronização
   Future<void> removeSyncItem(int syncId) async {
     if (!_initialized || _database == null) return;
-    
-    await _database!.delete(
-      'sync_queue',
-      where: 'id = ?',
-      whereArgs: [syncId],
-    );
+
+    await _database!.delete('sync_queue', where: 'id = ?', whereArgs: [syncId]);
   }
-  
+
   /// 🧹 LIMPA TODA A QUEUE DE SYNC (para resolver problemas de read-only)
   Future<void> clearSyncQueue() async {
     if (!_initialized || _database == null) return;
-    
+
     final count = await _database!.delete('sync_queue');
     debugPrint('🧹 Queue de sync limpa: $count itens removidos');
   }
-  
+
   /// 📂 MÉTODOS ESPECÍFICOS PARA CATEGORIAS
-  
+
   /// Busca categorias localmente (offline-first)
-  Future<List<Map<String, dynamic>>> fetchCategoriasLocal({String? tipo}) async {
+  Future<List<Map<String, dynamic>>> fetchCategoriasLocal({
+    String? tipo,
+  }) async {
     if (!_initialized || _database == null || _currentUserId == null) return [];
-    
+
     String whereClause = 'usuario_id = ? AND ativo = 1';
     List<dynamic> whereArgs = [_currentUserId];
-    
+
     if (tipo != null && tipo.isNotEmpty) {
       whereClause += ' AND tipo = ?';
       whereArgs.add(tipo);
     }
-    
+
     final result = await _database!.query(
       'categorias',
       where: whereClause,
       whereArgs: whereArgs,
       orderBy: 'created_at DESC',
     );
-    
+
     return result;
   }
 
@@ -918,31 +1022,33 @@ class LocalDatabase {
     DateTime? dataFim,
   }) async {
     if (!_initialized || _database == null || _currentUserId == null) return [];
-    
+
     log('🚀 Buscando categorias com valores otimizado (offline)...');
-    
+
     // Constrói WHERE clause dinâmica
     String whereClauseCategoria = 'c.usuario_id = ? AND c.ativo = 1';
-    String whereClauseTransacao = 't.usuario_id = ? AND t.efetivado = 1';
+    String whereClauseTransacao =
+        't.usuario_id = ? AND (t.transferencia IS NULL OR t.transferencia = 0)'; // AND t.efetivado = 1 -- 🔄 COMMENTED: Show all transactions (paid + pending), but exclude transfers
     List<dynamic> whereArgs = [_currentUserId, _currentUserId];
-    
+
     if (tipo != null && tipo.isNotEmpty) {
       whereClauseCategoria += ' AND c.tipo = ?';
       whereArgs.add(tipo);
     }
-    
+
     if (dataInicio != null) {
-      whereClauseTransacao += ' AND t.data >= ?';
+      whereClauseTransacao += ' AND DATE(t.data) >= DATE(?)';
       whereArgs.add(dataInicio.toIso8601String().split('T')[0]);
     }
-    
+
     if (dataFim != null) {
-      whereClauseTransacao += ' AND t.data <= ?';
+      whereClauseTransacao += ' AND DATE(t.data) <= DATE(?)';
       whereArgs.add(dataFim.toIso8601String().split('T')[0]);
     }
-    
+
     // Query otimizada com LEFT JOIN - Uma única query ao invés de N+1
-    final sql = '''
+    final sql =
+        '''
       SELECT 
         c.id,
         c.nome,
@@ -967,52 +1073,84 @@ class LocalDatabase {
       WHERE $whereClauseCategoria
       ORDER BY stats.valor_total DESC, c.nome ASC
     ''';
-    
-    log('🔍 SQL Otimizado: $sql');
-    log('🔍 Args: $whereArgs');
-    log('🔍 User ID: $_currentUserId');
-    log('🔍 Período: ${dataInicio?.toIso8601String().split('T')[0]} até ${dataFim?.toIso8601String().split('T')[0]}');
+
+    debugPrint('🔍 SQL Otimizado: $sql');
+    debugPrint('🔍 Args: $whereArgs');
+    debugPrint('🔍 User ID: $_currentUserId');
+    debugPrint(
+      '🔍 Período: ${dataInicio?.toIso8601String().split('T')[0]} até ${dataFim?.toIso8601String().split('T')[0]}',
+    );
 
     final result = await _database!.rawQuery(sql, whereArgs);
 
     log('✅ Categorias com valores carregadas: ${result.length}');
+
+    // 🔥 DEBUG ESPECÍFICO: Verificar quantas transações de Salário existem
+    final debugSalario = await _database!.rawQuery(
+      '''
+      SELECT COUNT(*) as total, SUM(t.valor) as valor_total
+      FROM transacoes t
+      INNER JOIN categorias c ON t.categoria_id = c.id
+      WHERE c.nome = 'Salário' AND t.usuario_id = ? AND (t.transferencia IS NULL OR t.transferencia = 0)
+    ''',
+      [_currentUserId],
+    );
+
+    if (debugSalario.isNotEmpty) {
+      final totalTransacoes = debugSalario.first['total'] as int;
+      final valorTotal = debugSalario.first['valor_total'] as double?;
+      debugPrint(
+        '🔥 DEBUG SALÁRIO LocalDB: ${totalTransacoes} transações, valor total: R\$ ${valorTotal ?? 0.0}',
+      );
+    }
 
     // 🐛 DEBUG: Log detailed results
     for (final row in result) {
       final nome = row['nome'] as String;
       final valorTotal = row['valor_total'] as double;
       final qtdTransacoes = row['quantidade_transacoes'] as int;
-      log('🔍 Categoria: $nome | Valor: R\$ $valorTotal | Transações: $qtdTransacoes');
+      log(
+        '🔍 Categoria: $nome | Valor: R\$ $valorTotal | Transações: $qtdTransacoes',
+      );
     }
 
     // 🐛 DEBUG: Verificar se há transações no período para debug
-    final debugTransacoes = await _database!.rawQuery('''
+    final debugTransacoes = await _database!.rawQuery(
+      '''
       SELECT COUNT(*) as total, SUM(valor) as soma_valores
       FROM transacoes
       WHERE usuario_id = ?
         AND efetivado = 1
         AND data >= ?
         AND data <= ?
-    ''', [_currentUserId,
-          dataInicio?.toIso8601String().split('T')[0] ?? '1900-01-01',
-          dataFim?.toIso8601String().split('T')[0] ?? '2100-12-31']);
+    ''',
+      [
+        _currentUserId,
+        dataInicio?.toIso8601String().split('T')[0] ?? '1900-01-01',
+        dataFim?.toIso8601String().split('T')[0] ?? '2100-12-31',
+      ],
+    );
 
     if (debugTransacoes.isNotEmpty) {
       final totalTransacoes = debugTransacoes.first['total'] as int;
       final somaValores = debugTransacoes.first['soma_valores'] as double?;
-      log('🔍 DEBUG: Total transações efetivadas no período: $totalTransacoes | Soma total: R\$ ${somaValores ?? 0.0}');
+      log(
+        '🔍 DEBUG: Total transações efetivadas no período: $totalTransacoes | Soma total: R\$ ${somaValores ?? 0.0}',
+      );
     }
 
     return result;
   }
-  
+
   /// Busca subcategorias localmente com JOIN
-  Future<List<Map<String, dynamic>>> fetchSubcategoriasLocal({String? categoriaId}) async {
+  Future<List<Map<String, dynamic>>> fetchSubcategoriasLocal({
+    String? categoriaId,
+  }) async {
     if (!_initialized || _database == null || _currentUserId == null) {
       debugPrint('❌ fetchSubcategoriasLocal: Database não inicializado');
       return [];
     }
-    
+
     String whereClause = 's.usuario_id = ? AND s.ativo = 1';
     List<dynamic> whereArgs = [_currentUserId];
 
@@ -1020,7 +1158,7 @@ class LocalDatabase {
       whereClause += ' AND s.categoria_id = ?';
       whereArgs.add(categoriaId);
     }
-    
+
     final result = await _database!.rawQuery('''
       SELECT 
         s.id,
@@ -1038,26 +1176,28 @@ class LocalDatabase {
       WHERE $whereClause
       ORDER BY s.created_at DESC
     ''', whereArgs);
-    
+
     // Log apenas em caso de erro ou quando vazio
     if (result.isEmpty && categoriaId != null) {
-      debugPrint('⚠️ Nenhuma subcategoria encontrada para categoria: $categoriaId');
+      debugPrint(
+        '⚠️ Nenhuma subcategoria encontrada para categoria: $categoriaId',
+      );
     }
-    
+
     return result;
   }
-  
+
   /// Adiciona categoria localmente
   Future<String> addCategoriaLocal(Map<String, dynamic> categoriaData) async {
     if (!_initialized || _database == null || _currentUserId == null) {
       throw Exception('Database não inicializado');
     }
-    
+
     categoriaData['sync_status'] = 'pending';
     categoriaData['last_sync'] = null;
-    
+
     await _database!.insert('categorias', categoriaData);
-    
+
     // Adiciona à fila de sync
     await addToSyncQueue(
       'categorias',
@@ -1065,22 +1205,24 @@ class LocalDatabase {
       'INSERT',
       categoriaData,
     );
-    
+
     return categoriaData['id'];
   }
-  
-  /// Adiciona subcategoria localmente  
-  Future<String> addSubcategoriaLocal(Map<String, dynamic> subcategoriaData) async {
+
+  /// Adiciona subcategoria localmente
+  Future<String> addSubcategoriaLocal(
+    Map<String, dynamic> subcategoriaData,
+  ) async {
     if (!_initialized || _database == null || _currentUserId == null) {
       throw Exception('Database não inicializado');
     }
-    
+
     debugPrint('💾 Salvando subcategoria offline: ${subcategoriaData['nome']}');
     subcategoriaData['sync_status'] = 'pending';
     subcategoriaData['last_sync'] = null;
 
     await _database!.insert('subcategorias', subcategoriaData);
-    
+
     // Adiciona à fila de sync
     await addToSyncQueue(
       'subcategorias',
@@ -1088,99 +1230,98 @@ class LocalDatabase {
       'INSERT',
       subcategoriaData,
     );
-    
+
     return subcategoriaData['id'];
   }
-  
+
   /// Atualiza categoria localmente
-  Future<void> updateCategoriaLocal(String categoriaId, Map<String, dynamic> updateData) async {
+  Future<void> updateCategoriaLocal(
+    String categoriaId,
+    Map<String, dynamic> updateData,
+  ) async {
     if (!_initialized || _database == null || _currentUserId == null) {
       throw Exception('Database não inicializado');
     }
-    
+
     // Adiciona metadados de sync
     updateData['updated_at'] = DateTime.now().toIso8601String();
     updateData['sync_status'] = 'pending';
-    
+
     await _database!.update(
       'categorias',
       updateData,
       where: 'id = ? AND usuario_id = ?',
       whereArgs: [categoriaId, _currentUserId],
     );
-    
+
     // Adiciona à fila de sync
-    await addToSyncQueue(
-      'categorias',
-      categoriaId,
-      'UPDATE',
-      updateData,
-    );
+    await addToSyncQueue('categorias', categoriaId, 'UPDATE', updateData);
   }
-  
-  /// Atualiza subcategoria localmente  
-  Future<void> updateSubcategoriaLocal(String subcategoriaId, String categoriaId, Map<String, dynamic> updateData) async {
+
+  /// Atualiza subcategoria localmente
+  Future<void> updateSubcategoriaLocal(
+    String subcategoriaId,
+    String categoriaId,
+    Map<String, dynamic> updateData,
+  ) async {
     if (!_initialized || _database == null || _currentUserId == null) {
       throw Exception('Database não inicializado');
     }
-    
+
     // Adiciona metadados de sync
     updateData['updated_at'] = DateTime.now().toIso8601String();
     updateData['sync_status'] = 'pending';
-    
+
     await _database!.update(
       'subcategorias',
       updateData,
       where: 'id = ? AND categoria_id = ? AND usuario_id = ?',
       whereArgs: [subcategoriaId, categoriaId, _currentUserId],
     );
-    
+
     // Adiciona à fila de sync
-    await addToSyncQueue(
-      'subcategorias',
-      subcategoriaId,
-      'UPDATE',
-      updateData,
-    );
+    await addToSyncQueue('subcategorias', subcategoriaId, 'UPDATE', updateData);
   }
-  
+
   /// Verifica se categoria tem transações (para soft/hard delete)
   Future<bool> categoriaTemTransacoes(String categoriaId) async {
-    if (!_initialized || _database == null || _currentUserId == null) return false;
-    
+    if (!_initialized || _database == null || _currentUserId == null)
+      return false;
+
     final result = await _database!.query(
       'transacoes',
       where: 'categoria_id = ? AND usuario_id = ?',
       whereArgs: [categoriaId, _currentUserId],
       limit: 1,
     );
-    
+
     return result.isNotEmpty;
   }
-  
+
   /// Verifica se subcategoria tem transações
   Future<bool> subcategoriaTemTransacoes(String subcategoriaId) async {
-    if (!_initialized || _database == null || _currentUserId == null) return false;
-    
+    if (!_initialized || _database == null || _currentUserId == null)
+      return false;
+
     final result = await _database!.query(
       'transacoes',
       where: 'subcategoria_id = ? AND usuario_id = ?',
       whereArgs: [subcategoriaId, _currentUserId],
       limit: 1,
     );
-    
+
     return result.isNotEmpty;
   }
-  
+
   /// Delete categoria com lógica soft/hard delete
   Future<Map<String, dynamic>> deleteCategoriaLocal(String categoriaId) async {
     if (!_initialized || _database == null || _currentUserId == null) {
       throw Exception('Database não inicializado');
     }
-    
+
     // Verifica se tem transações
     final temTransacoes = await categoriaTemTransacoes(categoriaId);
-    
+
     if (temTransacoes) {
       // SOFT DELETE: ativo = false
       await _database!.update(
@@ -1193,7 +1334,7 @@ class LocalDatabase {
         where: 'id = ? AND usuario_id = ?',
         whereArgs: [categoriaId, _currentUserId],
       );
-      
+
       // Desativa subcategorias também
       await _database!.update(
         'subcategorias',
@@ -1205,44 +1346,57 @@ class LocalDatabase {
         where: 'categoria_id = ? AND usuario_id = ?',
         whereArgs: [categoriaId, _currentUserId],
       );
-      
+
       // Adiciona à fila de sync
-      await addToSyncQueue('categorias', categoriaId, 'SOFT_DELETE', {'ativo': 0});
-      
-      return {'success': true, 'type': 'soft_delete', 'message': 'Categoria desativada'};
+      await addToSyncQueue('categorias', categoriaId, 'SOFT_DELETE', {
+        'ativo': 0,
+      });
+
+      return {
+        'success': true,
+        'type': 'soft_delete',
+        'message': 'Categoria desativada',
+      };
     } else {
       // HARD DELETE: Remove fisicamente
-      
+
       // 1. Remove subcategorias primeiro
       await _database!.delete(
         'subcategorias',
         where: 'categoria_id = ? AND usuario_id = ?',
         whereArgs: [categoriaId, _currentUserId],
       );
-      
+
       // 2. Remove categoria
       await _database!.delete(
         'categorias',
         where: 'id = ? AND usuario_id = ?',
         whereArgs: [categoriaId, _currentUserId],
       );
-      
+
       // Adiciona à fila de sync
       await addToSyncQueue('categorias', categoriaId, 'DELETE', {});
-      
-      return {'success': true, 'type': 'hard_delete', 'message': 'Categoria removida'};
+
+      return {
+        'success': true,
+        'type': 'hard_delete',
+        'message': 'Categoria removida',
+      };
     }
   }
-  
+
   /// Delete subcategoria com lógica soft/hard delete
-  Future<Map<String, dynamic>> deleteSubcategoriaLocal(String subcategoriaId, String categoriaId) async {
+  Future<Map<String, dynamic>> deleteSubcategoriaLocal(
+    String subcategoriaId,
+    String categoriaId,
+  ) async {
     if (!_initialized || _database == null || _currentUserId == null) {
       throw Exception('Database não inicializado');
     }
-    
+
     // Verifica se tem transações
     final temTransacoes = await subcategoriaTemTransacoes(subcategoriaId);
-    
+
     if (temTransacoes) {
       // SOFT DELETE: ativo = false
       await _database!.update(
@@ -1255,11 +1409,17 @@ class LocalDatabase {
         where: 'id = ? AND categoria_id = ? AND usuario_id = ?',
         whereArgs: [subcategoriaId, categoriaId, _currentUserId],
       );
-      
+
       // Adiciona à fila de sync
-      await addToSyncQueue('subcategorias', subcategoriaId, 'SOFT_DELETE', {'ativo': 0});
-      
-      return {'success': true, 'type': 'soft_delete', 'message': 'Subcategoria desativada'};
+      await addToSyncQueue('subcategorias', subcategoriaId, 'SOFT_DELETE', {
+        'ativo': 0,
+      });
+
+      return {
+        'success': true,
+        'type': 'soft_delete',
+        'message': 'Subcategoria desativada',
+      };
     } else {
       // HARD DELETE: Remove fisicamente
       await _database!.delete(
@@ -1267,43 +1427,56 @@ class LocalDatabase {
         where: 'id = ? AND categoria_id = ? AND usuario_id = ?',
         whereArgs: [subcategoriaId, categoriaId, _currentUserId],
       );
-      
+
       // Adiciona à fila de sync
       await addToSyncQueue('subcategorias', subcategoriaId, 'DELETE', {});
-      
-      return {'success': true, 'type': 'hard_delete', 'message': 'Subcategoria removida'};
+
+      return {
+        'success': true,
+        'type': 'hard_delete',
+        'message': 'Subcategoria removida',
+      };
     }
   }
 
   /// 🏦 MÉTODOS ESPECÍFICOS PARA CONTAS
-  
-  /// Busca contas localmente (offline-first) 
-  Future<List<Map<String, dynamic>>> fetchContasLocal({bool incluirArquivadas = false}) async {
+
+  /// Busca contas localmente (offline-first)
+  Future<List<Map<String, dynamic>>> fetchContasLocal({
+    bool incluirArquivadas = false,
+  }) async {
     if (!_initialized || _database == null || _currentUserId == null) {
       debugPrint('❌ fetchContasLocal: Database não inicializado');
       return [];
     }
-    
-    debugPrint('🏦 Buscando contas para user: $_currentUserId, incluirArquivadas: $incluirArquivadas');
-    
+
+    debugPrint(
+      '🏦 Buscando contas para user: $_currentUserId, incluirArquivadas: $incluirArquivadas',
+    );
+
     String whereClause = 'usuario_id = ?';
     List<dynamic> whereArgs = [_currentUserId];
-    
+
     if (!incluirArquivadas) {
       whereClause += ' AND ativo = 1';
     }
-    
+
     // Debug: Contar total de contas primeiro
-    final debugCount = await _database!.rawQuery('''
+    final debugCount = await _database!.rawQuery(
+      '''
       SELECT COUNT(*) as total,
              SUM(CASE WHEN ativo = 1 THEN 1 ELSE 0 END) as ativas,
              SUM(CASE WHEN ativo = 0 THEN 1 ELSE 0 END) as inativas
       FROM contas 
       WHERE usuario_id = ?
-    ''', [_currentUserId]);
-    
-    debugPrint('📊 Debug contas - Total: ${debugCount.first['total']}, Ativas: ${debugCount.first['ativas']}, Inativas: ${debugCount.first['inativas']}');
-    
+    ''',
+      [_currentUserId],
+    );
+
+    debugPrint(
+      '📊 Debug contas - Total: ${debugCount.first['total']}, Ativas: ${debugCount.first['ativas']}, Inativas: ${debugCount.first['inativas']}',
+    );
+
     // Busca contas com cálculo de saldo atual
     final contas = await _database!.query(
       'contas',
@@ -1311,133 +1484,152 @@ class LocalDatabase {
       whereArgs: whereArgs,
       orderBy: 'ordem, nome',
     );
-    
+
     debugPrint('✅ Query contas retornou: ${contas.length} itens');
-    
+
     // Para cada conta, usa saldo que já vem sincronizado do Supabase
     final List<Map<String, dynamic>> contasComSaldo = [];
-    
+
     for (final conta in contas) {
       final contaId = conta['id'] as String;
       final saldoInicial = (conta['saldo_inicial'] as num?)?.toDouble() ?? 0.0;
-      
+
       // ✅ SEMPRE usa saldo do Supabase (fonte da verdade)
       final saldoAtual = (conta['saldo'] as num?)?.toDouble() ?? saldoInicial;
-      debugPrint('📊 Saldo para $contaId: R\$ ${saldoAtual.toStringAsFixed(2)}');
-      
+      debugPrint(
+        '📊 Saldo para $contaId: R\$ ${saldoAtual.toStringAsFixed(2)}',
+      );
+
       final contaComSaldo = Map<String, dynamic>.from(conta);
       contaComSaldo['saldo'] = saldoAtual; // Saldo do Supabase ou calculado
       contaComSaldo['saldo_atual'] = saldoAtual; // Alias para compatibilidade
-      
+
       contasComSaldo.add(contaComSaldo);
     }
-    
+
     return contasComSaldo;
   }
-  
+
   /// Calcula saldo atual de uma conta específica
-  Future<double> calcularSaldoContaLocal(String contaId, double saldoInicial) async {
-    if (!_initialized || _database == null || _currentUserId == null) return saldoInicial;
-    
+  Future<double> calcularSaldoContaLocal(
+    String contaId,
+    double saldoInicial,
+  ) async {
+    if (!_initialized || _database == null || _currentUserId == null)
+      return saldoInicial;
+
     try {
       // Soma receitas
-      final receitasResult = await _database!.rawQuery('''
+      final receitasResult = await _database!.rawQuery(
+        '''
         SELECT COALESCE(SUM(valor), 0) as total
         FROM transacoes
         WHERE conta_id = ? AND usuario_id = ? AND tipo = 'receita' AND efetivado = 1
-      ''', [contaId, _currentUserId]);
-      final totalReceitas = (receitasResult.first['total'] as num?)?.toDouble() ?? 0.0;
-      
+      ''',
+        [contaId, _currentUserId],
+      );
+      final totalReceitas =
+          (receitasResult.first['total'] as num?)?.toDouble() ?? 0.0;
+
       // Soma despesas (sem cartão)
-      final despesasResult = await _database!.rawQuery('''
+      final despesasResult = await _database!.rawQuery(
+        '''
         SELECT COALESCE(SUM(valor), 0) as total
         FROM transacoes
         WHERE conta_id = ? AND usuario_id = ? AND tipo = 'despesa' AND efetivado = 1
-      ''', [contaId, _currentUserId]);
-      final totalDespesas = (despesasResult.first['total'] as num?)?.toDouble() ?? 0.0;
-      
+      ''',
+        [contaId, _currentUserId],
+      );
+      final totalDespesas =
+          (despesasResult.first['total'] as num?)?.toDouble() ?? 0.0;
+
       // Transferências recebidas
-      final transfRecebidasResult = await _database!.rawQuery('''
+      final transfRecebidasResult = await _database!.rawQuery(
+        '''
         SELECT COALESCE(SUM(valor), 0) as total
         FROM transacoes
         WHERE conta_id = ? AND usuario_id = ? AND tipo = 'receita' AND transferencia = 1 AND efetivado = 1
-      ''', [contaId, _currentUserId]);
-      final totalTransfRecebidas = (transfRecebidasResult.first['total'] as num?)?.toDouble() ?? 0.0;
-      
+      ''',
+        [contaId, _currentUserId],
+      );
+      final totalTransfRecebidas =
+          (transfRecebidasResult.first['total'] as num?)?.toDouble() ?? 0.0;
+
       // Transferências enviadas
-      final transfEnviadasResult = await _database!.rawQuery('''
+      final transfEnviadasResult = await _database!.rawQuery(
+        '''
         SELECT COALESCE(SUM(valor), 0) as total
         FROM transacoes
         WHERE conta_id = ? AND usuario_id = ? AND tipo = 'despesa' AND transferencia = 1 AND efetivado = 1
-      ''', [contaId, _currentUserId]);
-      final totalTransfEnviadas = (transfEnviadasResult.first['total'] as num?)?.toDouble() ?? 0.0;
-      
+      ''',
+        [contaId, _currentUserId],
+      );
+      final totalTransfEnviadas =
+          (transfEnviadasResult.first['total'] as num?)?.toDouble() ?? 0.0;
+
       // Fórmula exata do React
-      final somaTransacoes = totalReceitas - totalDespesas + totalTransfRecebidas - totalTransfEnviadas;
+      final somaTransacoes =
+          totalReceitas -
+          totalDespesas +
+          totalTransfRecebidas -
+          totalTransfEnviadas;
       return saldoInicial + somaTransacoes;
     } catch (e) {
       debugPrint('❌ Erro ao calcular saldo da conta $contaId: $e');
       return saldoInicial; // Fallback para saldo inicial
     }
   }
-  
+
   /// Adiciona conta localmente
   Future<String> addContaLocal(Map<String, dynamic> contaData) async {
     if (!_initialized || _database == null || _currentUserId == null) {
       throw Exception('Database não inicializado');
     }
-    
+
     contaData['sync_status'] = 'pending';
     contaData['last_sync'] = null;
-    
+
     await _database!.insert('contas', contaData);
-    
+
     // Adiciona à fila de sync
-    await addToSyncQueue(
-      'contas',
-      contaData['id'],
-      'INSERT',
-      contaData,
-    );
-    
+    await addToSyncQueue('contas', contaData['id'], 'INSERT', contaData);
+
     return contaData['id'];
   }
-  
+
   /// Atualiza conta localmente
-  Future<void> updateContaLocal(String contaId, Map<String, dynamic> updateData) async {
+  Future<void> updateContaLocal(
+    String contaId,
+    Map<String, dynamic> updateData,
+  ) async {
     if (!_initialized || _database == null || _currentUserId == null) {
       throw Exception('Database não inicializado');
     }
-    
+
     // Adiciona metadados de sync
     updateData['updated_at'] = DateTime.now().toIso8601String();
     updateData['sync_status'] = 'pending';
-    
+
     await _database!.update(
       'contas',
       updateData,
       where: 'id = ? AND usuario_id = ?',
       whereArgs: [contaId, _currentUserId],
     );
-    
+
     // Adiciona à fila de sync
-    await addToSyncQueue(
-      'contas',
-      contaId,
-      'UPDATE',
-      updateData,
-    );
+    await addToSyncQueue('contas', contaId, 'UPDATE', updateData);
   }
-  
+
   /// Arquivar conta localmente
   Future<void> arquivarContaLocal(String contaId, String? motivo) async {
     if (!_initialized || _database == null || _currentUserId == null) {
       throw Exception('Database não inicializado');
     }
-    
+
     final now = DateTime.now().toIso8601String().split('T')[0]; // Só a data
     final motivoTexto = motivo ?? 'Sem motivo especificado';
-    
+
     // Busca observações atuais
     final contaAtual = await _database!.query(
       'contas',
@@ -1445,77 +1637,84 @@ class LocalDatabase {
       where: 'id = ? AND usuario_id = ?',
       whereArgs: [contaId, _currentUserId],
     );
-    
+
     String observacoesAtuais = '';
     if (contaAtual.isNotEmpty) {
       observacoesAtuais = contaAtual.first['observacoes'] as String? ?? '';
     }
-    
-    final novasObservacoes = '$observacoesAtuais\n[Arquivada: $now] $motivoTexto'.trim();
-    
+
+    final novasObservacoes =
+        '$observacoesAtuais\n[Arquivada: $now] $motivoTexto'.trim();
+
     final updateData = {
       'ativo': 0, // SQLite usa INTEGER para boolean
       'observacoes': novasObservacoes,
       'updated_at': DateTime.now().toIso8601String(),
       'sync_status': 'pending',
     };
-    
+
     await _database!.update(
       'contas',
       updateData,
       where: 'id = ? AND usuario_id = ?',
       whereArgs: [contaId, _currentUserId],
     );
-    
+
     // Adiciona à fila de sync
     await addToSyncQueue('contas', contaId, 'ARCHIVE', updateData);
   }
-  
+
   /// Desarquivar conta localmente
   Future<void> desarquivarContaLocal(String contaId) async {
     if (!_initialized || _database == null || _currentUserId == null) {
       throw Exception('Database não inicializado');
     }
-    
+
     final updateData = {
       'ativo': 1, // SQLite usa INTEGER para boolean
       'updated_at': DateTime.now().toIso8601String(),
       'sync_status': 'pending',
     };
-    
+
     await _database!.update(
       'contas',
       updateData,
       where: 'id = ? AND usuario_id = ?',
       whereArgs: [contaId, _currentUserId],
     );
-    
+
     // Adiciona à fila de sync
     await addToSyncQueue('contas', contaId, 'UNARCHIVE', updateData);
   }
-  
+
   /// Verifica se conta tem transações (para exclusão)
   Future<int> contaTemTransacoes(String contaId) async {
     if (!_initialized || _database == null || _currentUserId == null) return 0;
-    
-    final result = await _database!.rawQuery('''
+
+    final result = await _database!.rawQuery(
+      '''
       SELECT COUNT(*) as total
       FROM transacoes
       WHERE (conta_id = ? OR conta_destino_id = ?) AND usuario_id = ?
-    ''', [contaId, contaId, _currentUserId]);
-    
+    ''',
+      [contaId, contaId, _currentUserId],
+    );
+
     return (result.first['total'] as int?) ?? 0;
   }
-  
+
   /// Exclui conta localmente
-  Future<Map<String, dynamic>> excluirContaLocal(String contaId, {bool confirmacao = false}) async {
+  Future<Map<String, dynamic>> excluirContaLocal(
+    String contaId, {
+    bool confirmacao = false,
+  }) async {
     if (!_initialized || _database == null || _currentUserId == null) {
       throw Exception('Database não inicializado');
     }
-    
+
     // Verifica se tem transações
     final totalTransacoes = await contaTemTransacoes(contaId);
-    
+
     if (totalTransacoes > 0 && !confirmacao) {
       return {
         'success': false,
@@ -1524,27 +1723,28 @@ class LocalDatabase {
         'quantidadeTransacoes': totalTransacoes,
       };
     }
-    
+
     // Exclui fisicamente
     await _database!.delete(
       'contas',
       where: 'id = ? AND usuario_id = ?',
       whereArgs: [contaId, _currentUserId],
     );
-    
+
     // Adiciona à fila de sync
     await addToSyncQueue('contas', contaId, 'DELETE', {});
-    
+
     return {'success': true, 'message': 'Conta excluída'};
   }
-  
+
   /// Calcula saldo total das contas ativas
   Future<double> calcularSaldoTotalLocal() async {
-    if (!_initialized || _database == null || _currentUserId == null) return 0.0;
-    
+    if (!_initialized || _database == null || _currentUserId == null)
+      return 0.0;
+
     try {
       final contas = await fetchContasLocal(incluirArquivadas: false);
-      
+
       double saldoTotal = 0.0;
       for (final conta in contas) {
         final incluirNasoma = (conta['incluir_soma_total'] as int?) == 1;
@@ -1553,14 +1753,14 @@ class LocalDatabase {
           saldoTotal += saldo;
         }
       }
-      
+
       return saldoTotal;
     } catch (e) {
       debugPrint('❌ Erro ao calcular saldo total: $e');
       return 0.0;
     }
   }
-  
+
   /// Corrige saldo de conta com dois métodos: ajuste ou saldo_inicial
   Future<Map<String, dynamic>> corrigirSaldoContaLocal(
     String contaId,
@@ -1571,7 +1771,7 @@ class LocalDatabase {
     if (!_initialized || _database == null || _currentUserId == null) {
       throw Exception('Database não inicializado');
     }
-    
+
     try {
       if (metodo == 'ajuste') {
         return await _corrigirPorAjuste(contaId, saldoDesejado, motivo);
@@ -1585,32 +1785,33 @@ class LocalDatabase {
       }
     } catch (e) {
       debugPrint('❌ Erro ao corrigir saldo da conta: $e');
-      return {
-        'success': false,
-        'error': 'Erro interno: $e',
-      };
+      return {'success': false, 'error': 'Erro interno: $e'};
     }
   }
-  
+
   /// Método 1: Correção por ajuste (cria transação de correção)
-  Future<Map<String, dynamic>> _corrigirPorAjuste(String contaId, double saldoDesejado, String motivo) async {
+  Future<Map<String, dynamic>> _corrigirPorAjuste(
+    String contaId,
+    double saldoDesejado,
+    String motivo,
+  ) async {
     // Busca conta atual
     final contas = await _database!.query(
       'contas',
       where: 'id = ? AND usuario_id = ?',
       whereArgs: [contaId, _currentUserId],
     );
-    
+
     if (contas.isEmpty) {
       return {'success': false, 'error': 'Conta não encontrada'};
     }
-    
+
     final conta = contas.first;
     final saldoInicial = (conta['saldo_inicial'] as num?)?.toDouble() ?? 0.0;
     final saldoAtual = await calcularSaldoContaLocal(contaId, saldoInicial);
-    
+
     final diferenca = saldoDesejado - saldoAtual;
-    
+
     if (diferenca == 0) {
       return {
         'success': true,
@@ -1618,11 +1819,11 @@ class LocalDatabase {
         'diferenca': 0.0,
       };
     }
-    
+
     // Cria transação de correção
     final now = DateTime.now();
     final transacaoId = const Uuid().v4();
-    
+
     final transacaoData = {
       'id': transacaoId,
       'usuario_id': _currentUserId,
@@ -1644,12 +1845,12 @@ class LocalDatabase {
       'updated_at': now.toIso8601String(),
       'sync_status': 'pending',
     };
-    
+
     await _database!.insert('transacoes', transacaoData);
-    
+
     // Adiciona à fila de sync
     await addToSyncQueue('transacoes', transacaoId, 'INSERT', transacaoData);
-    
+
     return {
       'success': true,
       'message': 'Saldo corrigido com transação de ajuste',
@@ -1659,66 +1860,90 @@ class LocalDatabase {
       'metodo': 'ajuste',
     };
   }
-  
+
   /// Método 2: Correção por saldo inicial (recalcula usando fórmula SQL)
-  Future<Map<String, dynamic>> _corrigirPorSaldoInicial(String contaId, double saldoDesejado, String motivo) async {
+  Future<Map<String, dynamic>> _corrigirPorSaldoInicial(
+    String contaId,
+    double saldoDesejado,
+    String motivo,
+  ) async {
     // Busca soma de todas as transações (fórmula exata do React)
-    
+
     // 1. Soma receitas
-    final receitasResult = await _database!.rawQuery('''
+    final receitasResult = await _database!.rawQuery(
+      '''
       SELECT COALESCE(SUM(valor), 0) as total
       FROM transacoes
       WHERE conta_id = ? AND usuario_id = ? AND tipo = 'receita' AND efetivado = 1
-    ''', [contaId, _currentUserId]);
-    final totalReceitas = (receitasResult.first['total'] as num?)?.toDouble() ?? 0.0;
-    
+    ''',
+      [contaId, _currentUserId],
+    );
+    final totalReceitas =
+        (receitasResult.first['total'] as num?)?.toDouble() ?? 0.0;
+
     // 2. Soma despesas
-    final despesasResult = await _database!.rawQuery('''
+    final despesasResult = await _database!.rawQuery(
+      '''
       SELECT COALESCE(SUM(valor), 0) as total
       FROM transacoes
       WHERE conta_id = ? AND usuario_id = ? AND tipo = 'despesa' AND efetivado = 1
-    ''', [contaId, _currentUserId]);
-    final totalDespesas = (despesasResult.first['total'] as num?)?.toDouble() ?? 0.0;
-    
+    ''',
+      [contaId, _currentUserId],
+    );
+    final totalDespesas =
+        (despesasResult.first['total'] as num?)?.toDouble() ?? 0.0;
+
     // 3. Transferências recebidas
-    final transfRecebidasResult = await _database!.rawQuery('''
+    final transfRecebidasResult = await _database!.rawQuery(
+      '''
       SELECT COALESCE(SUM(valor), 0) as total
       FROM transacoes
       WHERE conta_id = ? AND usuario_id = ? AND tipo = 'receita' AND transferencia = 1 AND efetivado = 1
-    ''', [contaId, _currentUserId]);
-    final totalTransfRecebidas = (transfRecebidasResult.first['total'] as num?)?.toDouble() ?? 0.0;
-    
+    ''',
+      [contaId, _currentUserId],
+    );
+    final totalTransfRecebidas =
+        (transfRecebidasResult.first['total'] as num?)?.toDouble() ?? 0.0;
+
     // 4. Transferências enviadas
-    final transfEnviadasResult = await _database!.rawQuery('''
+    final transfEnviadasResult = await _database!.rawQuery(
+      '''
       SELECT COALESCE(SUM(valor), 0) as total
       FROM transacoes
       WHERE conta_id = ? AND usuario_id = ? AND tipo = 'despesa' AND transferencia = 1 AND efetivado = 1
-    ''', [contaId, _currentUserId]);
-    final totalTransfEnviadas = (transfEnviadasResult.first['total'] as num?)?.toDouble() ?? 0.0;
-    
+    ''',
+      [contaId, _currentUserId],
+    );
+    final totalTransfEnviadas =
+        (transfEnviadasResult.first['total'] as num?)?.toDouble() ?? 0.0;
+
     // 5. Fórmula exata: somaTransacoes = totalReceitas - totalDespesas + totalTransfRecebidas - totalTransfEnviadas
-    final somaTransacoes = totalReceitas - totalDespesas + totalTransfRecebidas - totalTransfEnviadas;
-    
+    final somaTransacoes =
+        totalReceitas -
+        totalDespesas +
+        totalTransfRecebidas -
+        totalTransfEnviadas;
+
     // 6. Calcula novo saldo inicial: novoSaldoInicial = saldoDesejado - somaTransacoes
     final novoSaldoInicial = saldoDesejado - somaTransacoes;
-    
+
     // Atualiza saldo inicial na conta
     final updateData = {
       'saldo_inicial': novoSaldoInicial,
       'updated_at': DateTime.now().toIso8601String(),
       'sync_status': 'pending',
     };
-    
+
     await _database!.update(
       'contas',
       updateData,
       where: 'id = ? AND usuario_id = ?',
       whereArgs: [contaId, _currentUserId],
     );
-    
+
     // Adiciona à fila de sync
     await addToSyncQueue('contas', contaId, 'SALDO_CORRECTION', updateData);
-    
+
     return {
       'success': true,
       'message': 'Saldo inicial recalculado',
@@ -1737,16 +1962,22 @@ class LocalDatabase {
     if (!_initialized || _database == null || _currentUserId == null) {
       throw Exception('Database não inicializado');
     }
-    
+
     debugPrint('💳 Salvando transação offline: ${transacaoData['descricao']}');
     debugPrint('📝 Grupo parcelamento: ${transacaoData['grupo_parcelamento']}');
-    debugPrint('📝 Parcela: ${transacaoData['parcela_atual']}/${transacaoData['total_parcelas']}');
-    
+    debugPrint(
+      '📝 Parcela: ${transacaoData['parcela_atual']}/${transacaoData['total_parcelas']}',
+    );
+
     transacaoData['sync_status'] = 'pending';
     transacaoData['last_sync'] = null;
-    
-    await _database!.insert('transacoes', transacaoData, conflictAlgorithm: ConflictAlgorithm.replace);
-    
+
+    await _database!.insert(
+      'transacoes',
+      transacaoData,
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+
     // Adiciona à fila de sync
     await addToSyncQueue(
       'transacoes',
@@ -1754,44 +1985,50 @@ class LocalDatabase {
       'INSERT',
       transacaoData,
     );
-    
+
     debugPrint('✅ Transação salva no SQLite: ${transacaoData['id']}');
     return transacaoData['id'];
   }
 
   /// Busca transações por grupo de parcelamento
-  Future<List<Map<String, dynamic>>> getTransacoesByGrupoParcelamento(String grupoId) async {
+  Future<List<Map<String, dynamic>>> getTransacoesByGrupoParcelamento(
+    String grupoId,
+  ) async {
     if (!_initialized || _database == null || _currentUserId == null) return [];
-    
+
     debugPrint('🔍 Buscando transações do grupo parcelamento: $grupoId');
-    
+
     final result = await _database!.query(
       'transacoes',
       where: 'grupo_parcelamento = ? AND usuario_id = ?',
       whereArgs: [grupoId, _currentUserId],
       orderBy: 'parcela_atual ASC',
     );
-    
+
     debugPrint('✅ Encontradas ${result.length} parcelas no grupo');
     return result;
   }
 
   /// Atualiza transação localmente
-  Future<void> updateTransacaoLocal(String transacaoId, Map<String, dynamic> updateData, {bool skipAutoSync = false}) async {
+  Future<void> updateTransacaoLocal(
+    String transacaoId,
+    Map<String, dynamic> updateData, {
+    bool skipAutoSync = false,
+  }) async {
     if (!_initialized || _database == null || _currentUserId == null) {
       throw Exception('Database não inicializado');
     }
-    
+
     updateData['updated_at'] = DateTime.now().toIso8601String();
     updateData['sync_status'] = 'pending';
-    
+
     await _database!.update(
       'transacoes',
       updateData,
       where: 'id = ? AND usuario_id = ?',
       whereArgs: [transacaoId, _currentUserId],
     );
-    
+
     // Adiciona à fila de sync
     await addToSyncQueue(
       'transacoes',
@@ -1800,40 +2037,44 @@ class LocalDatabase {
       updateData,
       skipAutoSync: skipAutoSync,
     );
-    
+
     debugPrint('✅ Transação atualizada: $transacaoId');
   }
 
   /// Atualiza grupo de parcelas (igual ao React updateGrupoValor)
-  Future<void> updateGrupoParcelamentoLocal(String grupoId, double novoValor, String escopo) async {
+  Future<void> updateGrupoParcelamentoLocal(
+    String grupoId,
+    double novoValor,
+    String escopo,
+  ) async {
     if (!_initialized || _database == null || _currentUserId == null) {
       throw Exception('Database não inicializado');
     }
-    
+
     debugPrint('🔄 Atualizando grupo parcelamento: $grupoId, escopo: $escopo');
-    
+
     String whereClause = 'grupo_parcelamento = ? AND usuario_id = ?';
     List<dynamic> whereArgs = [grupoId, _currentUserId];
-    
+
     if (escopo == 'futuras') {
       // Só parcelas futuras não efetivadas
       whereClause += ' AND efetivado = 0 AND data >= ?';
       whereArgs.add(DateTime.now().toIso8601String().split('T')[0]);
     }
-    
+
     final updateData = {
       'valor': novoValor,
       'updated_at': DateTime.now().toIso8601String(),
       'sync_status': 'pending',
     };
-    
+
     final result = await _database!.update(
       'transacoes',
       updateData,
       where: whereClause,
       whereArgs: whereArgs,
     );
-    
+
     debugPrint('✅ Grupo parcelamento atualizado: $result transações afetadas');
   }
 
@@ -1845,24 +2086,24 @@ class LocalDatabase {
     String? tipo,
   }) async {
     await _ensureInitialized();
-    
+
     final whereClause = StringBuffer();
     final whereArgs = <dynamic>[];
-    
+
     whereClause.write('usuario_id = ? AND efetivado = 1');
     whereArgs.addAll([userId]);
-    
+
     whereClause.write(' AND data >= ? AND data <= ?');
     whereArgs.addAll([
       dataInicio.toIso8601String().split('T')[0],
       dataFim.toIso8601String().split('T')[0],
     ]);
-    
+
     if (tipo != null) {
       whereClause.write(' AND tipo = ?');
       whereArgs.add(tipo);
     }
-    
+
     final result = await _database!.rawQuery('''
       SELECT 
         categoria_id,
@@ -1872,28 +2113,32 @@ class LocalDatabase {
       GROUP BY categoria_id
       ORDER BY total_valor DESC
     ''', whereArgs);
-    
+
     // 🔍 DEBUG: Log da query e resultados
     debugPrint('🔍 DEBUG fetchValoresPorCategoria:');
     debugPrint('  📋 Query WHERE: $whereClause');
     debugPrint('  📋 Args: $whereArgs');
     debugPrint('  📋 Resultados encontrados: ${result.length}');
-    
+
     final Map<String, double> valoresPorCategoria = {};
-    
+
     for (final row in result) {
       final categoriaId = row['categoria_id'] as String?;
       final totalValor = (row['total_valor'] as num?)?.toDouble() ?? 0.0;
-      
-      debugPrint('  📊 Categoria: $categoriaId, Valor: R\$${totalValor.toStringAsFixed(2)}');
-      
+
+      debugPrint(
+        '  📊 Categoria: $categoriaId, Valor: R\$${totalValor.toStringAsFixed(2)}',
+      );
+
       if (categoriaId != null) {
         valoresPorCategoria[categoriaId] = totalValor;
       }
     }
-    
-    debugPrint('🔍 DEBUG: Mapa final com ${valoresPorCategoria.length} categorias');
-    
+
+    debugPrint(
+      '🔍 DEBUG: Mapa final com ${valoresPorCategoria.length} categorias',
+    );
+
     return valoresPorCategoria;
   }
 
@@ -1904,8 +2149,9 @@ class LocalDatabase {
     required DateTime dataFim,
   }) async {
     await _ensureInitialized();
-    
-    final result = await _database!.rawQuery('''
+
+    final result = await _database!.rawQuery(
+      '''
       SELECT 
         tipo,
         COALESCE(SUM(valor), 0) as total_valor
@@ -1913,23 +2159,25 @@ class LocalDatabase {
       WHERE usuario_id = ? AND efetivado = 1
       AND data >= ? AND data <= ?
       GROUP BY tipo
-    ''', [
-      userId,
-      dataInicio.toIso8601String().split('T')[0],
-      dataFim.toIso8601String().split('T')[0],
-    ]);
-    
+    ''',
+      [
+        userId,
+        dataInicio.toIso8601String().split('T')[0],
+        dataFim.toIso8601String().split('T')[0],
+      ],
+    );
+
     final Map<String, double> totais = {'receita': 0.0, 'despesa': 0.0};
-    
+
     for (final row in result) {
       final tipo = row['tipo'] as String?;
       final totalValor = (row['total_valor'] as num?)?.toDouble() ?? 0.0;
-      
+
       if (tipo != null) {
         totais[tipo] = totalValor;
       }
     }
-    
+
     return totais;
   }
 
@@ -1969,7 +2217,9 @@ class LocalDatabase {
       return [];
     }
 
-    debugPrint('📊 Buscando planejamentos para user: $_currentUserId, ano: $ano, mes: $mes, tipo: $tipo');
+    debugPrint(
+      '📊 Buscando planejamentos para user: $_currentUserId, ano: $ano, mes: $mes, tipo: $tipo',
+    );
 
     String whereClause = 'usuario_id = ? AND ano = ?';
     List<dynamic> whereArgs = [_currentUserId, ano];
@@ -2048,12 +2298,9 @@ class LocalDatabase {
     );
 
     // Adiciona à fila de sync para exclusão no Supabase
-    await addToSyncQueue(
-      'planejamentos',
-      planejamentoId,
-      'DELETE',
-      {'id': planejamentoId},
-    );
+    await addToSyncQueue('planejamentos', planejamentoId, 'DELETE', {
+      'id': planejamentoId,
+    });
   }
 
   /// Busca valores realizados e previstos por categoria para planejamento
@@ -2069,7 +2316,8 @@ class LocalDatabase {
     final dataInicio = DateTime(ano, mes, 1);
     final dataFim = DateTime(ano, mes + 1, 0);
 
-    String whereClause = 'usuario_id = ? AND data >= ? AND data <= ? AND (transferencia IS NULL OR transferencia = 0)';
+    String whereClause =
+        'usuario_id = ? AND data >= ? AND data <= ? AND (transferencia IS NULL OR transferencia = 0)';
     List<dynamic> whereArgs = [
       _currentUserId,
       dataInicio.toIso8601String().split('T')[0],
@@ -2100,13 +2348,16 @@ class LocalDatabase {
     for (final row in result) {
       final categoriaId = row['categoria_id'] as String?;
       final subcategoriaId = row['subcategoria_id'] as String?;
-      final valorRealizado = (row['valor_realizado'] as num?)?.toDouble() ?? 0.0;
+      final valorRealizado =
+          (row['valor_realizado'] as num?)?.toDouble() ?? 0.0;
       final valorPrevisto = (row['valor_previsto'] as num?)?.toDouble() ?? 0.0;
       final transacoesRealizadas = (row['transacoes_realizadas'] as int?) ?? 0;
       final transacoesPrevistas = (row['transacoes_previstas'] as int?) ?? 0;
 
       if (categoriaId != null) {
-        final chave = subcategoriaId != null ? '$categoriaId|$subcategoriaId' : categoriaId;
+        final chave = subcategoriaId != null
+            ? '$categoriaId|$subcategoriaId'
+            : categoriaId;
         valores[chave] = {
           'valor_realizado': valorRealizado,
           'valor_previsto': valorPrevisto,
@@ -2137,10 +2388,13 @@ class LocalDatabase {
       final data = DateTime(anoAtual, mesAtual - i);
       final dataInicio = DateTime(data.year, data.month, 1);
       final dataFim = DateTime(data.year, data.month + 1, 0);
-      meses.add('("${dataInicio.toIso8601String().split('T')[0]}", "${dataFim.toIso8601String().split('T')[0]}")');
+      meses.add(
+        '("${dataInicio.toIso8601String().split('T')[0]}", "${dataFim.toIso8601String().split('T')[0]}")',
+      );
     }
 
-    String whereClause = 'usuario_id = ? AND categoria_id = ? AND efetivado = 1';
+    String whereClause =
+        'usuario_id = ? AND categoria_id = ? AND efetivado = 1';
     List<dynamic> whereArgs = [_currentUserId, categoriaId];
 
     if (subcategoriaId != null) {
@@ -2195,49 +2449,87 @@ class LocalDatabase {
 
     try {
       // 📊 DEBUG: Buscar saldo ANTES do recálculo
-      final contaAntes = await _database!.query('contas', where: 'id = ?', whereArgs: [contaId]);
-      final saldoAntes = contaAntes.isNotEmpty ? (contaAntes.first['saldo'] as num?)?.toDouble() : null;
-      final saldoInicial = contaAntes.isNotEmpty ? (contaAntes.first['saldo_inicial'] as num?)?.toDouble() : 0.0;
-      debugPrint('💰 ANTES recalcular: Conta $contaId - Saldo: R\$ $saldoAntes, Saldo Inicial: R\$ $saldoInicial');
+      final contaAntes = await _database!.query(
+        'contas',
+        where: 'id = ?',
+        whereArgs: [contaId],
+      );
+      final saldoAntes = contaAntes.isNotEmpty
+          ? (contaAntes.first['saldo'] as num?)?.toDouble()
+          : null;
+      final saldoInicial = contaAntes.isNotEmpty
+          ? (contaAntes.first['saldo_inicial'] as num?)?.toDouble()
+          : 0.0;
+      debugPrint(
+        '💰 ANTES recalcular: Conta $contaId - Saldo: R\$ $saldoAntes, Saldo Inicial: R\$ $saldoInicial',
+      );
 
       // 📊 DEBUG: Componentes do cálculo
-      final receitas = await _database!.rawQuery('''
+      final receitas = await _database!.rawQuery(
+        '''
         SELECT COALESCE(SUM(valor), 0) as total FROM transacoes
         WHERE conta_id = ? AND tipo = 'receita' AND efetivado = 1 AND usuario_id = ?
-      ''', [contaId, _currentUserId]);
-      final totalReceitas = (receitas.first['total'] as num?)?.toDouble() ?? 0.0;
+      ''',
+        [contaId, _currentUserId],
+      );
+      final totalReceitas =
+          (receitas.first['total'] as num?)?.toDouble() ?? 0.0;
 
-      final despesas = await _database!.rawQuery('''
+      final despesas = await _database!.rawQuery(
+        '''
         SELECT COALESCE(SUM(valor), 0) as total FROM transacoes
         WHERE conta_id = ? AND tipo = 'despesa' AND efetivado = 1 AND cartao_id IS NULL AND usuario_id = ?
-      ''', [contaId, _currentUserId]);
-      final totalDespesas = (despesas.first['total'] as num?)?.toDouble() ?? 0.0;
+      ''',
+        [contaId, _currentUserId],
+      );
+      final totalDespesas =
+          (despesas.first['total'] as num?)?.toDouble() ?? 0.0;
 
-      final transfRecebidas = await _database!.rawQuery('''
+      final transfRecebidas = await _database!.rawQuery(
+        '''
         SELECT COALESCE(SUM(valor), 0) as total FROM transacoes
         WHERE conta_id = ? AND tipo = 'receita' AND transferencia = 1 AND efetivado = 1 AND usuario_id = ?
-      ''', [contaId, _currentUserId]);
-      final totalTransfRecebidas = (transfRecebidas.first['total'] as num?)?.toDouble() ?? 0.0;
+      ''',
+        [contaId, _currentUserId],
+      );
+      final totalTransfRecebidas =
+          (transfRecebidas.first['total'] as num?)?.toDouble() ?? 0.0;
 
-      final transfEnviadas = await _database!.rawQuery('''
+      final transfEnviadas = await _database!.rawQuery(
+        '''
         SELECT COALESCE(SUM(valor), 0) as total FROM transacoes
         WHERE conta_id = ? AND tipo = 'despesa' AND transferencia = 1 AND efetivado = 1 AND usuario_id = ?
-      ''', [contaId, _currentUserId]);
-      final totalTransfEnviadas = (transfEnviadas.first['total'] as num?)?.toDouble() ?? 0.0;
+      ''',
+        [contaId, _currentUserId],
+      );
+      final totalTransfEnviadas =
+          (transfEnviadas.first['total'] as num?)?.toDouble() ?? 0.0;
 
-      final saldoCalculado = (saldoInicial ?? 0.0) + totalReceitas - totalDespesas + totalTransfRecebidas - totalTransfEnviadas;
+      final saldoCalculado =
+          (saldoInicial ?? 0.0) +
+          totalReceitas -
+          totalDespesas +
+          totalTransfRecebidas -
+          totalTransfEnviadas;
 
       debugPrint('📊 COMPONENTES:');
       debugPrint('  + Saldo Inicial: R\$ ${saldoInicial?.toStringAsFixed(2)}');
       debugPrint('  + Receitas: R\$ ${totalReceitas.toStringAsFixed(2)}');
       debugPrint('  - Despesas: R\$ ${totalDespesas.toStringAsFixed(2)}');
-      debugPrint('  + Transf Recebidas: R\$ ${totalTransfRecebidas.toStringAsFixed(2)}');
-      debugPrint('  - Transf Enviadas: R\$ ${totalTransfEnviadas.toStringAsFixed(2)}');
-      debugPrint('  = SALDO CALCULADO: R\$ ${saldoCalculado.toStringAsFixed(2)}');
+      debugPrint(
+        '  + Transf Recebidas: R\$ ${totalTransfRecebidas.toStringAsFixed(2)}',
+      );
+      debugPrint(
+        '  - Transf Enviadas: R\$ ${totalTransfEnviadas.toStringAsFixed(2)}',
+      );
+      debugPrint(
+        '  = SALDO CALCULADO: R\$ ${saldoCalculado.toStringAsFixed(2)}',
+      );
 
       // ✅ Query única otimizada - recalcula saldo baseado na fórmula:
       // saldo = saldo_inicial + receitas - despesas + transf_recebidas - transf_enviadas
-      await _database!.rawQuery('''
+      await _database!.rawQuery(
+        '''
         UPDATE contas
         SET saldo = (
           saldo_inicial +
@@ -2279,23 +2571,35 @@ class LocalDatabase {
         ),
         updated_at = ?
         WHERE id = ? AND usuario_id = ?
-      ''', [
-        contaId, _currentUserId, // receitas
-        contaId, _currentUserId, // despesas
-        contaId, _currentUserId, // transferências recebidas
-        contaId, _currentUserId, // transferências enviadas
-        DateTime.now().toIso8601String(),
-        contaId,
-        _currentUserId,
-      ]);
+      ''',
+        [
+          contaId, _currentUserId, // receitas
+          contaId, _currentUserId, // despesas
+          contaId, _currentUserId, // transferências recebidas
+          contaId, _currentUserId, // transferências enviadas
+          DateTime.now().toIso8601String(),
+          contaId,
+          _currentUserId,
+        ],
+      );
 
       // 📊 DEBUG: Buscar saldo DEPOIS do recálculo
-      final contaDepois = await _database!.query('contas', where: 'id = ?', whereArgs: [contaId]);
-      final saldoDepois = contaDepois.isNotEmpty ? (contaDepois.first['saldo'] as num?)?.toDouble() : null;
-      debugPrint('💰 DEPOIS recalcular: Conta $contaId - Saldo: R\$ $saldoDepois');
+      final contaDepois = await _database!.query(
+        'contas',
+        where: 'id = ?',
+        whereArgs: [contaId],
+      );
+      final saldoDepois = contaDepois.isNotEmpty
+          ? (contaDepois.first['saldo'] as num?)?.toDouble()
+          : null;
+      debugPrint(
+        '💰 DEPOIS recalcular: Conta $contaId - Saldo: R\$ $saldoDepois',
+      );
 
       if (saldoAntes != saldoDepois) {
-        debugPrint('🔄 MUDANÇA DE SALDO: R\$ $saldoAntes → R\$ $saldoDepois (Δ ${(saldoDepois! - saldoAntes!).toStringAsFixed(2)})');
+        debugPrint(
+          '🔄 MUDANÇA DE SALDO: R\$ $saldoAntes → R\$ $saldoDepois (Δ ${(saldoDepois! - saldoAntes!).toStringAsFixed(2)})',
+        );
       }
 
       debugPrint('⚡ Saldo recalculado para conta $contaId');
@@ -2328,27 +2632,40 @@ class LocalDatabase {
     }
 
     try {
-      final contaAntes = await _database!.query('contas', where: 'id = ?', whereArgs: [contaId]);
-      final saldoAntes = contaAntes.isNotEmpty ? (contaAntes.first['saldo'] as num?)?.toDouble() : 0.0;
+      final contaAntes = await _database!.query(
+        'contas',
+        where: 'id = ?',
+        whereArgs: [contaId],
+      );
+      final saldoAntes = contaAntes.isNotEmpty
+          ? (contaAntes.first['saldo'] as num?)?.toDouble()
+          : 0.0;
 
-      debugPrint('💰 Aplicando delta: Conta $contaId - Saldo Antes: R\$ ${saldoAntes?.toStringAsFixed(2)}, Delta: R\$ ${delta.toStringAsFixed(2)}');
+      debugPrint(
+        '💰 Aplicando delta: Conta $contaId - Saldo Antes: R\$ ${saldoAntes?.toStringAsFixed(2)}, Delta: R\$ ${delta.toStringAsFixed(2)}',
+      );
 
-      await _database!.rawQuery('''
+      await _database!.rawQuery(
+        '''
         UPDATE contas
         SET saldo = saldo + ?,
             updated_at = ?
         WHERE id = ? AND usuario_id = ?
-      ''', [
-        delta,
-        DateTime.now().toIso8601String(),
-        contaId,
-        _currentUserId,
-      ]);
+      ''',
+        [delta, DateTime.now().toIso8601String(), contaId, _currentUserId],
+      );
 
-      final contaDepois = await _database!.query('contas', where: 'id = ?', whereArgs: [contaId]);
-      final saldoDepois = contaDepois.isNotEmpty ? (contaDepois.first['saldo'] as num?)?.toDouble() : null;
-      debugPrint('💰 Delta aplicado: R\$ $saldoAntes → R\$ $saldoDepois (Δ ${delta.toStringAsFixed(2)})');
-
+      final contaDepois = await _database!.query(
+        'contas',
+        where: 'id = ?',
+        whereArgs: [contaId],
+      );
+      final saldoDepois = contaDepois.isNotEmpty
+          ? (contaDepois.first['saldo'] as num?)?.toDouble()
+          : null;
+      debugPrint(
+        '💰 Delta aplicado: R\$ $saldoAntes → R\$ $saldoDepois (Δ ${delta.toStringAsFixed(2)})',
+      );
     } catch (e) {
       debugPrint('❌ Erro ao aplicar delta no saldo: $e');
     }
@@ -2367,7 +2684,9 @@ class LocalDatabase {
     // ℹ️ Cartões não têm campo "limite_usado" no banco
     // O cálculo é feito sob demanda em CartaoDataService
     // Este método existe apenas para manter consistência da API
-    debugPrint('ℹ️ Recálculo de limite de cartão não necessário (calculado sob demanda)');
+    debugPrint(
+      'ℹ️ Recálculo de limite de cartão não necessário (calculado sob demanda)',
+    );
   }
 
   /// 🧹 DISPOSE
