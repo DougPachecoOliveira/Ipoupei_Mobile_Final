@@ -638,7 +638,7 @@ class TransacaoService {
       }
       if (dataFim != null) {
         whereConditions.add('data <= ?');
-        whereArgs.add(dataFim.toIso8601String().split('T')[0]);
+        whereArgs.add(dataFim.toIso8601String());
       }
       if (tipo != null && tipo.isNotEmpty) {
         if (tipo == 'transferencia') {

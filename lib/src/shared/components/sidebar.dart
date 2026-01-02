@@ -208,17 +208,6 @@ class Sidebar extends StatelessWidget {
 
                     const SizedBox(height: 20),
 
-                    // BOTÃO TESTE LOADING (TEMPORÁRIO)
-                    _buildMenuItem(
-                      context: context,
-                      icon: Icons.animation,
-                      label: '🧪 Testar Loading',
-                      route: '/test-loading',
-                      onTap: () {
-                        Navigator.pop(context);
-                        Navigator.pushNamed(context, '/test-loading');
-                      },
-                    ),
 
                     // Botão de Logout
                     _buildMenuItem(

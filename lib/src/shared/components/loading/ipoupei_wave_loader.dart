@@ -101,7 +101,7 @@ class _IPoupeiWaveLoaderState extends State<IPoupeiWaveLoader>
                 ),
               ),
               Align(
-                alignment: const Alignment(-0.65, -0.2),
+                alignment: Alignment.center,
                 child: Transform.scale(
                   scale: _logoScale.value,
                   child: _buildLogoCard(),
@@ -133,13 +133,13 @@ class _IPoupeiWaveLoaderState extends State<IPoupeiWaveLoader>
         borderRadius: BorderRadius.circular(26),
         boxShadow: [
           BoxShadow(
-            color: AppColors.tealPrimary.withValues(alpha: 0.20),
+            color: AppColors.tealPrimary.withOpacity(0.20),
             blurRadius: 24,
             spreadRadius: 2,
             offset: const Offset(0, 14),
           ),
           BoxShadow(
-            color: Colors.white.withValues(alpha: 0.9),
+            color: Colors.white.withOpacity(0.9),
             blurRadius: 6,
             offset: const Offset(-2, -2),
           ),
@@ -160,7 +160,7 @@ class _IPoupeiWaveLoaderState extends State<IPoupeiWaveLoader>
         shaderCallback: (rect) => ui.Gradient.linear(
           rect.topLeft,
           rect.bottomRight,
-          [AppColors.azulHeader, AppColors.tealPrimary, AppColors.verdeSucesso],
+          [AppColors.tealPrimary, AppColors.verdeSucesso],
         ),
         child: Text(
           widget.label,
@@ -210,7 +210,12 @@ class _IPoupeiWavePainter extends CustomPainter {
     final metrics = path.computeMetrics();
     if (metrics.isEmpty) return;
 
-    final metric = metrics.first;
+    final metricsList = metrics.toList();
+    if (metricsList.isEmpty) return;
+
+    // Verificação adicional para evitar "Bad state: No element"
+    if (metricsList.isEmpty) return;
+    final metric = metricsList.first;
     final drawLength = metric.length * progress.clamp(0.0, 1.0);
 
     final visiblePath = metric.extractPath(0, math.max(0.0, drawLength));
@@ -221,7 +226,7 @@ class _IPoupeiWavePainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth * 1.35
       ..strokeCap = StrokeCap.round
-      ..color = AppColors.tealPrimary.withValues(alpha: 0.10)
+      ..color = AppColors.tealPrimary.withOpacity(0.10)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 18);
 
     final gradientPaint = Paint()

@@ -129,8 +129,9 @@ class TransacaoEditService {
           log('✅ Delta aplicado localmente');
         }
 
-        // 🔔 Notifica páginas de contas (após sync online OU delta offline)
-        ContasRefreshNotifier.instance.notificarMudancaContas();
+        // ⚠️ REMOVIDO: Notificação movida para final do SyncManager.syncAll()
+        // ContasRefreshNotifier será chamado APENAS após sync completo
+        log('✅ [TransacaoEditService] Operação concluída - sync responsável pela notificação');
 
         return ResultadoEdicao.sucesso(
           mensagem: 'Transação efetivada com sucesso',
@@ -190,8 +191,9 @@ class TransacaoEditService {
         log('✅ Deltas aplicados localmente');
       }
 
-      // 🔔 Notifica páginas de contas (após sync online OU delta offline)
-      ContasRefreshNotifier.instance.notificarMudancaContas();
+      // ⚠️ REMOVIDO: Notificação movida para final do SyncManager.syncAll()
+      // ContasRefreshNotifier será chamado APENAS após sync completo
+      log('✅ [TransacaoEditService] Operação concluída - sync responsável pela notificação');
 
       return ResultadoEdicao.sucesso(
         mensagem: '$efetivadas transações efetivadas',
@@ -260,8 +262,9 @@ class TransacaoEditService {
           log('✅ Delta reverso aplicado localmente');
         }
 
-        // 🔔 Notifica páginas de contas (após sync online OU delta offline)
-        ContasRefreshNotifier.instance.notificarMudancaContas();
+        // ⚠️ REMOVIDO: Notificação movida para final do SyncManager.syncAll()
+        // ContasRefreshNotifier será chamado APENAS após sync completo
+        log('✅ [TransacaoEditService] Operação concluída - sync responsável pela notificação');
 
         return ResultadoEdicao.sucesso(
           mensagem: 'Transação marcada como pendente',
@@ -321,8 +324,9 @@ class TransacaoEditService {
         log('✅ Deltas reversos aplicados localmente');
       }
 
-      // 🔔 Notifica páginas de contas (após sync online OU delta offline)
-      ContasRefreshNotifier.instance.notificarMudancaContas();
+      // ⚠️ REMOVIDO: Notificação movida para final do SyncManager.syncAll()
+      // ContasRefreshNotifier será chamado APENAS após sync completo
+      log('✅ [TransacaoEditService] Operação concluída - sync responsável pela notificação');
 
       return ResultadoEdicao.sucesso(
         mensagem: '$desefetivadas transações marcadas como pendentes',

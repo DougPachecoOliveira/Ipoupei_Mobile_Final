@@ -61,6 +61,7 @@ class _ContasPageState extends State<ContasPage> {
 
     // 🔔 Escutar notificações de mudança em contas
     ContasRefreshNotifier.instance.refreshTrigger.addListener(_onContasMudaram);
+    debugPrint('🔔 [ContasPage] Listener registrado no ContasRefreshNotifier');
   }
 
   @override
@@ -77,19 +78,25 @@ class _ContasPageState extends State<ContasPage> {
     _carregarContas();
   }
 
-  /// 🔄 CARREGAR CONTAS (funcionalidade original)
+  /// 🔄 CARREGAR CONTAS (limpa cache para garantir dados frescos após sync)
   Future<void> _carregarContas() async {
     setState(() {
       _loading = true;
       _erro = null;
     });
-    
+
     try {
-      // Buscar contas ativas
+      // 🧹 FORÇA INVALIDAÇÃO DO CACHE ANTES DE RECARREGAR
+      // Isso garante que dados vêm diretamente do SQLite (que foi atualizado pelo sync)
+      // em vez de retornar cache desatualizado
+      _contaService.limparCache();
+      debugPrint('🧹 [ContasPage] Cache invalidado antes do carregamento');
+
+      // Buscar contas ativas (método original funcionando)
       final contas = await _contaService.fetchContas();
       final contasAtivas = contas.where((c) => c.ativo).toList();
 
-      // Buscar saldo total
+      // Buscar saldo total (método original funcionando)
       final saldoTotal = await _contaService.getSaldoTotal();
 
       setState(() {
@@ -97,12 +104,70 @@ class _ContasPageState extends State<ContasPage> {
         _saldoTotal = saldoTotal;
         _loading = false;
       });
-      
+
     } catch (e) {
       setState(() {
         _erro = 'Erro ao carregar contas: $e';
         _loading = false;
       });
+    }
+  }
+
+  /// 🔄 REFRESH PULL-TO-REFRESH (força atualização completa)
+  Future<void> _onRefresh() async {
+    try {
+      debugPrint('🔄 Pull-to-refresh: Iniciando atualização...');
+
+      // 1. Forçar sync com Supabase (se online)
+      try {
+        await SyncManager.instance.syncAll();
+        debugPrint('✅ Sync forçado com Supabase concluído');
+      } catch (syncError) {
+        debugPrint('⚠️ Sync falhou, continuando com dados locais: $syncError');
+      }
+
+      // 2. Buscar contas ativas (forçar refresh do cache local)
+      final contas = await _contaService.fetchContas(forceRefresh: true);
+      final contasAtivas = contas.where((c) => c.ativo).toList();
+
+      // 3. Buscar saldo total atualizado
+      final saldoTotal = await _contaService.getSaldoTotal();
+
+      debugPrint('🔄 Pull-to-refresh: ${contasAtivas.length} contas carregadas, saldo: R\$ ${saldoTotal.toStringAsFixed(2)}');
+
+      setState(() {
+        _contas = contasAtivas;
+        _saldoTotal = saldoTotal;
+        _erro = null;
+      });
+
+      // 4. Feedback visual de sucesso
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Contas atualizadas com sucesso!'),
+            backgroundColor: AppColors.verdeSucesso,
+            duration: Duration(seconds: 1),
+          ),
+        );
+      }
+
+    } catch (e) {
+      debugPrint('❌ Erro no pull-to-refresh: $e');
+      setState(() {
+        _erro = 'Erro ao atualizar contas: $e';
+      });
+
+      // Feedback visual de erro
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Erro ao atualizar: ${e.toString()}'),
+            backgroundColor: AppColors.vermelhoErro,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
     }
   }
 
@@ -673,30 +738,35 @@ class _ContasPageState extends State<ContasPage> {
     }
 
     // Layout para contas ativas
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          // Card de resumo
-          _buildResumoCard(),
+    return RefreshIndicator(
+      color: AppColors.tealPrimary,
+      onRefresh: _onRefresh,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            // Card de resumo
+            _buildResumoCard(),
 
-          const SizedBox(height: 16),
+            const SizedBox(height: 16),
 
-          // Lista de contas
-          if (_contas.isEmpty)
-            _buildVazio()
-          else if (_viewMode == 'consolidado')
-            ..._contas.map((conta) => _buildContaItem(conta))
-          else
-            ..._contas.map((conta) => _buildContaSimples(conta)),
+            // Lista de contas
+            if (_contas.isEmpty)
+              _buildVazio()
+            else if (_viewMode == 'consolidado')
+              ..._contas.map((conta) => _buildContaItem(conta))
+            else
+              ..._contas.map((conta) => _buildContaSimples(conta)),
 
-          const SizedBox(height: 32),
+            const SizedBox(height: 32),
 
-          // Botões inferiores
-          _buildBotoesInferiores(),
+            // Botões inferiores
+            _buildBotoesInferiores(),
 
-          const SizedBox(height: 32),
-        ],
+            const SizedBox(height: 32),
+          ],
+        ),
       ),
     );
   }
@@ -794,9 +864,9 @@ class _ContasPageState extends State<ContasPage> {
   Widget _buildModoConsolidado(List<ContaModel> contas) {
     return RefreshIndicator(
       color: AppColors.tealPrimary,
-      onRefresh: _carregarContas,
+      onRefresh: _onRefresh,
       child: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
+        physics: const AlwaysScrollableScrollPhysics(),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
           child: Column(
@@ -818,9 +888,9 @@ class _ContasPageState extends State<ContasPage> {
   Widget _buildModoEmpilhado(List<ContaModel> contas) {
     return RefreshIndicator(
       color: AppColors.tealPrimary,
-      onRefresh: _carregarContas,
+      onRefresh: _onRefresh,
       child: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
+        physics: const AlwaysScrollableScrollPhysics(),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
           child: Column(

@@ -40,6 +40,7 @@ class PagamentoFaturaService {
       log('💳 Pagando fatura: $cartaoId - Vencimento: $faturaVencimento');
 
       // ✅ LÓGICA IGUAL REACT: Atualizar transações para efetivado = true
+      log('🔍 [DEBUG] Executando UPDATE para efetivar transações...');
       final result = await _localDb.database?.rawQuery(
         '''
         UPDATE transacoes
@@ -63,8 +64,12 @@ class PagamentoFaturaService {
         ],
       );
 
+      log('🔍 [DEBUG] UPDATE efetivação executado. Resultado: $result');
+
       // Contar transações afetadas
+      log('🔍 [DEBUG] Contando transações afetadas após efetivação...');
       final transacoesAfetadas = await _contarTransacoesAfetadas(cartaoId, faturaVencimento, userId);
+      log('🔍 [DEBUG] Transações efetivadas: $transacoesAfetadas');
 
       // 🏦 Aplica DELTA no saldo LOCAL da conta (método correto offline!)
       // Pagar fatura = despesa, então saldo diminui
@@ -75,12 +80,13 @@ class PagamentoFaturaService {
       // Adicionar à fila de sincronização
       await _adicionarSyncFila(cartaoId, faturaVencimento, userId);
 
-      // 🔔 Notifica páginas de contas (usuário vê atualização imediata)
-      ContasRefreshNotifier.instance.notificarMudancaContas();
+      // ⚠️ REMOVIDO: Notificação movida para final do SyncManager.syncAll()
+      // ContasRefreshNotifier será chamado APENAS após sync completo
+      log('✅ [PagamentoFaturaService] Delta aplicado - sync responsável pela notificação');
 
       // ⚡ FORÇA SYNC IMEDIATO (se online) para evitar sobrescrita pelo sync periódico
       if (_syncManager.isOnline) {
-        _syncManager.syncAll();
+        await _syncManager.syncAll(); // AWAIT para garantir que sync termine antes de retornar
       }
 
       log('✅ Fatura paga: $transacoesAfetadas transações efetivadas');
@@ -114,6 +120,7 @@ class PagamentoFaturaService {
       log('🔄 Reabrindo fatura: $cartaoId - Vencimento: $faturaVencimento');
 
       // ⚡ Buscar conta_id(s) e valores ANTES de atualizar (para calcular deltas)
+      log('🔍 [DEBUG] Buscando contas e valores afetados antes da reversão...');
       final contasValores = await _localDb.database?.rawQuery(
         '''
         SELECT conta_id, SUM(valor) as total_valor
@@ -128,8 +135,16 @@ class PagamentoFaturaService {
         [userId, cartaoId, faturaVencimento],
       );
 
+      log('🔍 [DEBUG] Contas encontradas para reversão: ${contasValores?.length ?? 0}');
+      if (contasValores != null) {
+        for (final row in contasValores) {
+          log('🔍 [DEBUG] Conta: ${row['conta_id']}, Valor total: ${row['total_valor']}');
+        }
+      }
+
       // ✅ LÓGICA IGUAL REACT: Reverter efetivação
-      await _localDb.database?.rawQuery(
+      log('🔍 [DEBUG] Executando UPDATE para reverter efetivação...');
+      final updateResult = await _localDb.database?.rawQuery(
         '''
         UPDATE transacoes
         SET
@@ -150,29 +165,40 @@ class PagamentoFaturaService {
         ],
       );
 
+      log('🔍 [DEBUG] UPDATE executado. Resultado: $updateResult');
+
       // Contar transações afetadas
+      log('🔍 [DEBUG] Contando transações afetadas após reversão...');
       final transacoesAfetadas = await _contarTransacoesAfetadas(cartaoId, faturaVencimento, userId, efetivado: false);
+      log('🔍 [DEBUG] Transações pendentes encontradas: $transacoesAfetadas');
 
       // 🏦 Aplica DELTA REVERSO no saldo LOCAL das contas afetadas (método correto offline!)
       // Reabrir fatura = reverter despesa, então saldo aumenta
+      log('🔍 [DEBUG] Aplicando deltas reversos nos saldos das contas...');
       if (contasValores != null && contasValores.isNotEmpty) {
         for (final row in contasValores) {
           final contaId = row['conta_id'] as String?;
           final valorTotal = (row['total_valor'] as num?)?.toDouble();
           if (contaId != null && valorTotal != null) {
+            log('🔍 [DEBUG] Aplicando delta +${valorTotal} na conta $contaId');
             await _localDb.aplicarDeltaSaldo(contaId, valorTotal); // Positivo = recupera o dinheiro
+            log('🔍 [DEBUG] Delta aplicado com sucesso na conta $contaId');
           }
         }
+        log('🔍 [DEBUG] Todos os deltas aplicados nas contas afetadas');
+      } else {
+        log('⚠️ [DEBUG] Nenhuma conta encontrada para aplicar delta reverso!');
       }
 
       await _adicionarSyncFila(cartaoId, faturaVencimento, userId);
 
-      // 🔔 Notifica páginas de contas (usuário vê atualização imediata)
-      ContasRefreshNotifier.instance.notificarMudancaContas();
+      // ⚠️ REMOVIDO: Notificação movida para final do SyncManager.syncAll()
+      // ContasRefreshNotifier será chamado APENAS após sync completo
+      log('✅ [PagamentoFaturaService] Operação concluída - sync responsável pela notificação');
 
       // ⚡ FORÇA SYNC IMEDIATO (se online) para evitar sobrescrita pelo sync periódico
       if (_syncManager.isOnline) {
-        _syncManager.syncAll();
+        await _syncManager.syncAll(); // AWAIT para garantir que sync termine antes de retornar
       }
 
       log('✅ Fatura reaberta: $transacoesAfetadas transações marcadas como pendentes');
@@ -192,12 +218,13 @@ class PagamentoFaturaService {
   /// ✅ CONTAR TRANSAÇÕES AFETADAS
   Future<int> _contarTransacoesAfetadas(String cartaoId, String faturaVencimento, String userId, {bool efetivado = true}) async {
     try {
+      log('🔍 [DEBUG] Contando transações - efetivado: $efetivado (${efetivado ? 1 : 0})');
       final result = await _localDb.database?.rawQuery(
         '''
         SELECT COUNT(*) as total
-        FROM transacoes 
-        WHERE usuario_id = ? 
-          AND cartao_id = ? 
+        FROM transacoes
+        WHERE usuario_id = ?
+          AND cartao_id = ?
           AND fatura_vencimento = ?
           AND efetivado = ?
         ''',
@@ -205,8 +232,11 @@ class PagamentoFaturaService {
       );
 
       if (result != null && result.isNotEmpty) {
-        return (result.first['total'] as int?) ?? 0;
+        final total = (result.first['total'] as int?) ?? 0;
+        log('🔍 [DEBUG] Total de transações encontradas: $total');
+        return total;
       }
+      log('🔍 [DEBUG] Nenhuma transação encontrada');
       return 0;
 
     } catch (e) {

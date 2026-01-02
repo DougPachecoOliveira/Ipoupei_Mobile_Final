@@ -5,6 +5,7 @@
 // 
 // Baseado em: Material Design + Analytics Dashboard
 
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -39,6 +40,9 @@ import '../../transacoes/pages/transferencia_form_page.dart';
 import '../../cartoes/pages/despesa_cartao_page.dart';
 import '../../transacoes/pages/transacoes_page.dart';
 import '../../contas/pages/contas_page.dart';
+import '../../../database/hard_reset_service.dart';
+import '../../../shared/widgets/interactive_loading_widget.dart';
+import '../../../shared/widgets/forcar_sync_widget.dart';
 
 class RelatoriosPage extends StatefulWidget {
   const RelatoriosPage({super.key});
@@ -65,10 +69,15 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
   // Variáveis para o FAB
   bool _fabExpanded = false;
 
+  // Variáveis para alternância de botões
+  bool _importarPrimeiro = true;
+  Timer? _timerAlternancia;
+
   @override
   void initState() {
     super.initState();
     _carregarResumo();
+    _iniciarAlternanciaBotoes();
   }
 
   /// 🔄 CARREGAR RESUMO BASEADO NO MÊS SELECIONADO
@@ -222,6 +231,16 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
       title: _buildSeletorMesCompacto(),
       centerTitle: true,
       actions: [
+        // Botão para alternar ordem dos botões
+        IconButton(
+          icon: Icon(
+            Icons.swap_vert,
+            color: Colors.white,
+            size: 20,
+          ),
+          tooltip: 'Alternar ordem dos botões',
+          onPressed: _alternarBotoes,
+        ),
         IconButton(
           icon: Icon(
             Icons.more_vert,
@@ -645,9 +664,34 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
 
-              // Widget de Importar Dados
-              ImportarDadosWidget(
-                onImportSuccess: _carregarResumo,
+              // Widgets de Ação (Vertical com Alternância)
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 500),
+                child: _importarPrimeiro
+                  ? Column(
+                      key: const ValueKey('importar-primeiro'),
+                      children: [
+                        ImportarDadosWidget(
+                          onImportSuccess: _carregarResumo,
+                        ),
+                        const SizedBox(height: 8),
+                        ForcarSyncWidget(
+                          onSyncSuccess: _carregarResumo,
+                        ),
+                      ],
+                    )
+                  : Column(
+                      key: const ValueKey('sync-primeiro'),
+                      children: [
+                        ForcarSyncWidget(
+                          onSyncSuccess: _carregarResumo,
+                        ),
+                        const SizedBox(height: 8),
+                        ImportarDadosWidget(
+                          onImportSuccess: _carregarResumo,
+                        ),
+                      ],
+                    ),
               ),
 
               const SizedBox(height: 12),
@@ -702,6 +746,11 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
 
               // Seção do Diagnóstico Financeiro
               const DiagnosticoDashboardWidget(),
+
+              const SizedBox(height: 16),
+
+              // 🔧 Ferramentas de Diagnóstico
+              _buildFerramentasDiagnostico(),
 
               const SizedBox(height: 16),
 
@@ -919,6 +968,214 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
     if (resultado == true) {
       _carregarResumo();
     }
+  }
+
+  /// 🔧 FERRAMENTAS DE DIAGNÓSTICO
+  Widget _buildFerramentasDiagnostico() {
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Row(
+              children: [
+                Icon(
+                  Icons.build,
+                  color: Colors.orange,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Ferramentas de Diagnóstico',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 12),
+
+            Text(
+              'Use essas ferramentas quando houver problemas de sincronização ou cache.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Colors.grey[600],
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Hard Reset Button
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _mostrarConfirmacaoHardReset,
+                icon: const Icon(Icons.refresh),
+                label: const Text('🔧 Hard Reset'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            Text(
+              'Apaga todos os dados locais e recarrega tudo do servidor.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Colors.grey[600],
+                fontStyle: FontStyle.italic,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 🚨 CONFIRMAÇÃO DO HARD RESET
+  void _mostrarConfirmacaoHardReset() {
+    debugPrint('🔧 [DEBUG] _mostrarConfirmacaoHardReset chamado');
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.warning, color: Colors.orange),
+            SizedBox(width: 8),
+            Text('Hard Reset'),
+          ],
+        ),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Esta operação irá:',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 8),
+            Text('• Apagar TODOS os dados locais'),
+            Text('• Recarregar tudo do Supabase'),
+            Text('• Resolver problemas de cache'),
+            Text('• Demorar até 1 minuto'),
+            SizedBox(height: 16),
+            Text(
+              '⚠️ Certifique-se de ter conexão estável com internet.',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.red,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _executarHardReset();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orange,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Confirmar Reset'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 🔧 EXECUTAR HARD RESET
+  void _executarHardReset() async {
+    // Mostra o loading interativo (sem await)
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => InteractiveLoadingWidget(
+        progressStream: HardResetService.instance.progressStream,
+        onCompleted: () {
+          Navigator.of(context).pop();
+          _mostrarSucessoReset();
+        },
+      ),
+    );
+
+    // Inicia o hard reset
+    final sucesso = await HardResetService.instance.performHardReset();
+
+    if (!sucesso) {
+      // Se o reset falhou, o erro já foi mostrado pelo InteractiveLoadingWidget
+      // Apenas recarregamos a tela atual
+      _carregarResumo();
+    } else {
+      // Recarrega todos os dados da tela
+      _carregarResumo();
+    }
+  }
+
+  /// ✅ MOSTRAR SUCESSO DO RESET
+  void _mostrarSucessoReset() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.green),
+            SizedBox(width: 8),
+            Text('Reset Concluído!'),
+          ],
+        ),
+        content: const Text(
+          'Todos os dados foram recarregados com sucesso.\n\n'
+          'A aplicação está sincronizada com o servidor.',
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 🔄 Método para iniciar a alternância automática dos botões
+  void _iniciarAlternanciaBotoes() {
+    _timerAlternancia = Timer.periodic(const Duration(seconds: 4), (timer) {
+      if (mounted) {
+        setState(() {
+          _importarPrimeiro = !_importarPrimeiro;
+        });
+      }
+    });
+  }
+
+  // 🔀 Método para alternar manualmente os botões
+  void _alternarBotoes() {
+    setState(() {
+      _importarPrimeiro = !_importarPrimeiro;
+    });
+  }
+
+  @override
+  void dispose() {
+    _timerAlternancia?.cancel();
+    super.dispose();
   }
 }
 

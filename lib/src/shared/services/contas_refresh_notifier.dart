@@ -25,8 +25,10 @@ class ContasRefreshNotifier {
   /// 🔔 Notifica que houve mudança em transações que afeta saldos de contas
   /// Chamado após efetivar/desefetivar transações
   void notificarMudancaContas() {
+    final oldValue = refreshTrigger.value;
     refreshTrigger.value++;
-    debugPrint('🔔 Contas precisam refresh (trigger: ${refreshTrigger.value})');
+    debugPrint('🔔 [ContasRefreshNotifier] Mudança notificada! ${oldValue} → ${refreshTrigger.value}');
+    debugPrint('🔔 [ContasRefreshNotifier] Listeners ativos: ${refreshTrigger.hasListeners ? 'SIM' : 'NÃO'}');
   }
 
   /// 🧹 Dispose (apenas para testes)

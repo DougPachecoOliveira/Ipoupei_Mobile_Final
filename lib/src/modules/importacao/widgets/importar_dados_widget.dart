@@ -80,12 +80,13 @@ class ImportarDadosWidget extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      SizedBox(height: 2),
+                      SizedBox(height: 4),
                       Text(
                         'Extratos bancários e faturas de cartão',
                         style: TextStyle(
-                          color: Colors.white70,
+                          color: Colors.white,
                           fontSize: 12,
+                          fontWeight: FontWeight.w400,
                         ),
                       ),
                     ],

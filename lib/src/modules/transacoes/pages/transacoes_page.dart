@@ -93,6 +93,7 @@ enum FiltroPeriodo {
   anoAtual(titulo: 'Ano Atual', icone: Icons.date_range),
   ultimos3Meses(titulo: 'Últimos 3 Meses', icone: Icons.calendar_month),
   ultimos6Meses(titulo: 'Últimos 6 Meses', icone: Icons.date_range),
+  anoCompleto(titulo: 'Ano Completo', icone: Icons.date_range_outlined),
   personalizado(
     titulo: 'Período Personalizado',
     icone: Icons.calendar_view_week,
@@ -557,12 +558,15 @@ class _TransacoesPageState extends State<TransacoesPage>
 
         print('   Transações SEM cartão: ${transacoesSemCartao.length}');
 
-        // 🎯 2. GERAR FATURAS SINTÉTICAS PARA O PERÍODO
-        List<TransacaoModel> faturasSinteticas = await _gerarFaturasSinteticas(
-          inicioMes,
-          fimMes,
-        );
-        print('   Faturas sintéticas geradas: ${faturasSinteticas.length}');
+        // 🎯 2. BUSCAR TRANSAÇÕES DE CARTÃO REAIS AGRUPADAS (apenas para "Todas" e "Despesas")
+        List<TransacaoModel> transacoesCartaoAgrupadas = [];
+        if (_modoAtual.filtroTipo == null || _modoAtual.filtroTipo == 'despesa') {
+          transacoesCartaoAgrupadas =
+              await _gerarAgrupamentosCartaoReais(inicioMes, fimMes);
+          print('   Transações de cartão agrupadas: ${transacoesCartaoAgrupadas.length}');
+        } else {
+          print('   Agrupamentos de cartão ignorados para modo: ${_modoAtual.filtroTipo}');
+        }
 
         // 🎯 3. IMPLEMENTAR DEDUPLICAÇÃO E CACHE
         final Set<String> idsExistentes = {};
@@ -576,14 +580,14 @@ class _TransacoesPageState extends State<TransacoesPage>
           }
         }
 
-        // Adicionar faturas sintéticas, evitando duplicação
-        for (final faturasintetica in faturasSinteticas) {
-          if (!idsExistentes.contains(faturasintetica.id)) {
-            idsExistentes.add(faturasintetica.id);
-            transacoesDeduplicated.add(faturasintetica);
+        // Adicionar transações de cartão agrupadas, evitando duplicação
+        for (final transacaoCartao in transacoesCartaoAgrupadas) {
+          if (!idsExistentes.contains(transacaoCartao.id)) {
+            idsExistentes.add(transacaoCartao.id);
+            transacoesDeduplicated.add(transacaoCartao);
           } else {
             debugPrint(
-              '⚠️  Fatura sintética duplicada ignorada: ${faturasintetica.id}',
+              '⚠️  Transação de cartão agrupada duplicada ignorada: ${transacaoCartao.id}',
             );
           }
         }
@@ -594,7 +598,7 @@ class _TransacoesPageState extends State<TransacoesPage>
           if (_modoAtual.filtroTipo == 'transferencia') {
             // Filtrar APENAS transferências (usa campo transferencia = true)
             transacoesFiltradas = transacoesFiltradas
-                .where((t) => t.transferencia == true)
+                .where((t) => (t.transferencia ?? false) == true)
                 .toList();
             print(
               '   Após filtro de transferências: ${transacoesFiltradas.length}',
@@ -605,7 +609,7 @@ class _TransacoesPageState extends State<TransacoesPage>
                 .where(
                   (t) =>
                       t.tipo == _modoAtual.filtroTipo &&
-                      t.transferencia != true,
+                      !(t.transferencia ?? false),
                 )
                 .toList();
             print(
@@ -615,7 +619,7 @@ class _TransacoesPageState extends State<TransacoesPage>
         } else {
           // Modo "Todas": EXCLUIR transferências (seguindo padrão React)
           transacoesFiltradas = transacoesFiltradas
-              .where((t) => t.transferencia != true)
+              .where((t) => !(t.transferencia ?? false))
               .toList();
           print(
             '   Após excluir transferências de "Todas": ${transacoesFiltradas.length}',
@@ -945,7 +949,7 @@ class _TransacoesPageState extends State<TransacoesPage>
       context: context,
       initialDate:
           dataFim ?? dataInicioSelecionada.add(const Duration(days: 30)),
-      firstDate: dataInicioSelecionada, // Não pode ser antes da data início
+      firstDate: DateTime(2020), // Permitir seleção livre
       lastDate: DateTime.now().add(const Duration(days: 365)),
       locale: const Locale('pt', 'BR'),
       helpText: 'Selecionar Data de Fim',
@@ -961,14 +965,16 @@ class _TransacoesPageState extends State<TransacoesPage>
       _visaoAtiva = null;
       _filtroAtivo = null;
 
-      // Configurar filtros personalizados
+      // Configurar filtros personalizados com horário completo no último dia
+      final dataFimComHorario = DateTime(dataFimSelecionada.year, dataFimSelecionada.month, dataFimSelecionada.day, 23, 59, 59);
+
       _filtrosPersonalizados['dataInicio'] = dataInicioSelecionada;
-      _filtrosPersonalizados['dataFim'] = dataFimSelecionada;
+      _filtrosPersonalizados['dataFim'] = dataFimComHorario;
 
       // Configurar parâmetros (para compatibilidade)
       _parametrosFiltro = {
         'inicio': dataInicioSelecionada,
-        'fim': dataFimSelecionada,
+        'fim': dataFimComHorario,
       };
     });
 
@@ -1013,6 +1019,11 @@ class _TransacoesPageState extends State<TransacoesPage>
         _parametrosFiltro.clear();
         _filtrosPersonalizados['dataInicio'] = null;
         _filtrosPersonalizados['dataFim'] = null;
+      } else if (periodo == FiltroPeriodo.anoCompleto) {
+        _mesAtual = DateTime(agora.year, agora.month);
+        _periodoAtivo = periodo; // Manter como filtro ativo
+        _filtrosPersonalizados['dataInicio'] = _parametrosFiltro['inicio'];
+        _filtrosPersonalizados['dataFim'] = _parametrosFiltro['fim'];
       } else {
         // Para períodos que precisam de filtro (últimos 3/6 meses), copiar para _filtrosPersonalizados
         _filtrosPersonalizados['dataInicio'] = _parametrosFiltro['inicio'];
@@ -1043,33 +1054,44 @@ class _TransacoesPageState extends State<TransacoesPage>
 
     switch (periodo) {
       case FiltroPeriodo.mesAtual:
+        final ultimoDiaDoMes = DateTime(agora.year, agora.month + 1, 0);
         return {
           'inicio': DateTime(agora.year, agora.month, 1),
-          'fim': DateTime(agora.year, agora.month + 1, 0),
+          'fim': DateTime(ultimoDiaDoMes.year, ultimoDiaDoMes.month, ultimoDiaDoMes.day, 23, 59, 59),
         };
 
       case FiltroPeriodo.anoAtual:
         return {
           'inicio': DateTime(agora.year, 1, 1),
-          'fim': DateTime(agora.year, 12, 31),
+          'fim': DateTime(agora.year, 12, 31, 23, 59, 59),
         };
 
       case FiltroPeriodo.ultimos3Meses:
+        final ultimoDiaDoMes = DateTime(agora.year, agora.month + 1, 0);
         return {
           'inicio': DateTime(agora.year, agora.month - 2, 1),
-          'fim': DateTime(agora.year, agora.month + 1, 0),
+          'fim': DateTime(ultimoDiaDoMes.year, ultimoDiaDoMes.month, ultimoDiaDoMes.day, 23, 59, 59),
         };
 
       case FiltroPeriodo.ultimos6Meses:
+        final ultimoDiaDoMes = DateTime(agora.year, agora.month + 1, 0);
         return {
           'inicio': DateTime(agora.year, agora.month - 5, 1),
-          'fim': DateTime(agora.year, agora.month + 1, 0),
+          'fim': DateTime(ultimoDiaDoMes.year, ultimoDiaDoMes.month, ultimoDiaDoMes.day, 23, 59, 59),
         };
+
+      case FiltroPeriodo.anoCompleto:
+        return {
+          'inicio': DateTime(agora.year, 1, 1),
+          'fim': DateTime(agora.year, 12, 31, 23, 59, 59),
+        };
+
       case FiltroPeriodo.personalizado:
         // Retorna período padrão, será substituído pelo seletor
+        final ultimoDiaDoMes = DateTime(agora.year, agora.month + 1, 0);
         return {
           'inicio': DateTime(agora.year, agora.month, 1),
-          'fim': DateTime(agora.year, agora.month + 1, 0),
+          'fim': DateTime(ultimoDiaDoMes.year, ultimoDiaDoMes.month, ultimoDiaDoMes.day, 23, 59, 59),
         };
     }
   }
@@ -3120,6 +3142,10 @@ class _TransacoesPageState extends State<TransacoesPage>
 
   /// 🎛️ MOSTRAR OPÇÕES DA TRANSAÇÃO
   void _mostrarOpcoesTransacao(TransacaoModel transacao) {
+    // Verificar se é um agrupamento de cartão
+    final bool isAgrupamentoCartao = transacao.id.startsWith('fatura_real_') ||
+                                     transacao.id.startsWith('fatura_virtual_');
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -3165,90 +3191,189 @@ class _TransacoesPageState extends State<TransacoesPage>
 
               const SizedBox(height: 24),
 
-              const Text(
-                'O que você deseja fazer?',
-                style: TextStyle(
+              // Título diferente para agrupamento de cartão
+              Text(
+                isAgrupamentoCartao
+                  ? 'Agrupamento de Fatura'
+                  : 'O que você deseja fazer?',
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: AppColors.cinzaEscuro,
                 ),
               ),
 
+              // Informação adicional para agrupamentos
+              if (isAgrupamentoCartao) ...[
+                const SizedBox(height: 8),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      transacao.efetivado
+                        ? 'Fatura paga'
+                        : 'Fatura pendente de pagamento',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: transacao.efetivado
+                          ? AppColors.verdeSucesso
+                          : AppColors.laranjaAlerta,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    // Chip da conta pagadora (apenas se paga)
+                    if (transacao.efetivado && transacao.contaId != null)
+                      FutureBuilder<String>(
+                        future: _obterNomeConta(transacao.contaId!),
+                        builder: (context, snapshot) {
+                          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                            return const SizedBox.shrink();
+                          }
+
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 6),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.verdeSucesso10,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: AppColors.verdeSucesso30,
+                                  width: 0.5,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.account_balance,
+                                    size: 14,
+                                    color: AppColors.verdeSucesso,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    snapshot.data!,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.verdeSucesso,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                  ],
+                ),
+              ],
+
               const SizedBox(height: 16),
 
-              // Editar
-              EditOptionCardModal(
-                titulo: 'Editar',
-                subtitulo: 'Alterar dados da transação',
-                icone: Icons.edit,
-                cor: AppColors.azul,
-                onTap: () {
-                  Navigator.of(context).pop();
-                  _navegarParaEditarAvancado(transacao);
-                },
-              ),
-
-              // Efetivar (apenas se não efetivada E não for despesa de cartão)
-              if (!transacao.efetivado && transacao.cartaoId == null)
+              // Opções específicas para agrupamentos de cartão
+              if (isAgrupamentoCartao) ...[
                 EditOptionCardModal(
-                  titulo: 'Efetivar',
-                  subtitulo: 'Marcar como confirmada',
-                  icone: Icons.check_circle,
-                  cor: AppColors.verdeSucesso,
+                  titulo: 'Ver Transações do Cartão',
+                  subtitulo: 'Visualizar transações individuais',
+                  icone: Icons.credit_card,
+                  cor: AppColors.azul,
                   onTap: () {
                     Navigator.of(context).pop();
-                    _efetivarTransacao(transacao);
+                    // TODO: Implementar navegação para transações do cartão
+                    _mostrarTransacoesDoCartao(transacao);
                   },
                 ),
-
-              // Desefetivar (apenas se efetivada E não for despesa de cartão)
-              if (transacao.efetivado && transacao.cartaoId == null)
                 EditOptionCardModal(
-                  titulo: 'Desefetivar',
-                  subtitulo: 'Marcar como pendente',
-                  icone: Icons.remove_circle,
-                  cor: AppColors.amareloAlerta,
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    _desefetivarTransacao(transacao);
-                  },
-                ),
-
-              // Duplicar
-              EditOptionCardModal(
-                titulo: 'Duplicar',
-                subtitulo: 'Criar uma cópia desta transação',
-                icone: Icons.copy,
-                cor: AppColors.cinzaMedio,
-                onTap: () {
-                  Navigator.of(context).pop();
-                  _duplicarTransacao(transacao);
-                },
-              ),
-
-              // Excluir (apenas se não efetivada)
-              if (!transacao.efetivado)
-                EditOptionCardModal(
-                  titulo: 'Excluir',
-                  subtitulo: 'Remover permanentemente',
-                  icone: Icons.delete,
-                  cor: AppColors.vermelhoErro,
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    _excluirTransacao(transacao);
-                  },
-                )
-              else
-                EditOptionCardModal(
-                  titulo: 'Não é possível excluir',
-                  subtitulo: 'Transações efetivadas não podem ser excluídas',
-                  icone: Icons.block,
+                  titulo: 'Agrupamento Não Editável',
+                  subtitulo: 'Este é um resumo das transações do cartão',
+                  icone: Icons.info_outline,
                   cor: AppColors.cinzaMedio,
                   onTap: () {},
                   habilitado: false,
                   mensagemDesabilitado:
-                      'Transações efetivadas não podem ser excluídas',
+                      'Agrupamentos de cartão não podem ser editados diretamente',
                 ),
+              ] else ...[
+                // Opções normais para transações individuais
+
+                // Editar
+                EditOptionCardModal(
+                  titulo: 'Editar',
+                  subtitulo: 'Alterar dados da transação',
+                  icone: Icons.edit,
+                  cor: AppColors.azul,
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _navegarParaEditarAvancado(transacao);
+                  },
+                ),
+
+                // Efetivar (apenas se não efetivada E não for despesa de cartão)
+                if (!transacao.efetivado && transacao.cartaoId == null)
+                  EditOptionCardModal(
+                    titulo: 'Efetivar',
+                    subtitulo: 'Marcar como confirmada',
+                    icone: Icons.check_circle,
+                    cor: AppColors.verdeSucesso,
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      _efetivarTransacao(transacao);
+                    },
+                  ),
+
+                // Desefetivar (apenas se efetivada E não for despesa de cartão)
+                if (transacao.efetivado && transacao.cartaoId == null)
+                  EditOptionCardModal(
+                    titulo: 'Desefetivar',
+                    subtitulo: 'Marcar como pendente',
+                    icone: Icons.remove_circle,
+                    cor: AppColors.amareloAlerta,
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      _desefetivarTransacao(transacao);
+                    },
+                  ),
+
+                // Duplicar
+                EditOptionCardModal(
+                  titulo: 'Duplicar',
+                  subtitulo: 'Criar uma cópia desta transação',
+                  icone: Icons.copy,
+                  cor: AppColors.cinzaMedio,
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _duplicarTransacao(transacao);
+                  },
+                ),
+
+                // Excluir (apenas se não efetivada)
+                if (!transacao.efetivado)
+                  EditOptionCardModal(
+                    titulo: 'Excluir',
+                    subtitulo: 'Remover permanentemente',
+                    icone: Icons.delete,
+                    cor: AppColors.vermelhoErro,
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      _excluirTransacao(transacao);
+                    },
+                  )
+                else
+                  EditOptionCardModal(
+                    titulo: 'Não é possível excluir',
+                    subtitulo: 'Transações efetivadas não podem ser excluídas',
+                    icone: Icons.block,
+                    cor: AppColors.cinzaMedio,
+                    onTap: () {},
+                    habilitado: false,
+                    mensagemDesabilitado:
+                        'Transações efetivadas não podem ser excluídas',
+                  ),
+              ],
             ],
           ),
         ),
@@ -3490,6 +3615,9 @@ class _TransacoesPageState extends State<TransacoesPage>
           return '$mes/$ano';
 
         case FiltroPeriodo.anoAtual:
+          return agora.year.toString();
+
+        case FiltroPeriodo.anoCompleto:
           return agora.year.toString();
 
         default:
@@ -5560,6 +5688,173 @@ class _TransacoesPageState extends State<TransacoesPage>
     return null;
   }
 
+  /// 💳 GERAR AGRUPAMENTOS DE CARTÃO REAIS - NOVO MÉTODO
+  /// Busca transações reais de cartão e cria agrupamentos para exibição nas abas "Todas" e "Despesas"
+  Future<List<TransacaoModel>> _gerarAgrupamentosCartaoReais(
+    DateTime inicioMes,
+    DateTime fimMes,
+  ) async {
+    try {
+      debugPrint(
+        '💳 ✨ Gerando agrupamentos reais de cartão para o período: ${inicioMes.toIso8601String().split('T')[0]} - ${fimMes.toIso8601String().split('T')[0]}',
+      );
+
+      final db = LocalDatabase.instance;
+      final userId = db.currentUserId;
+      if (userId == null) {
+        debugPrint('❌ Usuário não autenticado');
+        return [];
+      }
+
+      // Buscar transações de cartão reais no período (tanto efetivadas quanto pendentes)
+      final transacoesCartao = await db.select(
+        'transacoes',
+        where: '''
+          usuario_id = ?
+          AND cartao_id IS NOT NULL
+          AND DATE(fatura_vencimento) BETWEEN DATE(?) AND DATE(?)
+        ''',
+        whereArgs: [
+          userId,
+          inicioMes.toIso8601String().split('T')[0],
+          fimMes.toIso8601String().split('T')[0],
+        ],
+      );
+
+      debugPrint('💳 📋 Transações de cartão encontradas: ${transacoesCartao.length}');
+
+      if (transacoesCartao.isEmpty) {
+        return [];
+      }
+
+      // Agrupar por cartão
+      final Map<String, List<Map<String, dynamic>>> transacoesPorCartao = {};
+      for (final transacao in transacoesCartao) {
+        final cartaoId = transacao['cartao_id'] as String;
+        transacoesPorCartao[cartaoId] ??= [];
+        transacoesPorCartao[cartaoId]!.add(transacao);
+      }
+
+      final List<TransacaoModel> agrupamentos = [];
+
+      // Para cada cartão, criar um agrupamento
+      for (final entry in transacoesPorCartao.entries) {
+        final cartaoId = entry.key;
+        final transacoesDoCartao = entry.value;
+
+        // Buscar dados do cartão
+        final cartaoResult = await db.select(
+          'cartoes',
+          where: 'id = ?',
+          whereArgs: [cartaoId],
+        );
+
+        if (cartaoResult.isEmpty) continue;
+
+        final cartaoData = cartaoResult.first;
+        final nomeCartao = cartaoData['nome'] as String;
+
+        // Calcular valores do agrupamento
+        double valorTotal = 0.0;
+        int quantidadePagas = 0;
+        int quantidadePendentes = 0;
+
+        for (final transacao in transacoesDoCartao) {
+          final valor = (transacao['valor'] as num?)?.toDouble() ?? 0.0;
+          final efetivado = (transacao['efetivado'] as num?)?.toInt() == 1;
+
+          if (transacao['tipo'] == 'despesa') {
+            valorTotal += valor;
+            if (efetivado) {
+              quantidadePagas++;
+            } else {
+              quantidadePendentes++;
+            }
+          }
+        }
+
+        if (valorTotal > 0.01) {
+          // Determinar data mais apropriada: data de vencimento da fatura ou data de pagamento
+          DateTime dataAgrupamento = fimMes; // Fallback
+
+          // Buscar a data de vencimento mais comum ou mais recente das transações deste cartão
+          DateTime? dataVencimentoFatura;
+          DateTime? dataPagamento;
+
+          for (final transacao in transacoesDoCartao) {
+            final faturaVencimento = transacao['fatura_vencimento'] as String?;
+            final efetivado = (transacao['efetivado'] as num?)?.toInt() == 1;
+
+            if (faturaVencimento != null) {
+              final vencimento = DateTime.tryParse(faturaVencimento);
+              if (vencimento != null) {
+                dataVencimentoFatura = vencimento;
+              }
+            }
+
+            // Se efetivada, usar data_efetivacao ou data da transação
+            if (efetivado) {
+              final dataEfetivacao = transacao['data_efetivacao'] as String?;
+              if (dataEfetivacao != null) {
+                final efetivacao = DateTime.tryParse(dataEfetivacao);
+                if (efetivacao != null) {
+                  dataPagamento = efetivacao;
+                }
+              }
+            }
+          }
+
+          // Prioridade: data de pagamento (se paga) > data de vencimento > fim do período
+          if (quantidadePendentes == 0 && dataPagamento != null) {
+            dataAgrupamento = dataPagamento;
+          } else if (dataVencimentoFatura != null) {
+            dataAgrupamento = dataVencimentoFatura;
+          }
+
+          // Criar transação agrupada representando o cartão
+          final agora = DateTime.now();
+          final agrupamento = TransacaoModel(
+            id: 'agrupamento_cartao_${cartaoId}_${inicioMes.month}_${inicioMes.year}',
+            usuarioId: userId,
+            descricao: 'Fatura $nomeCartao - ${_formatarMesAno(inicioMes)}',
+            valor: valorTotal,
+            tipo: 'despesa',
+            data: dataAgrupamento, // Data baseada em vencimento ou pagamento
+            cartaoId: cartaoId,
+            contaId: null,
+            categoriaId: 'categoria_cartao_agrupamento',
+            efetivado: quantidadePendentes == 0, // Efetivado se não há pendentes
+            observacoes: 'Agrupamento: ${quantidadePagas + quantidadePendentes} transações (${quantidadePagas} pagas, ${quantidadePendentes} pendentes)',
+            createdAt: agora,
+            updatedAt: agora,
+          );
+
+          agrupamentos.add(agrupamento);
+
+          debugPrint(
+            '💳 📊 Agrupamento criado: $nomeCartao - R\$${valorTotal.toStringAsFixed(2)} (${quantidadePagas + quantidadePendentes} transações)',
+          );
+        }
+      }
+
+      debugPrint('💳 ✅ Total de agrupamentos criados: ${agrupamentos.length}');
+      return agrupamentos;
+
+    } catch (e) {
+      debugPrint('❌ Erro ao gerar agrupamentos de cartão reais: $e');
+      return [];
+    }
+  }
+
+  /// 📅 Formatar mês/ano para exibição
+  String _formatarMesAno(DateTime data) {
+    const meses = [
+      'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
+      'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
+    ];
+    return '${meses[data.month - 1]}/${data.year}';
+  }
+
   /// 💳 GERAR FATURAS SINTÉTICAS PARA CONSOLIDAR NAS ABAS PRINCIPAIS
   /// Cria transações virtuais representando as faturas como um todo
   Future<List<TransacaoModel>> _gerarFaturasSinteticas(
@@ -5934,4 +6229,43 @@ class _TransacoesPageState extends State<TransacoesPage>
   }
 
   /// ✅ REMOVIDO: método de criação de categoria on-the-fly para evitar problemas
+
+  /// Obter nome da conta/banco para exibir no modal
+  Future<String> _obterNomeConta(String? contaId) async {
+    if (contaId == null) return 'Conta não informada';
+
+    try {
+      final result = await LocalDatabase.instance.select(
+        'contas',
+        where: 'id = ?',
+        whereArgs: [contaId],
+      );
+
+      if (result.isNotEmpty) {
+        final banco = result.first['banco'] as String? ?? '';
+        final nome = result.first['nome'] as String? ?? '';
+        return '$banco - $nome'.trim().replaceAll(RegExp(r'^-\s*|-\s*$'), '');
+      }
+
+      return 'Conta não encontrada';
+    } catch (e) {
+      debugPrint('❌ Erro ao obter nome da conta: $e');
+      return 'Erro ao carregar conta';
+    }
+  }
+
+  /// Navegar para tela de transações do cartão
+  void _mostrarTransacoesDoCartao(TransacaoModel transacao) {
+    if (transacao.cartaoId == null) return;
+
+    // Aqui você pode navegar para uma tela específica do cartão
+    // ou implementar um filtro que mostre apenas as transações do cartão
+    debugPrint('🔍 Exibir transações do cartão: ${transacao.cartaoId}');
+
+    // Exemplo de implementação: aplicar filtro por cartão
+    // setState(() {
+    //   _filtroAtual = FiltroTransacao(cartaoId: transacao.cartaoId);
+    // });
+    // Navigator.pop(context);
+  }
 }

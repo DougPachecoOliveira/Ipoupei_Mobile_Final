@@ -866,18 +866,18 @@ class CategoriaService {
                 String query = '''
                   SELECT COALESCE(SUM(valor), 0) as total, COUNT(*) as qtd
                   FROM transacoes
-                  WHERE categoria_id = ? AND usuario_id = ? AND efetivado = 1
+                  WHERE categoria_id = ? AND usuario_id = ? AND (transferencia IS NULL OR transferencia = 0)
                 ''';
 
                 List<dynamic> params = [categoria.id, userId];
 
                 // Adicionar filtros de data se fornecidos
                 if (dataInicio != null) {
-                  query += ' AND data >= ?';
+                  query += ' AND DATE(data) >= DATE(?)';
                   params.add(dataInicio.toIso8601String().split('T')[0]);
                 }
                 if (dataFim != null) {
-                  query += ' AND data <= ?';
+                  query += ' AND DATE(data) <= DATE(?)';
                   params.add(dataFim.toIso8601String().split('T')[0]);
                 }
 

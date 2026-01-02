@@ -13,6 +13,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../database/local_database.dart';
 import '../services/grupos_metadados_service.dart';
+import '../shared/services/contas_refresh_notifier.dart';
 import 'connectivity_helper.dart';
 
 /// Status de sincronização
@@ -609,6 +610,19 @@ class SyncManager {
       await _downloadServerChanges();
 
       debugPrint('✅ Sincronização completa concluída');
+
+      // 🔔 NOTIFICA PÁGINAS DE CONTAS APÓS SYNC COMPLETO
+      // Esta é a única notificação necessária, pois:
+      // 1. _downloadServerChanges() atualizou saldos via RPC
+      // 2. Dados estão frescos no SQLite local
+      // 3. ContasPage irá recarregar com dados corretos
+      try {
+        ContasRefreshNotifier.instance.notificarMudancaContas();
+        debugPrint('🔔 [SyncManager] Contas notificadas após sync completo');
+      } catch (e) {
+        debugPrint('⚠️ [SyncManager] Erro ao notificar contas: $e');
+        // Não falha o sync por erro de notificação
+      }
     } catch (e) {
       debugPrint('❌ Erro na sincronização completa: $e');
 
@@ -2951,6 +2965,30 @@ class SyncManager {
     } catch (e) {
       debugPrint('❌ Erro ao verificar se grupo precisa download: $e');
       return false;
+    }
+  }
+
+  /// 🧹 LIMPA TODOS OS TIMESTAMPS DE SYNC
+  /// Usado pelo HardResetService para forçar download completo
+  Future<void> clearSyncTimestamps() async {
+    try {
+      debugPrint('🧹 Limpando timestamps de sync...');
+
+      // Limpa timestamps em memória
+      _lastSyncTimestamps.clear();
+
+      // Limpa timestamps no SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      for (final table in _syncTables) {
+        await prefs.remove('last_sync_$table');
+      }
+
+      // Remove também o timestamp de sync completo
+      await prefs.remove('last_full_sync');
+
+      debugPrint('✅ Todos os timestamps de sync foram limpos');
+    } catch (e) {
+      debugPrint('❌ Erro ao limpar timestamps: $e');
     }
   }
 
