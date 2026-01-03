@@ -2508,7 +2508,30 @@ class _TransacoesPageState extends State<TransacoesPage>
       chips.add(_buildChipSubcategoria(transacao));
     }
 
-    // 6. TAGS (máximo 2)
+    // 6. BANCO DE PAGAMENTO (apenas para agrupamentos de cartão pagos)
+    if (transacao.id.startsWith('agrupamento_cartao_') &&
+        transacao.efetivado &&
+        transacao.contaId != null) {
+      final conta = _contas.firstWhere(
+        (c) => c.id == transacao.contaId,
+        orElse: () => ContaModel(
+          id: '',
+          usuarioId: '',
+          nome: 'Conta não encontrada',
+          tipo: 'corrente',
+          saldoInicial: 0.0,
+          saldo: 0.0,
+          ativo: true,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+      );
+      if (conta.id.isNotEmpty) {
+        chips.add(_buildChipBancoPagamento(conta));
+      }
+    }
+
+    // 7. TAGS (máximo 2)
     if (transacao.tags != null && transacao.tags!.isNotEmpty) {
       for (final tag in transacao.tags!.take(2)) {
         chips.add(_buildChipTag(tag));
@@ -3023,6 +3046,36 @@ class _TransacoesPageState extends State<TransacoesPage>
           const SizedBox(width: 4),
           Text(
             conta.nome,
+            style: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Chip para banco de pagamento (faturas de cartão pagas)
+  Widget _buildChipBancoPagamento(ContaModel conta) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: const Color(0xFF10B981), // Verde esmeralda - indica pagamento
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.paid,
+            size: 12,
+            color: Colors.white,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            'Pago via ${conta.nome}',
             style: const TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w500,
@@ -5819,10 +5872,11 @@ class _TransacoesPageState extends State<TransacoesPage>
         final cartaoData = cartaoResult.first;
         final nomeCartao = cartaoData['nome'] as String;
 
-        // Calcular valores do agrupamento
+        // Calcular valores do agrupamento e detectar conta de pagamento
         double valorTotal = 0.0;
         int quantidadePagas = 0;
         int quantidadePendentes = 0;
+        final Map<String, int> contasPagamento = {}; // Para rastrear qual conta foi mais usada
 
         for (final transacao in transacoesDoCartao) {
           final valor = (transacao['valor'] as num?)?.toDouble() ?? 0.0;
@@ -5832,10 +5886,23 @@ class _TransacoesPageState extends State<TransacoesPage>
             valorTotal += valor;
             if (efetivado) {
               quantidadePagas++;
+              // Rastrear conta usada no pagamento
+              final contaIdPagamento = transacao['conta_id'] as String?;
+              if (contaIdPagamento != null) {
+                contasPagamento[contaIdPagamento] = (contasPagamento[contaIdPagamento] ?? 0) + 1;
+              }
             } else {
               quantidadePendentes++;
             }
           }
+        }
+
+        // Determinar conta mais usada no pagamento
+        String? contaIdPagamento;
+        if (contasPagamento.isNotEmpty) {
+          contaIdPagamento = contasPagamento.entries
+              .reduce((a, b) => a.value > b.value ? a : b)
+              .key;
         }
 
         if (valorTotal > 0.01) {
@@ -5886,7 +5953,7 @@ class _TransacoesPageState extends State<TransacoesPage>
             tipo: 'despesa',
             data: dataAgrupamento, // Data baseada em vencimento ou pagamento
             cartaoId: cartaoId,
-            contaId: null,
+            contaId: contaIdPagamento, // ✅ Conta usada no pagamento (se paga)
             categoriaId: 'categoria_cartao_agrupamento',
             efetivado: quantidadePendentes == 0, // Efetivado se não há pendentes
             observacoes: 'Agrupamento: ${quantidadePagas + quantidadePendentes} transações (${quantidadePagas} pagas, ${quantidadePendentes} pendentes)',
