@@ -1003,6 +1003,7 @@ class _GestaoCategoriaPageState extends State<GestaoCategoriaPage> {
           filtrosIniciais: {
             'categoria_id': widget.categoria.id,
           },
+          showNavigationBar: true,
         ),
       ),
     );
