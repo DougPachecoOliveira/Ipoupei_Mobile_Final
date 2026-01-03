@@ -5320,6 +5320,9 @@ class _TransacoesPageState extends State<TransacoesPage>
                     _filtroBusca = '';
                     _buscaController.clear();
                   });
+                  // Fechar overlay se estiver aberto
+                  _fecharSearchOverlay();
+                  // Recarregar dados sem filtro
                   _carregarDados();
                 },
               ),
@@ -6848,12 +6851,21 @@ class _SearchOverlayState extends State<SearchOverlay>
   late Animation<Offset> _slideAnimation;
   late FocusNode _focusNode;
   List<String> _buscasSalvas = [];
+  String _currentText = ''; // Estado para reatividade do botão +
 
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.initialSearch);
     _focusNode = FocusNode();
+
+    // Listener para atualizar botão + em tempo real
+    _currentText = widget.initialSearch;
+    _controller.addListener(() {
+      setState(() {
+        _currentText = _controller.text;
+      });
+    });
 
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 300),
@@ -7175,7 +7187,7 @@ class _SearchOverlayState extends State<SearchOverlay>
                                 borderRadius: BorderRadius.circular(8),
                                 borderSide: const BorderSide(color: Color(0xFF008080), width: 2),
                               ),
-                              suffixIcon: _controller.text.isNotEmpty
+                              suffixIcon: _currentText.isNotEmpty
                                   ? Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
