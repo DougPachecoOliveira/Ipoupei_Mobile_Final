@@ -72,7 +72,7 @@ class _MainNavigationState extends State<MainNavigation> {
       TransacoesPage(
         modoInicial: modoInicial,
         filtrosIniciais: filtros,
-        showNavigationBar: true,
+        showNavigationBar: false,
       ),
     ];
   }
