@@ -561,9 +561,17 @@ class _TransacoesPageState extends State<TransacoesPage>
         // 🎯 2. BUSCAR TRANSAÇÕES DE CARTÃO REAIS AGRUPADAS (apenas para "Todas" e "Despesas")
         List<TransacaoModel> transacoesCartaoAgrupadas = [];
         if (_modoAtual.filtroTipo == null || _modoAtual.filtroTipo == 'despesa') {
-          transacoesCartaoAgrupadas =
-              await _gerarAgrupamentosCartaoReais(inicioMes, fimMes);
-          print('   Transações de cartão agrupadas: ${transacoesCartaoAgrupadas.length}');
+          if (_temFiltrosCategoriaAtivos()) {
+            // 🔍 NOVO: Mostrar transações individuais de cartão filtradas
+            transacoesCartaoAgrupadas =
+                await _buscarTransacoesCartaoIndividuais(inicioMes, fimMes);
+            print('   Transações de cartão individuais filtradas: ${transacoesCartaoAgrupadas.length}');
+          } else {
+            // ✅ ATUAL: Mostrar agrupamentos (comportamento padrão)
+            transacoesCartaoAgrupadas =
+                await _gerarAgrupamentosCartaoReais(inicioMes, fimMes);
+            print('   Transações de cartão agrupadas: ${transacoesCartaoAgrupadas.length}');
+          }
         } else {
           print('   Agrupamentos de cartão ignorados para modo: ${_modoAtual.filtroTipo}');
         }
@@ -5169,6 +5177,12 @@ class _TransacoesPageState extends State<TransacoesPage>
     return _aplicarFiltrosPersonalizados([transacao]).isNotEmpty;
   }
 
+  /// Verifica se há filtros de categoria ou subcategoria ativos
+  bool _temFiltrosCategoriaAtivos() {
+    return (_filtrosPersonalizados['categorias']?.isNotEmpty ?? false) ||
+        (_filtrosPersonalizados['subcategorias']?.isNotEmpty ?? false);
+  }
+
   List<TransacaoModel> _aplicarFiltrosPersonalizados(
     List<TransacaoModel> transacoes,
   ) {
@@ -5804,6 +5818,63 @@ class _TransacoesPageState extends State<TransacoesPage>
       }
     }
     return null;
+  }
+
+  /// 💳 BUSCAR TRANSAÇÕES INDIVIDUAIS DE CARTÃO FILTRADAS
+  /// Busca transações individuais de cartão que passam nos filtros de categoria/subcategoria
+  Future<List<TransacaoModel>> _buscarTransacoesCartaoIndividuais(
+    DateTime inicioMes,
+    DateTime fimMes,
+  ) async {
+    try {
+      debugPrint('💳 🔍 Buscando transações individuais de cartão com filtros...');
+
+      final db = LocalDatabase.instance;
+      final userId = db.currentUserId;
+      if (userId == null) {
+        debugPrint('❌ Usuário não autenticado');
+        return [];
+      }
+
+      // Buscar transações de cartão reais no período
+      final transacoesResult = await db.select(
+        'transacoes',
+        where: '''
+          usuario_id = ?
+          AND cartao_id IS NOT NULL
+          AND DATE(fatura_vencimento) BETWEEN DATE(?) AND DATE(?)
+        ''',
+        whereArgs: [
+          userId,
+          inicioMes.toIso8601String().split('T')[0],
+          fimMes.toIso8601String().split('T')[0],
+        ],
+      );
+
+      debugPrint('💳 📋 Transações de cartão encontradas: ${transacoesResult.length}');
+
+      final List<TransacaoModel> transacoesIndividuais = [];
+
+      // Converter para TransacaoModel e aplicar filtros
+      for (final transacaoData in transacoesResult) {
+        try {
+          final transacao = TransacaoModel.fromJson(transacaoData);
+          // Aplicar filtros de categoria/subcategoria
+          if (_passaNosFiltros(transacao)) {
+            transacoesIndividuais.add(transacao);
+          }
+        } catch (e) {
+          debugPrint('❌ Erro ao converter transação: $e');
+        }
+      }
+
+      debugPrint('💳 ✅ Transações individuais filtradas: ${transacoesIndividuais.length}');
+      return transacoesIndividuais;
+
+    } catch (e) {
+      debugPrint('❌ Erro ao buscar transações individuais de cartão: $e');
+      return [];
+    }
   }
 
   /// 💳 GERAR AGRUPAMENTOS DE CARTÃO REAIS - NOVO MÉTODO
