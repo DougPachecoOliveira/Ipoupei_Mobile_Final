@@ -664,34 +664,49 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
 
-              // Widgets de Ação (Vertical com Alternância)
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 500),
-                child: _importarPrimeiro
-                  ? Column(
-                      key: const ValueKey('importar-primeiro'),
-                      children: [
-                        ImportarDadosWidget(
-                          onImportSuccess: _carregarResumo,
+              // 📊 SEÇÃO DE AÇÕES (Overlap Simples - Botões 100%)
+              Container(
+                height: 80, // Altura de um botão
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 500),
+                  child: Stack(
+                    key: ValueKey(_importarPrimeiro),
+                    children: [
+                      // Ambos os botões 100% largura, apenas ordem determina qual fica na frente
+                      if (_importarPrimeiro) ...[
+                        // ForcarSync atrás
+                        Positioned(
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          child: ForcarSyncWidget(onSyncSuccess: _carregarResumo),
                         ),
-                        const SizedBox(height: 8),
-                        ForcarSyncWidget(
-                          onSyncSuccess: _carregarResumo,
+                        // ImportarDados na frente
+                        Positioned(
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          child: ImportarDadosWidget(onImportSuccess: _carregarResumo),
+                        ),
+                      ] else ...[
+                        // ImportarDados atrás
+                        Positioned(
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          child: ImportarDadosWidget(onImportSuccess: _carregarResumo),
+                        ),
+                        // ForcarSync na frente
+                        Positioned(
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          child: ForcarSyncWidget(onSyncSuccess: _carregarResumo),
                         ),
                       ],
-                    )
-                  : Column(
-                      key: const ValueKey('sync-primeiro'),
-                      children: [
-                        ForcarSyncWidget(
-                          onSyncSuccess: _carregarResumo,
-                        ),
-                        const SizedBox(height: 8),
-                        ImportarDadosWidget(
-                          onImportSuccess: _carregarResumo,
-                        ),
-                      ],
-                    ),
+                    ],
+                  ),
+                ),
               ),
 
               const SizedBox(height: 12),

@@ -2352,11 +2352,13 @@ class _TransacoesPageState extends State<TransacoesPage>
             ),
             const SizedBox(height: 8),
 
-            // LINHA 3: Chips de informações
+            // LINHA 3: Chips de informações - Alinhados à esquerda
             Row(
               children: [
                 Expanded(
                   child: Wrap(
+                    alignment: WrapAlignment.start,
+                    crossAxisAlignment: WrapCrossAlignment.start,
                     spacing: 8,
                     runSpacing: 6,
                     children: _buildChipsInformacoes(transacao),
@@ -2501,7 +2503,12 @@ class _TransacoesPageState extends State<TransacoesPage>
       chips.add(_buildChipCategoria(transacao));
     }
 
-    // 5. TAGS (máximo 2)
+    // 5. SUBCATEGORIA - Mesma cor da categoria pai
+    if (transacao.subcategoriaId != null) {
+      chips.add(_buildChipSubcategoria(transacao));
+    }
+
+    // 6. TAGS (máximo 2)
     if (transacao.tags != null && transacao.tags!.isNotEmpty) {
       for (final tag in transacao.tags!.take(2)) {
         chips.add(_buildChipTag(tag));
@@ -2651,6 +2658,55 @@ class _TransacoesPageState extends State<TransacoesPage>
     } catch (e) {
       return null;
     }
+  }
+
+  // CHIP SUBCATEGORIA - Mesma cor da categoria pai
+  Widget _buildChipSubcategoria(TransacaoModel transacao) {
+    final subcategoria = _encontrarSubcategoria(transacao.subcategoriaId!);
+    if (subcategoria == null) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+        decoration: BoxDecoration(
+          color: const Color(0xFF6B7280), // Cinza como padrão
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: const Text(
+          'Subcategoria',
+          style: TextStyle(
+            fontSize: 9,
+            fontWeight: FontWeight.w500,
+            color: Colors.white,
+          ),
+        ),
+      );
+    }
+
+    // Buscar categoria pai para obter a cor
+    final categoria = _encontrarCategoria(subcategoria.categoriaId);
+    Color corSubcategoria;
+    try {
+      // Se subcategoria tem cor própria, usar ela, senão usar a da categoria pai
+      final corFinal = subcategoria.cor ?? categoria?.cor ?? '#6B7280';
+      corSubcategoria = Color(int.parse(corFinal.replaceAll('#', '0xFF')));
+    } catch (e) {
+      corSubcategoria = const Color(0xFF6B7280); // Fallback para cinza
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      decoration: BoxDecoration(
+        color: corSubcategoria,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        subcategoria.nome,
+        style: const TextStyle(
+          fontSize: 9,
+          fontWeight: FontWeight.w500,
+          color: Colors.white,
+        ),
+      ),
+    );
   }
 
   // CHIP TAG - Teal sólido
@@ -3143,8 +3199,11 @@ class _TransacoesPageState extends State<TransacoesPage>
   /// 🎛️ MOSTRAR OPÇÕES DA TRANSAÇÃO
   void _mostrarOpcoesTransacao(TransacaoModel transacao) {
     // Verificar se é um agrupamento de cartão
+    // Na aba CARTÕES (index 3), apenas faturas reais/virtuais são não-editáveis
+    // Nas outras abas (TODAS=0, DESPESAS=2), agrupamentos de cartão também são não-editáveis
     final bool isAgrupamentoCartao = transacao.id.startsWith('fatura_real_') ||
-                                     transacao.id.startsWith('fatura_virtual_');
+                                     transacao.id.startsWith('fatura_virtual_') ||
+                                     (_tabController.index != 3 && transacao.id.startsWith('agrupamento_cartao_'));
 
     showModalBottomSheet(
       context: context,
@@ -4226,6 +4285,7 @@ class _TransacoesPageState extends State<TransacoesPage>
       // Filtrar apenas transações de cartão
       final transacoesCartao = _transacoes
           .where((t) => t.cartaoId != null)
+          .where((t) => _passaNosFiltros(t))
           .toList();
 
       // 🔥 AGRUPAR POR CARTÃO E FATURA_VENCIMENTO (NÃO POR DATA DA TRANSAÇÃO)
@@ -4555,7 +4615,8 @@ class _TransacoesPageState extends State<TransacoesPage>
         }
       }
 
-      return transacoesDetalhadas;
+      // Aplicar filtros personalizados (cartões, categorias, valores, etc.)
+      return _aplicarFiltrosPersonalizados(transacoesDetalhadas);
     } catch (e) {
       debugPrint('❌ Erro ao obter transações detalhadas: $e');
       return [];
@@ -5049,6 +5110,10 @@ class _TransacoesPageState extends State<TransacoesPage>
         (_filtrosPersonalizados['valorMinimo'] ?? 0.0) > 0 ||
         (_filtrosPersonalizados['valorMaximo'] ?? 999999.0) < 999999;
     // Removido dataInicio/dataFim pois são aplicados na busca do banco, não aqui
+  }
+
+  bool _passaNosFiltros(TransacaoModel transacao) {
+    return _aplicarFiltrosPersonalizados([transacao]).isNotEmpty;
   }
 
   List<TransacaoModel> _aplicarFiltrosPersonalizados(
@@ -6256,16 +6321,27 @@ class _TransacoesPageState extends State<TransacoesPage>
 
   /// Navegar para tela de transações do cartão
   void _mostrarTransacoesDoCartao(TransacaoModel transacao) {
-    if (transacao.cartaoId == null) return;
+    String? cartaoId;
 
-    // Aqui você pode navegar para uma tela específica do cartão
-    // ou implementar um filtro que mostre apenas as transações do cartão
-    debugPrint('🔍 Exibir transações do cartão: ${transacao.cartaoId}');
+    // Extrair cartaoId do agrupamento ou usar cartaoId direto
+    if (transacao.id.startsWith('agrupamento_cartao_')) {
+      // Formato: agrupamento_cartao_{cartaoId}_{month}_{year}
+      final parts = transacao.id.split('_');
+      if (parts.length >= 4) {
+        cartaoId = parts[2]; // O cartaoId está na posição 2
+      }
+    } else {
+      cartaoId = transacao.cartaoId;
+    }
 
-    // Exemplo de implementação: aplicar filtro por cartão
-    // setState(() {
-    //   _filtroAtual = FiltroTransacao(cartaoId: transacao.cartaoId);
-    // });
-    // Navigator.pop(context);
+    if (cartaoId == null) return;
+
+    debugPrint('🔍 Exibir transações do cartão: $cartaoId');
+
+    // Navegar para aba CARTÕES (index 3) com filtro de cartão aplicado
+    setState(() {
+      _tabController.animateTo(3); // Ir para aba CARTÕES
+      _filtrosPersonalizados['cartoes'] = [cartaoId]; // Aplicar filtro do cartão
+    });
   }
 }

@@ -67,12 +67,12 @@ class ImportarDadosWidget extends StatelessWidget {
                 const SizedBox(width: 16),
 
                 // Textos
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
+                      const Text(
                         'Importar Dados',
                         style: TextStyle(
                           color: Colors.white,
@@ -80,13 +80,16 @@ class ImportarDadosWidget extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      SizedBox(height: 4),
-                      Text(
-                        'Extratos bancários e faturas de cartão',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w400,
+                      const SizedBox(height: 4),
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: const Text(
+                          'Extratos bancários e faturas de cartão',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w400,
+                          ),
                         ),
                       ),
                     ],
