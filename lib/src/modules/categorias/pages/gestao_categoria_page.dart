@@ -1003,7 +1003,7 @@ class _GestaoCategoriaPageState extends State<GestaoCategoriaPage> {
           filtrosIniciais: {
             'categoria_id': widget.categoria.id,
           },
-          showNavigationBar: true,
+          showNavigationBar: false,
         ),
       ),
     );
@@ -3151,7 +3151,7 @@ class _GestaoCategoriaPageState extends State<GestaoCategoriaPage> {
             'categoria_id': widget.categoria.id,
             'subcategoria_id': subcategoriaId,
           },
-          showNavigationBar: true,
+          showNavigationBar: false,
         ),
       ),
     );

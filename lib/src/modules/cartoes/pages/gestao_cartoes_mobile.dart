@@ -2251,7 +2251,7 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
             'cartoes': [widget.cartao.id],
             'mes': _mesAtual,
           },
-          showNavigationBar: true,
+          showNavigationBar: false,
         ),
       ),
     );
