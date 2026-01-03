@@ -1,15 +1,15 @@
 // Script de correção única para fix do banco de dados
 // Execute UMA VEZ para corrigir as subcategorias que estão com categoria_id errado
 
-import 'package:sqflite/sqflite.dart';
+import 'package:flutter/foundation.dart';
 import 'src/database/local_database.dart';
 
 Future<void> fixSubcategoriasDatabase() async {
-  print('🔧 Iniciando correção das subcategorias...');
+  debugPrint('🔧 Iniciando correção das subcategorias...');
 
   final db = LocalDatabase.instance.database;
   if (db == null) {
-    print('❌ Database não inicializado');
+    debugPrint('❌ Database não inicializado');
     return;
   }
 
@@ -95,7 +95,7 @@ Future<void> fixSubcategoriasDatabase() async {
         );
 
         if (categoriaResult.isEmpty) {
-          print('⚠️ Categoria não encontrada: $nomeCategoria');
+          debugPrint('⚠️ Categoria não encontrada: $nomeCategoria');
           erros++;
           continue;
         }
@@ -111,23 +111,23 @@ Future<void> fixSubcategoriasDatabase() async {
         );
 
         if (updated > 0) {
-          print('✅ "$nomeSubcategoria" → "$nomeCategoria" (corrigida)');
+          debugPrint('✅ "$nomeSubcategoria" → "$nomeCategoria" (corrigida)');
           corrigidas++;
         }
       } catch (e) {
-        print('❌ Erro ao corrigir "$nomeSubcategoria": $e');
+        debugPrint('❌ Erro ao corrigir "$nomeSubcategoria": $e');
         erros++;
       }
     }
 
-    print('');
-    print('🎯 RESULTADO DA CORREÇÃO:');
-    print('   ✅ Subcategorias corrigidas: $corrigidas');
-    print('   ❌ Erros: $erros');
-    print('');
-    print('✅ Correção concluída! Reinicie o app para ver as mudanças.');
+    debugPrint('');
+    debugPrint('🎯 RESULTADO DA CORREÇÃO:');
+    debugPrint('   ✅ Subcategorias corrigidas: $corrigidas');
+    debugPrint('   ❌ Erros: $erros');
+    debugPrint('');
+    debugPrint('✅ Correção concluída! Reinicie o app para ver as mudanças.');
 
   } catch (e) {
-    print('❌ Erro geral na correção: $e');
+    debugPrint('❌ Erro geral na correção: $e');
   }
 }
