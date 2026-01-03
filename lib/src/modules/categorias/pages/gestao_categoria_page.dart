@@ -154,13 +154,16 @@ class _GestaoCategoriaPageState extends State<GestaoCategoriaPage> {
 
       if (nossaCategoria != null) {
         // ⚡ DADOS JÁ PRÉ-CALCULADOS - INSTANTÂNEO!
-        _valorEfetivado = (nossaCategoria['valor_total'] as num?)?.toDouble() ?? 0.0;
-        _qtdEfetivados = (nossaCategoria['quantidade_transacoes'] as num?)?.toInt() ?? 0;
+        final totalCache = (nossaCategoria['valor_total'] as num?)?.toDouble() ?? 0.0;
+        final totalTransacoesCache =
+            (nossaCategoria['quantidade_transacoes'] as num?)?.toInt() ?? 0;
         
         // Para pendentes, ainda precisamos buscar (são poucos)
         await _carregarTransacoesPendentes(dataInicio, dataFim);
         
-        _valorTotal = _valorEfetivado + _valorPendente;
+        _valorTotal = totalCache;
+        _valorEfetivado = _valorTotal - _valorPendente;
+        _qtdEfetivados = totalTransacoesCache - _qtdPendentes;
         
         debugPrint('⚡ Métricas PRÉ-CALCULADAS - Total: R\$ $_valorTotal, Efetivado: R\$ $_valorEfetivado');
       } else {

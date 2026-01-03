@@ -231,16 +231,16 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
       title: _buildSeletorMesCompacto(),
       centerTitle: true,
       actions: [
-        // Botão para alternar ordem dos botões
-        IconButton(
-          icon: Icon(
-            Icons.swap_vert,
-            color: Colors.white,
-            size: 20,
-          ),
-          tooltip: 'Alternar ordem dos botões',
-          onPressed: _alternarBotoes,
-        ),
+        // Botão de alternar ordem ocultado
+        // IconButton(
+        //   icon: Icon(
+        //     Icons.swap_vert,
+        //     color: Colors.white,
+        //     size: 20,
+        //   ),
+        //   tooltip: 'Alternar ordem dos botões',
+        //   onPressed: _alternarBotoes,
+        // ),
         IconButton(
           icon: Icon(
             Icons.more_vert,
@@ -763,11 +763,10 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
               const DiagnosticoDashboardWidget(),
 
               const SizedBox(height: 16),
-
-              // 🔧 Ferramentas de Diagnóstico
-              _buildFerramentasDiagnostico(),
-
-              const SizedBox(height: 16),
+              // const SizedBox(height: 16),
+              //
+              // // 🔧 Ferramentas de Diagnóstico
+              // _buildFerramentasDiagnostico(),
 
               // Widget "Quanto Vale Minha Hora" (após diagnóstico)
               ValorHoraWidget(

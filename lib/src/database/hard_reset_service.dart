@@ -215,7 +215,7 @@ class HardResetService {
     await _updateProgress(
       phase: ResetPhase.downloading,
       message: 'Baixando dados do servidor...',
-      detailMessage: 'Conectando ao Supabase e iniciando download',
+      detailMessage: 'Conectando ao Servidor e iniciando o download',
       progress: 0.3,
     );
 

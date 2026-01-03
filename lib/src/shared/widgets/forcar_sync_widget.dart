@@ -7,7 +7,6 @@
 
 import 'package:flutter/material.dart';
 import '../../database/hard_reset_service.dart';
-import '../../sync/sync_manager.dart';
 import 'interactive_loading_widget.dart';
 
 /// Widget elegante para forçar sincronização
@@ -119,32 +118,29 @@ class ForcarSyncWidget extends StatelessWidget {
     );
   }
 
-  /// 🔄 HANDLE SINCRONIZAÇÃO
+  /// 🔄 HANDLE HARD RESET
   void _handleSincronizacao(BuildContext context) async {
-    // Verificar se já está sincronizando
-    if (SyncManager.instance.status == SyncStatus.syncing) {
-      _showAlreadySyncingMessage(context);
+    if (HardResetService.instance.isResetting) {
+      _showAlreadyResettingMessage(context);
       return;
     }
 
-    // Mostrar confirmação
     final confirmar = await _showConfirmDialog(context);
     if (!confirmar) return;
 
-    // Executar sincronização
-    await _executarSincronizacao(context);
+    await _executarHardReset(context);
   }
 
-  /// ❓ CONFIRMAÇÃO DE SINCRONIZAÇÃO
+  /// ❓ CONFIRMAÇÃO DE HARD RESET
   Future<bool> _showConfirmDialog(BuildContext context) async {
     return await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Row(
           children: [
-            Icon(Icons.sync, color: Colors.teal),
+            Icon(Icons.warning, color: Colors.orange),
             SizedBox(width: 8),
-            Text('Forçar Sincronização'),
+            Text('Hard Reset'),
           ],
         ),
         content: const Column(
@@ -156,15 +152,21 @@ class ForcarSyncWidget extends StatelessWidget {
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 8),
-            Text('• Buscar atualizações do servidor'),
-            Text('• Sincronizar dados locais'),
-            Text('• Atualizar todas as telas'),
-            SizedBox(height: 12),
             Text(
-              'ℹ️ Use quando houver dados desatualizados.',
+              '• Apagar TODOS os dados locais',
+            ),
+            Text(
+              '• Recarregar tudo do Servidor',
+            ),
+            Text(
+              '• Resolver problemas de cache',
+            ),
+            SizedBox(height: 16),
+            Text(
+              '⚠️ Certifique-se de ter conexão estável com internet.',
               style: TextStyle(
-                color: Colors.grey,
-                fontStyle: FontStyle.italic,
+                fontWeight: FontWeight.bold,
+                color: Colors.red,
               ),
             ),
           ],
@@ -177,60 +179,48 @@ class ForcarSyncWidget extends StatelessWidget {
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.teal,
+              backgroundColor: Colors.orange,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Sincronizar'),
+            child: const Text('Confirmar Reset'),
           ),
         ],
       ),
     ) ?? false;
   }
 
-  /// 🔄 EXECUTAR SINCRONIZAÇÃO
-  Future<void> _executarSincronizacao(BuildContext context) async {
+  /// 🔄 EXECUTAR HARD RESET
+  Future<void> _executarHardReset(BuildContext context) async {
     try {
-      // Mostrar loading simples
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (context) => const AlertDialog(
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(color: Colors.teal),
-              SizedBox(height: 16),
-              Text('Sincronizando dados...'),
-            ],
-          ),
+        builder: (context) => InteractiveLoadingWidget(
+          progressStream: HardResetService.instance.progressStream,
+          onCompleted: () {
+            Navigator.of(context).pop();
+            _showSucessoReset(context);
+            if (onSyncSuccess != null) {
+              onSyncSuccess!();
+            }
+          },
         ),
       );
 
-      // Executar sync
-      await SyncManager.instance.syncAll();
+      final sucesso = await HardResetService.instance.performHardReset();
 
-      // Fechar loading
-      Navigator.of(context).pop();
-
-      // Mostrar sucesso
-      _showSucessoSync(context);
-
-      // Callback de sucesso
-      if (onSyncSuccess != null) {
-        onSyncSuccess!();
+      if (!sucesso) {
+        Navigator.of(context).pop();
+        _showErroReset(context);
       }
-
     } catch (e) {
-      // Fechar loading se estiver aberto
       Navigator.of(context).pop();
-
-      // Mostrar erro
-      _showErroSync(context, e.toString());
+      _showErroReset(context);
     }
   }
 
   /// ✅ MOSTRAR SUCESSO
-  void _showSucessoSync(BuildContext context) {
+  void _showSucessoReset(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -238,11 +228,11 @@ class ForcarSyncWidget extends StatelessWidget {
           children: [
             Icon(Icons.check_circle, color: Colors.green),
             SizedBox(width: 8),
-            Text('Sincronizado!'),
+            Text('Reset Concluído!'),
           ],
         ),
         content: const Text(
-          'Todos os dados foram sincronizados com sucesso.',
+          'Todos os dados foram recarregados com sucesso.',
         ),
         actions: [
           ElevatedButton(
@@ -259,7 +249,7 @@ class ForcarSyncWidget extends StatelessWidget {
   }
 
   /// ❌ MOSTRAR ERRO
-  void _showErroSync(BuildContext context, String erro) {
+  void _showErroReset(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -267,10 +257,12 @@ class ForcarSyncWidget extends StatelessWidget {
           children: [
             Icon(Icons.error, color: Colors.red),
             SizedBox(width: 8),
-            Text('Erro na Sincronização'),
+            Text('Erro no Reset'),
           ],
         ),
-        content: Text('Falha ao sincronizar: $erro'),
+        content: const Text(
+          'Falha ao executar o hard reset. Tente novamente.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -281,11 +273,11 @@ class ForcarSyncWidget extends StatelessWidget {
     );
   }
 
-  /// ⚠️ MENSAGEM JÁ SINCRONIZANDO
-  void _showAlreadySyncingMessage(BuildContext context) {
+  /// ⚠️ MENSAGEM JÁ RESETANDO
+  void _showAlreadyResettingMessage(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('⏳ Sincronização já em andamento...'),
+        content: Text('⏳ Hard reset já em andamento...'),
         backgroundColor: Colors.orange,
       ),
     );

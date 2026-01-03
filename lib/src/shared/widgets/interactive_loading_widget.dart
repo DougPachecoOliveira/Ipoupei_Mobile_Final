@@ -241,7 +241,7 @@ class _InteractiveLoadingWidgetState extends State<InteractiveLoadingWidget>
         const SizedBox(height: 8),
 
         Text(
-          'Sincronizando com o servidor...',
+          'Conectando ao Servidor e iniciando download',
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.textTheme.bodySmall?.color,
           ),

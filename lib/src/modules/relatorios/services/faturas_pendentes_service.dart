@@ -7,6 +7,7 @@
 
 import 'package:flutter/foundation.dart';
 import '../../../database/local_database.dart';
+import '../../cartoes/services/cartao_data_service.dart';
 import '../models/fatura_pendente_model.dart';
 
 class FaturasPendentesService {
@@ -30,6 +31,9 @@ class FaturasPendentesService {
       debugPrint('💳 Buscando faturas pendentes para usuário: $userId');
 
       final hoje = DateTime.now();
+      final hojeBase = DateTime(hoje.year, hoje.month, hoje.day);
+      final dataLimite = hojeBase.add(const Duration(days: 3));
+      final cartaoDataService = CartaoDataService.instance;
 
       // Buscar cartões ativos do usuário
       final cartoesResult = await _db.select(
@@ -46,71 +50,116 @@ class FaturasPendentesService {
         try {
           final cartaoId = cartaoData['id'] as String;
           final nomeCartao = cartaoData['nome'] as String? ?? 'Cartão';
-          final diaVencimento = cartaoData['dia_vencimento'] as int? ?? 15;
 
-          // Calcular data de vencimento para o mês atual/anterior
-          final mesAtual = DateTime(hoje.year, hoje.month, diaVencimento);
-          final mesAnterior = DateTime(hoje.year, hoje.month - 1, diaVencimento);
+          debugPrint('💳 🔍 Buscando transações por fatura_vencimento: $nomeCartao ($cartaoId)');
 
-          // Se hoje passou do vencimento do mês atual, considera vencida
-          // Se ainda não passou, verifica se há transações do mês anterior não pagas
-          DateTime dataVencimento;
-          if (hoje.day > diaVencimento) {
-            // Já passou do vencimento deste mês - fatura vencida
-            dataVencimento = mesAtual;
-          } else {
-            // Ainda não chegou o vencimento - verifica fatura do mês anterior
-            dataVencimento = mesAnterior;
+          final transacoesResult = await _db.select(
+            'transacoes',
+            where: '''
+              usuario_id = ?
+              AND cartao_id = ?
+              AND fatura_vencimento IS NOT NULL
+              AND DATE(fatura_vencimento) <= DATE(?)
+            ''',
+            whereArgs: [
+              userId,
+              cartaoId,
+              dataLimite.toIso8601String().split('T')[0],
+            ],
+          );
+
+          if (transacoesResult.isEmpty) {
+            debugPrint('💳 ℹ️ Nenhuma transação encontrada para $nomeCartao');
+            continue;
           }
 
-          // Calcular período da fatura (desde vencimento anterior até a data atual)
-          final inicioFatura = DateTime(dataVencimento.year, dataVencimento.month - 1, diaVencimento);
-          final fimFatura = dataVencimento;
+          final Map<String, List<Map<String, dynamic>>> transacoesPorVencimento = {};
 
-          debugPrint('💳 🔍 Buscando transações para cartão $nomeCartao ($cartaoId)');
-          debugPrint('💳 🔍 Período da fatura: ${inicioFatura.toIso8601String().split('T')[0]} até ${fimFatura.toIso8601String().split('T')[0]}');
+          for (final transacaoData in transacoesResult) {
+            final faturaVencimentoStr =
+                transacaoData['fatura_vencimento'] as String?;
+            if (faturaVencimentoStr == null || faturaVencimentoStr.isEmpty) {
+              continue;
+            }
+            final dataVencimento = DateTime.tryParse(faturaVencimentoStr);
+            if (dataVencimento == null) {
+              debugPrint(
+                '⚠️ Fatura vencimento inválido: $faturaVencimentoStr',
+              );
+              continue;
+            }
 
-          final transacoesResult = await _db.rawQuery('''
-            SELECT
-              SUM(CASE WHEN t.tipo = 'despesa' THEN t.valor ELSE -t.valor END) as valor_total,
-              COUNT(*) as quantidade
-            FROM transacoes t
-            WHERE t.cartao_id = ?
-              AND t.efetivado = 0
-              AND DATE(t.data) > DATE(?)
-              AND DATE(t.data) <= DATE(?)
-          ''', [cartaoId, inicioFatura.toIso8601String().split('T')[0], fimFatura.toIso8601String().split('T')[0]]);
+            final chave = dataVencimento.toIso8601String().split('T')[0];
+            transacoesPorVencimento.putIfAbsent(chave, () => []);
+            transacoesPorVencimento[chave]!.add(transacaoData);
+          }
 
-          debugPrint('💳 🔍 Resultado query: ${transacoesResult.first}');
-
-          final valorFatura = (transacoesResult.first['valor_total'] as num?)?.toDouble() ?? 0.0;
-          final quantidadeTransacoes = (transacoesResult.first['quantidade'] as num?)?.toInt() ?? 0;
-
-          debugPrint('💳 Cartão $nomeCartao: R\$ ${valorFatura.toStringAsFixed(2)} ($quantidadeTransacoes transações)');
-
-          // Só considera se tem valor > 0 e está vencida ou vencendo em 3 dias
-          if (valorFatura > 0.01) {
-            final diasAteVencimento = dataVencimento.difference(DateTime(hoje.year, hoje.month, hoje.day)).inDays;
+          for (final entry in transacoesPorVencimento.entries) {
+            final dataVencimento = DateTime.parse(entry.key);
+            final diasAteVencimento =
+                dataVencimento.difference(hojeBase).inDays;
             final isVencida = diasAteVencimento < 0;
             final venceHoje = diasAteVencimento == 0;
-            final venceEm3Dias = diasAteVencimento > 0 && diasAteVencimento <= 3;
+            final venceEm3Dias =
+                diasAteVencimento > 0 && diasAteVencimento <= 3;
 
-            debugPrint('💳 📊 $nomeCartao: Vencimento em $diasAteVencimento dias (${dataVencimento.day}/${dataVencimento.month})');
-
-            if (isVencida || venceHoje || venceEm3Dias || forceMostrar) {
-              final fatura = FaturaPendente(
-                cartaoId: cartaoId,
-                nomeCartao: nomeCartao,
-                valorFatura: valorFatura,
-                dataVencimento: dataVencimento,
-                corCartao: cartaoData['cor'] as String?,
-              );
-
-              faturasPendentes.add(fatura);
-              debugPrint('💳 ✅ Fatura crítica: $nomeCartao - ${fatura.statusTexto} - R\$ ${valorFatura.toStringAsFixed(2)}');
-            } else {
-              debugPrint('💳 ℹ️ Fatura não crítica: $nomeCartao - ${diasAteVencimento} dias');
+            if (!forceMostrar && !(isVencida || venceHoje || venceEm3Dias)) {
+              continue;
             }
+
+            double valorTransacoes = 0.0;
+            bool temPendente = false;
+
+            for (final transacao in entry.value) {
+              valorTransacoes +=
+                  (transacao['valor'] as num?)?.toDouble() ?? 0.0;
+              final efetivado =
+                  (transacao['efetivado'] as num?)?.toInt() == 1;
+              if (!efetivado) {
+                temPendente = true;
+              }
+            }
+
+            if (valorTransacoes <= 0.01) {
+              continue;
+            }
+
+            if (!temPendente && !forceMostrar) {
+              debugPrint(
+                '💳 ℹ️ Fatura paga ignorada: $nomeCartao (${entry.key})',
+              );
+              continue;
+            }
+
+            final mesReferencia = DateTime(
+              dataVencimento.year,
+              dataVencimento.month,
+            );
+            final faturaReal = await cartaoDataService.buscarFaturaReal(
+              cartaoId,
+              mesReferencia: mesReferencia,
+            );
+
+            final valorFatura = faturaReal?.valorTotal ?? valorTransacoes;
+            final dataVencimentoFinal =
+                faturaReal?.dataVencimento ?? dataVencimento;
+
+            if (valorFatura <= 0.01) {
+              continue;
+            }
+
+            final fatura = FaturaPendente(
+              cartaoId: cartaoId,
+              nomeCartao: nomeCartao,
+              valorFatura: valorFatura,
+              dataVencimento: dataVencimentoFinal,
+              corCartao: cartaoData['cor'] as String?,
+            );
+
+            faturasPendentes.add(fatura);
+            debugPrint(
+              '💳 ✅ Fatura crítica: $nomeCartao - ${fatura.statusTexto} - R\$ ${valorFatura.toStringAsFixed(2)}',
+            );
           }
         } catch (e) {
           debugPrint('❌ Erro ao processar cartão ${cartaoData['nome']}: $e');
