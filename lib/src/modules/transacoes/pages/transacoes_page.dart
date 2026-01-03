@@ -295,8 +295,14 @@ class _TransacoesPageState extends State<TransacoesPage>
 
   // Filtros por categoria
   FiltroPeriodo? _periodoAtivo;
-  VisaoRapida? _visaoAtiva;
-  VisaoRapida? _visaoTempSelecionada; // Para seleção temporária no modal
+
+  // FASE 2: Migração gradual das visões rápidas para busca inteligente
+  @Deprecated('Use busca inteligente + filtros. Será removido na Fase 3')
+  VisaoRapida? _visaoAtiva; // TODO: Migrar para _filtroBusca
+
+  @Deprecated('Use busca inteligente + filtros. Será removido na Fase 3')
+  VisaoRapida? _visaoTempSelecionada; // TODO: Migrar para _filtroBusca
+
   FiltroInteligente? _filtroAtivo; // DEPRECATED - mantido por compatibilidade
   Map<String, dynamic> _parametrosFiltro = {};
 
@@ -4988,47 +4994,42 @@ class _TransacoesPageState extends State<TransacoesPage>
                   : 'Lista Normal',
             ),
 
-          // Botão de Visões Rápidas
+          // Botão de Busca Inteligente (migração gradual das visões rápidas)
           IconButton(
-            onPressed: () async {
-              final visao = await _mostrarModalVisoesRapidas();
-              if (visao != null) {
-                _aplicarVisaoRapida(visao);
-              }
-            },
-            icon: Icon(
-              Icons.visibility,
-              color: _visaoAtiva != null ? Colors.yellow[300] : Colors.white,
-            ),
-            tooltip: 'Visões Rápidas',
-          ),
+            onPressed: () {
+              // Prioridade 1: Abrir search overlay
+              _mostrarSearchOverlay();
 
-          // Ícone de busca elegante (substitui campo fixo)
-          Stack(
-            children: [
-              IconButton(
-                onPressed: _mostrarSearchOverlay,
-                icon: Icon(
+              // TODO: Fase 3 - Remover visões rápidas após validação
+              // Manter temporariamente para compatibilidade
+            },
+            icon: Stack(
+              children: [
+                Icon(
                   Icons.search,
-                  color: _filtroBusca.isNotEmpty ? Colors.yellow[300] : Colors.white,
+                  color: (_visaoAtiva != null || _filtroBusca.isNotEmpty)
+                      ? Colors.yellow[300]
+                      : Colors.white,
                 ),
-                tooltip: 'Buscar transações',
-              ),
-              // Indicador de busca ativa
-              if (_filtroBusca.isNotEmpty)
-                Positioned(
-                  right: 8,
-                  top: 8,
-                  child: Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: Colors.yellow[300],
-                      shape: BoxShape.circle,
+                // Indicador combinado (busca ativa ou visão ativa)
+                if (_filtroBusca.isNotEmpty || _visaoAtiva != null)
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: Colors.yellow[300],
+                        shape: BoxShape.circle,
+                      ),
                     ),
                   ),
-                ),
-            ],
+              ],
+            ),
+            tooltip: _filtroBusca.isNotEmpty
+                ? 'Busca: "$_filtroBusca" (clique para editar)'
+                : 'Busca Inteligente + Filtros Rápidos',
           ),
 
           // Botão de filtros com indicador
@@ -6800,6 +6801,51 @@ class _SearchOverlayState extends State<SearchOverlay>
     widget.onClose();
   }
 
+  Widget _buildQuickSearchChip(String searchTerm, String label) {
+    return Material(
+      borderRadius: BorderRadius.circular(16),
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () {
+          _controller.text = searchTerm;
+          widget.onSearchChanged(searchTerm);
+          _handleClose();
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: const Color(0xFF008080).withOpacity(0.3),
+              width: 1,
+            ),
+            color: const Color(0xFF008080).withOpacity(0.05),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.bolt,
+                size: 12,
+                color: const Color(0xFF008080),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFF008080),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
@@ -6939,6 +6985,29 @@ class _SearchOverlayState extends State<SearchOverlay>
                               fontSize: 12,
                               color: Colors.grey[600],
                             ),
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          // Sugestões inteligentes (substitui visões rápidas)
+                          Text(
+                            'Busca rápida:',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 4,
+                            children: [
+                              _buildQuickSearchChip('não efetivado', 'Pendentes'),
+                              _buildQuickSearchChip('efetivado', 'Efetivadas'),
+                              _buildQuickSearchChip('cartão', 'Por Cartão'),
+                              _buildQuickSearchChip('transferência', 'Transferências'),
+                            ],
                           ),
                         ],
                       ),
