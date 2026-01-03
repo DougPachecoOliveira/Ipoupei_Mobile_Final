@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../shared/theme/app_colors.dart';
 import '../../../database/local_database.dart';
 import '../../../shared/components/ui/app_button.dart';
@@ -6727,6 +6728,99 @@ class _TransacoesPageState extends State<TransacoesPage>
   }
 }
 
+// ===== BUSCAS SALVAS SERVICE =====
+
+/// Serviço simples para gerenciar buscas salvas do usuário
+class BuscasSalvasService {
+  static const String _key = 'buscas_salvas_usuario';
+  static const int _maxBuscas = 15;
+
+  /// Busca todas as buscas salvas
+  static Future<List<Map<String, dynamic>>> getBuscas() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? buscasJson = prefs.getString(_key);
+    if (buscasJson == null) return [];
+
+    try {
+      final List<dynamic> lista = json.decode(buscasJson);
+      return lista.cast<Map<String, dynamic>>();
+    } catch (e) {
+      return [];
+    }
+  }
+
+  /// Salva uma nova busca ou incrementa contador se já existe
+  static Future<void> salvarBusca(String termo) async {
+    if (termo.trim().isEmpty) return;
+
+    final buscas = await getBuscas();
+    final termoLimpo = termo.trim().toLowerCase();
+
+    // Verifica se já existe
+    final index = buscas.indexWhere((b) => b['termo'] == termoLimpo);
+
+    if (index >= 0) {
+      // Já existe - incrementa contador e move para frente
+      buscas[index]['count'] = (buscas[index]['count'] ?? 0) + 1;
+      buscas[index]['lastUsed'] = DateTime.now().toIso8601String();
+      final busca = buscas.removeAt(index);
+      buscas.insert(0, busca);
+    } else {
+      // Nova busca - adiciona no início
+      buscas.insert(0, {
+        'termo': termoLimpo,
+        'count': 1,
+        'created': DateTime.now().toIso8601String(),
+        'lastUsed': DateTime.now().toIso8601String(),
+      });
+    }
+
+    // Limita o número de buscas
+    while (buscas.length > _maxBuscas) {
+      buscas.removeLast();
+    }
+
+    await _saveBuscas(buscas);
+  }
+
+  /// Incrementa contador de uso de uma busca
+  static Future<void> incrementarUso(String termo) async {
+    await salvarBusca(termo); // Reutiliza a lógica de salvamento
+  }
+
+  /// Remove uma busca específica
+  static Future<void> removerBusca(String termo) async {
+    final buscas = await getBuscas();
+    final termoLimpo = termo.trim().toLowerCase();
+
+    buscas.removeWhere((b) => b['termo'] == termoLimpo);
+    await _saveBuscas(buscas);
+  }
+
+  /// Obtém buscas ordenadas por uso (mais usadas primeiro)
+  static Future<List<String>> getBuscasOrdenadas() async {
+    final buscas = await getBuscas();
+
+    // Ordena por count (desc) e depois por lastUsed (desc)
+    buscas.sort((a, b) {
+      final countCompare = (b['count'] ?? 0).compareTo(a['count'] ?? 0);
+      if (countCompare != 0) return countCompare;
+
+      final aLastUsed = DateTime.tryParse(a['lastUsed'] ?? '') ?? DateTime(1970);
+      final bLastUsed = DateTime.tryParse(b['lastUsed'] ?? '') ?? DateTime(1970);
+      return bLastUsed.compareTo(aLastUsed);
+    });
+
+    return buscas.map<String>((b) => b['termo'] as String).toList();
+  }
+
+  /// Salva lista de buscas no SharedPreferences
+  static Future<void> _saveBuscas(List<Map<String, dynamic>> buscas) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_key, json.encode(buscas));
+  }
+}
+
 // ===== SEARCH OVERLAY COMPONENTS =====
 
 /// Widget overlay para busca expansível e elegante
@@ -6753,6 +6847,7 @@ class _SearchOverlayState extends State<SearchOverlay>
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
   late FocusNode _focusNode;
+  List<String> _buscasSalvas = [];
 
   @override
   void initState() {
@@ -6781,6 +6876,9 @@ class _SearchOverlayState extends State<SearchOverlay>
       curve: Curves.easeOut,
     ));
 
+    // Carregar buscas salvas
+    _carregarBuscasSalvas();
+
     // Iniciar animação e focar no campo
     _animationController.forward();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -6801,17 +6899,105 @@ class _SearchOverlayState extends State<SearchOverlay>
     widget.onClose();
   }
 
-  Widget _buildQuickSearchChip(String searchTerm, String label) {
+  Future<void> _carregarBuscasSalvas() async {
+    final buscas = await BuscasSalvasService.getBuscasOrdenadas();
+    if (mounted) {
+      setState(() {
+        _buscasSalvas = buscas;
+      });
+    }
+  }
+
+  Future<void> _salvarBuscaAtual() async {
+    final termo = _controller.text.trim();
+    if (termo.isEmpty) return;
+
+    await BuscasSalvasService.salvarBusca(termo);
+    await _carregarBuscasSalvas(); // Recarrega para atualizar UI
+
+    // Feedback visual
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Busca "$termo" salva!'),
+          duration: const Duration(seconds: 1),
+          backgroundColor: const Color(0xFF008080),
+        ),
+      );
+    }
+  }
+
+  Widget _buildDynamicSearchChipsArea() {
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxHeight: 200),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (_buscasSalvas.isEmpty)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey[200]!),
+                ),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.search_off,
+                      size: 32,
+                      color: Colors.grey[400],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Nenhuma busca salva ainda',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Use o botão + para salvar suas buscas favoritas',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[500],
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              )
+            else
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                children: _buscasSalvas.map((termo) =>
+                  _buildSavedSearchChip(termo)
+                ).toList(),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSavedSearchChip(String termo) {
     return Material(
       borderRadius: BorderRadius.circular(16),
       color: Colors.transparent,
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        onTap: () {
-          _controller.text = searchTerm;
-          widget.onSearchChanged(searchTerm);
+        onTap: () async {
+          _controller.text = termo;
+          widget.onSearchChanged(termo);
+          await BuscasSalvasService.incrementarUso(termo);
           _handleClose();
         },
+        onLongPress: () => _mostrarMenuRemoverBusca(termo),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
@@ -6820,19 +7006,19 @@ class _SearchOverlayState extends State<SearchOverlay>
               color: const Color(0xFF008080).withOpacity(0.3),
               width: 1,
             ),
-            color: const Color(0xFF008080).withOpacity(0.05),
+            color: const Color(0xFF008080).withOpacity(0.1),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                Icons.bolt,
-                size: 12,
+                Icons.history,
+                size: 14,
                 color: const Color(0xFF008080),
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: 6),
               Text(
-                label,
+                termo,
                 style: const TextStyle(
                   fontSize: 12,
                   color: Color(0xFF008080),
@@ -6845,6 +7031,43 @@ class _SearchOverlayState extends State<SearchOverlay>
       ),
     );
   }
+
+  void _mostrarMenuRemoverBusca(String termo) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Busca: "$termo"',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 16),
+            ListTile(
+              leading: const Icon(Icons.delete_outline, color: Colors.red),
+              title: const Text('Remover busca salva'),
+              onTap: () async {
+                Navigator.pop(context);
+                await BuscasSalvasService.removerBusca(termo);
+                await _carregarBuscasSalvas();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.cancel_outlined),
+              title: const Text('Cancelar'),
+              onTap: () => Navigator.pop(context),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -6953,16 +7176,32 @@ class _SearchOverlayState extends State<SearchOverlay>
                                 borderSide: const BorderSide(color: Color(0xFF008080), width: 2),
                               ),
                               suffixIcon: _controller.text.isNotEmpty
-                                  ? IconButton(
-                                      onPressed: () {
-                                        _controller.clear();
-                                        widget.onSearchChanged('');
-                                      },
-                                      icon: Icon(
-                                        Icons.clear,
-                                        color: Colors.grey[400],
-                                        size: 20,
-                                      ),
+                                  ? Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        // Botão + para salvar busca
+                                        IconButton(
+                                          onPressed: _salvarBuscaAtual,
+                                          icon: const Icon(
+                                            Icons.add_circle_outline,
+                                            color: Color(0xFF008080),
+                                            size: 20,
+                                          ),
+                                          tooltip: 'Salvar esta busca',
+                                        ),
+                                        // Botão clear
+                                        IconButton(
+                                          onPressed: () {
+                                            _controller.clear();
+                                            widget.onSearchChanged('');
+                                          },
+                                          icon: Icon(
+                                            Icons.clear,
+                                            color: Colors.grey[400],
+                                            size: 20,
+                                          ),
+                                        ),
+                                      ],
                                     )
                                   : null,
                               contentPadding: const EdgeInsets.symmetric(
@@ -6999,16 +7238,8 @@ class _SearchOverlayState extends State<SearchOverlay>
                             ),
                           ),
                           const SizedBox(height: 8),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 4,
-                            children: [
-                              _buildQuickSearchChip('não efetivado', 'Pendentes'),
-                              _buildQuickSearchChip('efetivado', 'Efetivadas'),
-                              _buildQuickSearchChip('cartão', 'Por Cartão'),
-                              _buildQuickSearchChip('transferência', 'Transferências'),
-                            ],
-                          ),
+                          // Área dinâmica para chips salvos pelo usuário
+                          _buildDynamicSearchChipsArea(),
                         ],
                       ),
                     ),
