@@ -321,6 +321,10 @@ class _TransacoesPageState extends State<TransacoesPage>
     'dataFim': null,
   };
 
+  // Filtro de busca por texto
+  String _filtroBusca = '';
+  final TextEditingController _buscaController = TextEditingController();
+
   // Resumo adaptativo
   Map<String, double> _estatisticas = {};
 
@@ -439,6 +443,7 @@ class _TransacoesPageState extends State<TransacoesPage>
   @override
   void dispose() {
     _tabController.dispose();
+    _buscaController.dispose();
     super.dispose();
   }
 
@@ -4992,6 +4997,65 @@ class _TransacoesPageState extends State<TransacoesPage>
             tooltip: 'Visões Rápidas',
           ),
 
+          // Campo de busca por texto
+          Container(
+            width: 200,
+            height: 40,
+            margin: const EdgeInsets.symmetric(horizontal: 8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.3),
+                width: 1,
+              ),
+            ),
+            child: TextField(
+              controller: _buscaController,
+              style: const TextStyle(color: Colors.white, fontSize: 14),
+              decoration: InputDecoration(
+                hintText: 'Buscar transações...',
+                hintStyle: TextStyle(
+                  color: Colors.white.withOpacity(0.7),
+                  fontSize: 14,
+                ),
+                prefixIcon: Icon(
+                  Icons.search,
+                  color: Colors.white.withOpacity(0.7),
+                  size: 20,
+                ),
+                suffixIcon: _filtroBusca.isNotEmpty
+                    ? IconButton(
+                        icon: Icon(
+                          Icons.clear,
+                          color: Colors.white.withOpacity(0.7),
+                          size: 18,
+                        ),
+                        onPressed: () {
+                          _buscaController.clear();
+                          setState(() {
+                            _filtroBusca = '';
+                          });
+                          _carregarDados(); // Recarregar sem filtro
+                        },
+                      )
+                    : null,
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+              ),
+              onChanged: (valor) {
+                setState(() {
+                  _filtroBusca = valor.toLowerCase();
+                });
+                // Aplicar filtro em tempo real com debounce
+                _aplicarFiltroBusca();
+              },
+            ),
+          ),
+
           // Botão de filtros com indicador
           Stack(
             children: [
@@ -5169,7 +5233,8 @@ class _TransacoesPageState extends State<TransacoesPage>
         (_filtrosPersonalizados['cartoes']?.isNotEmpty ?? false) ||
         (_filtrosPersonalizados['status']?.isNotEmpty ?? false) ||
         (_filtrosPersonalizados['valorMinimo'] ?? 0.0) > 0 ||
-        (_filtrosPersonalizados['valorMaximo'] ?? 999999.0) < 999999;
+        (_filtrosPersonalizados['valorMaximo'] ?? 999999.0) < 999999 ||
+        _filtroBusca.isNotEmpty;
     // Removido dataInicio/dataFim pois são aplicados na busca do banco, não aqui
   }
 
@@ -5181,6 +5246,22 @@ class _TransacoesPageState extends State<TransacoesPage>
   bool _temFiltrosCategoriaAtivos() {
     return (_filtrosPersonalizados['categorias']?.isNotEmpty ?? false) ||
         (_filtrosPersonalizados['subcategorias']?.isNotEmpty ?? false);
+  }
+
+  /// Aplica filtro de busca por texto
+  void _aplicarFiltroBusca() {
+    if (_filtroBusca.isEmpty) {
+      // Se busca está vazia, recarregar dados normalmente
+      _carregarDados();
+      return;
+    }
+
+    // Filtrar transações existentes em memória
+    setState(() {
+      // A filtragem será aplicada no método _aplicarFiltrosPersonalizados
+      // que já é chamado no carregamento de dados
+    });
+    _carregarDados();
   }
 
   List<TransacaoModel> _aplicarFiltrosPersonalizados(
@@ -5330,6 +5411,103 @@ class _TransacoesPageState extends State<TransacoesPage>
       // (_carregarDados já busca com dataInicio e dataFim corretos)
       // Aplicar novamente causaria problemas com transações de cartão que têm data da compra
       // diferente do período de faturamento
+
+      // Filtro por busca de texto
+      if (_filtroBusca.isNotEmpty) {
+        final buscaLower = _filtroBusca.toLowerCase();
+
+        // Buscar na descrição da transação
+        if (transacao.descricao.toLowerCase().contains(buscaLower)) {
+          return true;
+        }
+
+        // Buscar no nome da categoria (se disponível)
+        if (transacao.categoriaId != null) {
+          final categoria = _categorias.firstWhere(
+            (c) => c.id == transacao.categoriaId,
+            orElse: () => CategoriaModel(
+              id: '',
+              usuarioId: '',
+              nome: '',
+              tipo: 'despesa',
+              cor: '#008080',
+              icone: 'folder',
+              ativo: true,
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+            ),
+          );
+          if (categoria.nome.toLowerCase().contains(buscaLower)) {
+            return true;
+          }
+        }
+
+        // Buscar no nome da subcategoria (se disponível)
+        if (transacao.subcategoriaId != null) {
+          final subcategoria = _subcategorias.firstWhere(
+            (s) => s.id == transacao.subcategoriaId,
+            orElse: () => SubcategoriaModel(
+              id: '',
+              usuarioId: '',
+              categoriaId: '',
+              nome: '',
+              cor: '#008080',
+              icone: 'folder',
+              ativo: true,
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+            ),
+          );
+          if (subcategoria.nome.toLowerCase().contains(buscaLower)) {
+            return true;
+          }
+        }
+
+        // Buscar no nome do cartão (se disponível)
+        if (transacao.cartaoId != null) {
+          final cartao = _cartoes.firstWhere(
+            (c) => c.id == transacao.cartaoId,
+            orElse: () => CartaoModel(
+              id: '',
+              usuarioId: '',
+              nome: '',
+              limite: 0,
+              diaFechamento: 1,
+              diaVencimento: 10,
+              ativo: true,
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+            ),
+          );
+          if (cartao.nome.toLowerCase().contains(buscaLower)) {
+            return true;
+          }
+        }
+
+        // Buscar no nome da conta (se disponível)
+        if (transacao.contaId != null) {
+          final conta = _contas.firstWhere(
+            (c) => c.id == transacao.contaId,
+            orElse: () => ContaModel(
+              id: '',
+              usuarioId: '',
+              nome: '',
+              tipo: 'corrente',
+              saldoInicial: 0.0,
+              saldo: 0.0,
+              ativo: true,
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+            ),
+          );
+          if (conta.nome.toLowerCase().contains(buscaLower)) {
+            return true;
+          }
+        }
+
+        // Se chegou até aqui e tem filtro de busca, não passou na busca
+        return false;
+      }
 
       return true;
     }).toList();
