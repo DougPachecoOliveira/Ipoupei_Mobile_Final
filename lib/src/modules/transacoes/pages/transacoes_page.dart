@@ -325,6 +325,10 @@ class _TransacoesPageState extends State<TransacoesPage>
   String _filtroBusca = '';
   final TextEditingController _buscaController = TextEditingController();
 
+  // Search overlay state
+  bool _showSearchOverlay = false;
+  OverlayEntry? _overlayEntry;
+
   // Resumo adaptativo
   Map<String, double> _estatisticas = {};
 
@@ -444,6 +448,8 @@ class _TransacoesPageState extends State<TransacoesPage>
   void dispose() {
     _tabController.dispose();
     _buscaController.dispose();
+    // Limpar overlay se ainda estiver ativo
+    _overlayEntry?.remove();
     super.dispose();
   }
 
@@ -4997,63 +5003,32 @@ class _TransacoesPageState extends State<TransacoesPage>
             tooltip: 'Visões Rápidas',
           ),
 
-          // Campo de busca por texto
-          Container(
-            width: 200,
-            height: 40,
-            margin: const EdgeInsets.symmetric(horizontal: 8),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.3),
-                width: 1,
-              ),
-            ),
-            child: TextField(
-              controller: _buscaController,
-              style: const TextStyle(color: Colors.white, fontSize: 14),
-              decoration: InputDecoration(
-                hintText: 'Buscar transações...',
-                hintStyle: TextStyle(
-                  color: Colors.white.withOpacity(0.7),
-                  fontSize: 14,
-                ),
-                prefixIcon: Icon(
+          // Ícone de busca elegante (substitui campo fixo)
+          Stack(
+            children: [
+              IconButton(
+                onPressed: _mostrarSearchOverlay,
+                icon: Icon(
                   Icons.search,
-                  color: Colors.white.withOpacity(0.7),
-                  size: 20,
+                  color: _filtroBusca.isNotEmpty ? Colors.yellow[300] : Colors.white,
                 ),
-                suffixIcon: _filtroBusca.isNotEmpty
-                    ? IconButton(
-                        icon: Icon(
-                          Icons.clear,
-                          color: Colors.white.withOpacity(0.7),
-                          size: 18,
-                        ),
-                        onPressed: () {
-                          _buscaController.clear();
-                          setState(() {
-                            _filtroBusca = '';
-                          });
-                          _carregarDados(); // Recarregar sem filtro
-                        },
-                      )
-                    : null,
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
+                tooltip: 'Buscar transações',
               ),
-              onChanged: (valor) {
-                setState(() {
-                  _filtroBusca = valor.toLowerCase();
-                });
-                // Aplicar filtro em tempo real com debounce
-                _aplicarFiltroBusca();
-              },
-            ),
+              // Indicador de busca ativa
+              if (_filtroBusca.isNotEmpty)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: Colors.yellow[300],
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+            ],
           ),
 
           // Botão de filtros com indicador
@@ -5110,6 +5085,9 @@ class _TransacoesPageState extends State<TransacoesPage>
                   ],
                 ),
               ),
+
+              // Chips de busca ativa
+              if (_filtroBusca.isNotEmpty) _buildSearchChips(),
 
               // Toggle "Por Fatura" vs "Detalhado" para cartões - Padrão Device
               if (_modoAtual == TransacoesPageMode.cartoes)
@@ -5262,6 +5240,92 @@ class _TransacoesPageState extends State<TransacoesPage>
       // que já é chamado no carregamento de dados
     });
     _carregarDados();
+  }
+
+  /// Controle do Search Overlay
+  void _mostrarSearchOverlay() {
+    if (_showSearchOverlay) return;
+
+    setState(() => _showSearchOverlay = true);
+
+    _overlayEntry = OverlayEntry(
+      builder: (context) => SearchOverlay(
+        initialSearch: _filtroBusca,
+        onSearchChanged: (value) {
+          setState(() {
+            _filtroBusca = value;
+            _buscaController.text = value;
+          });
+          _aplicarFiltroBusca();
+        },
+        onClose: _fecharSearchOverlay,
+      ),
+    );
+
+    Overlay.of(context).insert(_overlayEntry!);
+  }
+
+  void _fecharSearchOverlay() {
+    if (!_showSearchOverlay) return;
+
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+    setState(() => _showSearchOverlay = false);
+  }
+
+  /// Build da área de chips de busca
+  Widget _buildSearchChips() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          bottom: BorderSide(
+            color: Colors.grey[200]!,
+            width: 1,
+          ),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.search,
+                size: 16,
+                color: Colors.grey[600],
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Busca ativa:',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            children: [
+              SearchChip(
+                text: _filtroBusca,
+                onRemove: () {
+                  setState(() {
+                    _filtroBusca = '';
+                    _buscaController.clear();
+                  });
+                  _carregarDados();
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   List<TransacaoModel> _aplicarFiltrosPersonalizados(
@@ -6659,5 +6723,297 @@ class _TransacoesPageState extends State<TransacoesPage>
       _tabController.animateTo(3); // Ir para aba CARTÕES
       _filtrosPersonalizados['cartoes'] = [cartaoId]; // Aplicar filtro do cartão
     });
+  }
+}
+
+// ===== SEARCH OVERLAY COMPONENTS =====
+
+/// Widget overlay para busca expansível e elegante
+class SearchOverlay extends StatefulWidget {
+  final String initialSearch;
+  final Function(String) onSearchChanged;
+  final VoidCallback onClose;
+
+  const SearchOverlay({
+    super.key,
+    required this.initialSearch,
+    required this.onSearchChanged,
+    required this.onClose,
+  });
+
+  @override
+  State<SearchOverlay> createState() => _SearchOverlayState();
+}
+
+class _SearchOverlayState extends State<SearchOverlay>
+    with SingleTickerProviderStateMixin {
+  late TextEditingController _controller;
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+  late FocusNode _focusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialSearch);
+    _focusNode = FocusNode();
+
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeOut,
+    ));
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, -0.1),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeOut,
+    ));
+
+    // Iniciar animação e focar no campo
+    _animationController.forward();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _focusNode.requestFocus();
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _focusNode.dispose();
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  void _handleClose() async {
+    await _animationController.reverse();
+    widget.onClose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animationController,
+      builder: (context, child) {
+        return Stack(
+          children: [
+            // Background overlay
+            GestureDetector(
+              onTap: _handleClose,
+              child: Container(
+                color: Colors.black.withOpacity(0.3 * _fadeAnimation.value),
+              ),
+            ),
+
+            // Search container
+            Positioned(
+              top: kToolbarHeight + MediaQuery.of(context).padding.top - 8,
+              left: 16,
+              right: 16,
+              child: SlideTransition(
+                position: _slideAnimation,
+                child: FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: Material(
+                    borderRadius: BorderRadius.circular(12),
+                    elevation: 8,
+                    color: Colors.white,
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        color: Colors.white,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 20,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Header with close button
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.search,
+                                color: Colors.grey[600],
+                                size: 24,
+                              ),
+                              const SizedBox(width: 12),
+                              const Expanded(
+                                child: Text(
+                                  'Buscar transações',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                              ),
+                              IconButton(
+                                onPressed: _handleClose,
+                                icon: Icon(
+                                  Icons.close,
+                                  color: Colors.grey[400],
+                                ),
+                                constraints: const BoxConstraints(
+                                  minWidth: 32,
+                                  minHeight: 32,
+                                ),
+                                padding: EdgeInsets.zero,
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          // Search field
+                          TextField(
+                            controller: _controller,
+                            focusNode: _focusNode,
+                            onChanged: widget.onSearchChanged,
+                            decoration: InputDecoration(
+                              hintText: 'Digite para buscar por descrição, categoria, cartão...',
+                              hintStyle: TextStyle(
+                                color: Colors.grey[500],
+                                fontSize: 14,
+                              ),
+                              filled: true,
+                              fillColor: Colors.grey[50],
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(color: Colors.grey[300]!),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(color: Colors.grey[300]!),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: const BorderSide(color: Color(0xFF008080), width: 2),
+                              ),
+                              suffixIcon: _controller.text.isNotEmpty
+                                  ? IconButton(
+                                      onPressed: () {
+                                        _controller.clear();
+                                        widget.onSearchChanged('');
+                                      },
+                                      icon: Icon(
+                                        Icons.clear,
+                                        color: Colors.grey[400],
+                                        size: 20,
+                                      ),
+                                    )
+                                  : null,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                            ),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: Colors.black87,
+                            ),
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          // Helpful text
+                          Text(
+                            'Busque por descrição, categoria, subcategoria, cartão ou conta',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// Chip para mostrar termos de busca ativos
+class SearchChip extends StatelessWidget {
+  final String text;
+  final VoidCallback? onRemove;
+
+  const SearchChip({
+    super.key,
+    required this.text,
+    this.onRemove,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(right: 8, bottom: 4),
+      child: Material(
+        borderRadius: BorderRadius.circular(16),
+        color: const Color(0xFF008080).withOpacity(0.1),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onRemove,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: const Color(0xFF008080).withOpacity(0.3),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.search,
+                  size: 14,
+                  color: const Color(0xFF008080),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  text,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF008080),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                if (onRemove != null) ...[
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.close,
+                    size: 14,
+                    color: const Color(0xFF008080).withOpacity(0.7),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
