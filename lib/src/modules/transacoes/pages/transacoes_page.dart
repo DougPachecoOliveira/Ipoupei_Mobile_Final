@@ -5277,6 +5277,10 @@ class _TransacoesPageState extends State<TransacoesPage>
 
   /// Build da área de chips de busca
   Widget _buildSearchChips() {
+    // Verificação defensiva para evitar renderização desnecessária
+    if (_filtroBusca.trim().isEmpty) {
+      return const SizedBox.shrink();
+    }
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -5316,13 +5320,13 @@ class _TransacoesPageState extends State<TransacoesPage>
               SearchChip(
                 text: _filtroBusca,
                 onRemove: () {
+                  // Fechar overlay primeiro para evitar bug visual
+                  _fecharSearchOverlay();
+                  // Depois limpar estado e recarregar dados
                   setState(() {
                     _filtroBusca = '';
                     _buscaController.clear();
                   });
-                  // Fechar overlay se estiver aberto
-                  _fecharSearchOverlay();
-                  // Recarregar dados sem filtro
                   _carregarDados();
                 },
               ),
