@@ -71,28 +71,20 @@ class _TransacoesPendentesWidgetState extends State<TransacoesPendentesWidget> {
 
   @override
   Widget build(BuildContext context) {
-    // DEBUG: Sempre mostrar para teste (remover depois)
-    debugPrint('🔍 [TRANSACOES_WIDGET] Build - Loading: $_loading, Resumo: ${_resumo?.totalTransacoes ?? 0}, Error: $_error');
-
     // Não mostrar se estiver carregando e não tem dados
     if (_loading && (_resumo == null || !_resumo!.hasTransacoes)) {
-      debugPrint('🔍 [TRANSACOES_WIDGET] Ocultando: Loading + sem dados');
       return const SizedBox.shrink();
     }
 
     // Não mostrar se não tem transações pendentes
     if (_resumo != null && !_resumo!.hasTransacoes && !_loading) {
-      debugPrint('🔍 [TRANSACOES_WIDGET] Ocultando: Sem transações + não carregando');
       return const SizedBox.shrink();
     }
 
     // Não mostrar se deu erro
     if (_error != null) {
-      debugPrint('🔍 [TRANSACOES_WIDGET] Ocultando: Erro $_error');
       return const SizedBox.shrink();
     }
-
-    debugPrint('🔍 [TRANSACOES_WIDGET] Mostrando widget com ${_resumo?.totalTransacoes ?? 0} transações');
 
     return Container(
       // Sem margin - usa o padding do ScrollView igual outros widgets
