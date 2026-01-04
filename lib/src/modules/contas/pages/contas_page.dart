@@ -634,11 +634,11 @@ class _ContasPageState extends State<ContasPage> {
     // Usar cor oficial do banco se disponível, senão cor da conta
     final corFinal = corOficialBanco ?? corConta;
 
-    // Se tem logo, usar bolinha branca bem maior
+    // Se tem logo, usar bolinha branca ainda maior
     if (logo != null && logo.isNotEmpty) {
       return Container(
-        width: size + 8, // Bolinha bem maior
-        height: size + 8,
+        width: size + 10, // Bolinha 2px maior (era +8)
+        height: size + 10,
         decoration: BoxDecoration(
           color: Colors.white,
           shape: BoxShape.circle,
