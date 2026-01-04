@@ -634,24 +634,24 @@ class _ContasPageState extends State<ContasPage> {
     // Usar cor oficial do banco se disponível, senão cor da conta
     final corFinal = corOficialBanco ?? corConta;
 
-    // Se tem logo, usar bolinha branca com logo
+    // Se tem logo, usar bolinha branca bem maior
     if (logo != null && logo.isNotEmpty) {
       return Container(
-        width: size + 4,
-        height: size + 4,
+        width: size + 8, // Bolinha bem maior
+        height: size + 8,
         decoration: BoxDecoration(
           color: Colors.white,
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withAlpha(26),
-              blurRadius: 2,
-              offset: const Offset(0, 1),
+              color: Colors.black.withAlpha(38), // Sombra um pouco mais visível
+              blurRadius: 3,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
-        padding: const EdgeInsets.all(2),
-        child: _buildLogoWidget(logo, size: size, fallbackColor: corFinal),
+        padding: const EdgeInsets.all(3), // Padding maior para logo
+        child: _buildLogoWidget(logo, size: size + 2, fallbackColor: corFinal), // Logo maior
       );
     }
 
@@ -1228,16 +1228,16 @@ class _ContasPageState extends State<ContasPage> {
           borderRadius: BorderRadius.circular(12),
           onTap: () => _navegarParaGestaoCompleta(conta),
           child: Container(
-            height: 85, // Aumentado de 71 para 85 (+20%)
+            height: 95, // Aumentado para acomodar elementos maiores
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               color: AppColors.branco,
             ),
             child: Row(
               children: [
-                // 🎨 FAIXA LATERAL COLORIDA EXPANDIDA
+                // 🎨 FAIXA LATERAL COLORIDA BEM MAIOR
                 Container(
-                  width: 55, // Expandido para dar mais destaque
+                  width: 65, // Ainda mais largo para destaque máximo
                   decoration: BoxDecoration(
                     color: cor, // Cor da conta
                     borderRadius: const BorderRadius.only(
@@ -1246,7 +1246,7 @@ class _ContasPageState extends State<ContasPage> {
                     ),
                   ),
                   child: Center(
-                    child: _buildIconeComLogo(conta, size: 24), // Logo maior na bolinha
+                    child: _buildIconeComLogo(conta, size: 28), // Logo bem maior
                   ),
                 ),
                 
@@ -1340,8 +1340,8 @@ class _ContasPageState extends State<ContasPage> {
           borderRadius: BorderRadius.circular(8),
           onTap: () => _mostrarMenuConta(conta), // MENU REAL!
           child: Container(
-            height: 72, // Aumentado de 60 para 72 (+20%)
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            height: 80, // Aumentado para acomodar bolinha maior
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(8),
               gradient: LinearGradient(
@@ -1354,14 +1354,14 @@ class _ContasPageState extends State<ContasPage> {
             child: Row(
               children: [
                 Container(
-                  width: 32, // Maior para acomodar bolinha
-                  height: 32,
+                  width: 38, // Ainda maior para melhor destaque
+                  height: 38,
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(6),
+                    color: Colors.white.withValues(alpha: 0.15), // Menos opacidade para destaque
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: Center(
-                    child: _buildIconeComLogo(conta, size: 20, isCompact: true), // Tamanho da bolinha
+                    child: _buildIconeComLogo(conta, size: 24, isCompact: true), // Bolinha maior
                   ),
                 ),
                 
