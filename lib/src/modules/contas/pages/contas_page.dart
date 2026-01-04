@@ -605,18 +605,48 @@ class _ContasPageState extends State<ContasPage> {
     }
   }
 
-  /// Widget de logo do banco com fallback para ícone
-  Widget _buildIconeComLogo(ContaModel conta, {required double size}) {
+  /// Widget de logo do banco com melhorias visuais
+  Widget _buildIconeComLogo(ContaModel conta, {required double size, bool isCompact = false}) {
     final logo = _getLogoBanco(conta);
-    final fallbackIcon = Icon(
+    final corConta = _parseColor(conta.cor ?? '#008080');
+
+    // Se tem logo, usar fundo branco para destacar
+    if (logo != null && logo.isNotEmpty) {
+      return Container(
+        width: size + 6, // Um pouco maior para logo
+        height: size + 6,
+        decoration: BoxDecoration(
+          color: Colors.white, // Fundo branco para destacar logo
+          borderRadius: BorderRadius.circular(isCompact ? 3 : 4),
+        ),
+        padding: const EdgeInsets.all(3),
+        child: _buildLogoWidget(logo, size: size, fallbackColor: corConta),
+      );
+    }
+
+    // Fallback: ícone com cor do banco
+    return Icon(
       _iconFromSlug(conta.tipo),
       color: Colors.white,
       size: size,
     );
+  }
 
-    if (logo == null || logo.isEmpty) {
-      return fallbackIcon;
-    }
+  /// Widget de logo com fallback
+  Widget _buildLogoWidget(String logo, {required double size, required Color fallbackColor}) {
+    final fallbackIcon = Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: fallbackColor,
+        borderRadius: BorderRadius.circular(2),
+      ),
+      child: Icon(
+        Icons.account_balance,
+        color: Colors.white,
+        size: size * 0.6,
+      ),
+    );
 
     try {
       final lowerLogo = logo.toLowerCase();
@@ -1167,16 +1197,16 @@ class _ContasPageState extends State<ContasPage> {
           borderRadius: BorderRadius.circular(12),
           onTap: () => _navegarParaGestaoCompleta(conta),
           child: Container(
-            height: 71,
+            height: 85, // Aumentado de 71 para 85 (+20%)
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               color: AppColors.branco,
             ),
             child: Row(
               children: [
-                // 🎨 FAIXA LATERAL COLORIDA (como no offline)
+                // 🎨 FAIXA LATERAL COLORIDA (como no offline) - MAIOR
                 Container(
-                  width: 37,
+                  width: 45, // Aumentado de 37 para 45 (+20%)
                   decoration: BoxDecoration(
                     color: cor, // Cor da conta
                     borderRadius: const BorderRadius.only(
@@ -1185,7 +1215,7 @@ class _ContasPageState extends State<ContasPage> {
                     ),
                   ),
                   child: Center(
-                    child: _buildIconeComLogo(conta, size: 17),
+                    child: _buildIconeComLogo(conta, size: 20), // Aumentado de 17 para 20
                   ),
                 ),
                 
@@ -1279,8 +1309,8 @@ class _ContasPageState extends State<ContasPage> {
           borderRadius: BorderRadius.circular(8),
           onTap: () => _mostrarMenuConta(conta), // MENU REAL!
           child: Container(
-            height: 60,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            height: 72, // Aumentado de 60 para 72 (+20%)
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(8),
               gradient: LinearGradient(
@@ -1293,12 +1323,15 @@ class _ContasPageState extends State<ContasPage> {
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(4),
+                  width: 28, // Tamanho fixo para logo
+                  height: 28,
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
+                    color: Colors.white.withValues(alpha: 0.25),
                     borderRadius: BorderRadius.circular(4),
                   ),
-                  child: _buildIconeComLogo(conta, size: 14),
+                  child: Center(
+                    child: _buildIconeComLogo(conta, size: 16, isCompact: true), // Aumentado de 14 para 16
+                  ),
                 ),
                 
                 const SizedBox(width: 12),
