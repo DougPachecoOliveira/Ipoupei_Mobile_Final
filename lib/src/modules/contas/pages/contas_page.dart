@@ -1432,6 +1432,98 @@ class _ContasPageState extends State<ContasPage> {
   }
 
   /// Menu da conta com FUNCIONALIDADES REAIS
+  /// Header do modal com logo do banco
+  Widget _buildModalHeader(ContaModel conta) {
+    final corConta = _parseColor(conta.cor ?? '#008080');
+    final corOficialBanco = _getCorFromBankData(conta.banco);
+    final corFinal = corOficialBanco ?? corConta;
+    final logo = _getLogoBanco(conta);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Row(
+        children: [
+          // Logo do banco em círculo
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: corFinal,
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: logo != null && logo.isNotEmpty
+                  ? Container(
+                      width: 36,
+                      height: 36,
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                      padding: const EdgeInsets.all(3),
+                      child: _buildLogoWidget(logo, size: 30, fallbackColor: corFinal),
+                    )
+                  : Icon(
+                      _iconFromSlug(conta.tipo),
+                      color: Colors.white,
+                      size: 24,
+                    ),
+            ),
+          ),
+          const SizedBox(width: 16),
+
+          // Informações da conta
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  conta.nome,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.cinzaEscuro,
+                  ),
+                ),
+                if (conta.banco != null && conta.banco!.isNotEmpty)
+                  Text(
+                    conta.banco!,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: AppColors.cinzaTexto,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+
+          // Saldo
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                CurrencyFormatter.format(conta.saldo),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: conta.saldo < 0 ? Colors.red[600] : Colors.green[600],
+                ),
+              ),
+              Text(
+                conta.tipo?.toUpperCase() ?? 'CONTA',
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.cinzaTexto,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   /// 🎯 MOSTRAR MENU DA CONTA (funcionalidades completas)
   void _mostrarMenuConta(ContaModel conta) {
     showModalBottomSheet(
@@ -1446,10 +1538,8 @@ class _ContasPageState extends State<ContasPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              conta.nome,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
+            // Header com logo do banco
+            _buildModalHeader(conta),
             const SizedBox(height: 20),
             
             ListTile(
