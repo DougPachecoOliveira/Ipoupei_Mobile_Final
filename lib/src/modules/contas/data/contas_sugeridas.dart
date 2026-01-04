@@ -89,7 +89,7 @@ class ContasSugeridas {
       'saldo_inicial': 0.0,
       'cor': '#009EE3',
       'icone': 'bank',
-      'logo': 'assets/images/banks/Mercado Pago.svg',
+      'logo': 'assets/images/banks/Mercado Pago.jpeg',
       'categoria': 'populares',
     },
 
