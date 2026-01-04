@@ -20,6 +20,7 @@ import '../../shared/utils/currency_formatter.dart';
 import '../../../shared/components/ui/loading_widget.dart';
 import '../../../shared/components/ui/app_error_widget.dart';
 import '../../../shared/components/ui/app_button.dart';
+import '../widgets/conta_card.dart';
 import '../../../sync/sync_manager.dart';
 import '../../relatorios/pages/relatorios_page.dart';
 import '../../../routes/main_navigation.dart';
@@ -755,9 +756,18 @@ class _ContasPageState extends State<ContasPage> {
             if (_contas.isEmpty)
               _buildVazio()
             else if (_viewMode == 'consolidado')
-              ..._contas.map((conta) => _buildContaItem(conta))
+              ..._contas.map((conta) => ContaCard(
+                    conta: conta,
+                    isCompact: false,
+                    onTap: () => _navegarParaGestaoCompleta(conta),
+                    onMenuTap: () => _mostrarMenuConta(conta),
+                  ))
             else
-              ..._contas.map((conta) => _buildContaSimples(conta)),
+              ..._contas.map((conta) => ContaCard(
+                    conta: conta,
+                    isCompact: true,
+                    onTap: () => _mostrarMenuConta(conta),
+                  )),
 
             const SizedBox(height: 32),
 
@@ -897,7 +907,11 @@ class _ContasPageState extends State<ContasPage> {
             children: [
               _buildResumoCard(),
               const SizedBox(height: 24),
-              ...contas.map((conta) => _buildContaSimples(conta)),
+              ...contas.map((conta) => ContaCard(
+                    conta: conta,
+                    isCompact: true,
+                    onTap: () => _mostrarMenuConta(conta),
+                  )),
               const SizedBox(height: 32),
               _botoesInferiores(),
               const SizedBox(height: 32),
@@ -1091,7 +1105,12 @@ class _ContasPageState extends State<ContasPage> {
       physics: const NeverScrollableScrollPhysics(),
       padding: const EdgeInsets.only(top: 0),
       itemCount: contas.length,
-      itemBuilder: (context, i) => _buildContaItem(contas[i]),
+      itemBuilder: (context, i) => ContaCard(
+        conta: contas[i],
+        isCompact: false,
+        onTap: () => _navegarParaGestaoCompleta(contas[i]),
+        onMenuTap: () => _mostrarMenuConta(contas[i]),
+      ),
     );
   }
 

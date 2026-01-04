@@ -9,6 +9,7 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../models/transacao_model.dart';
 import '../services/transacao_service.dart';
 import '../../contas/models/conta_model.dart';
@@ -26,6 +27,7 @@ import '../components/tipo_selector.dart';
 import '../../../shared/components/ui/app_button.dart';
 import '../../shared/theme/app_colors.dart';
 import '../../categorias/data/categoria_icons.dart';
+import '../../contas/data/contas_sugeridas.dart';
 
 class TransacaoFormPage extends StatefulWidget {
   final String modo; // 'criar' ou 'editar'
@@ -1370,12 +1372,61 @@ class _TransacaoFormPageState extends State<TransacaoFormPage> {
     return CategoriaIcons.renderIcon(icone, size, color: color);
   }
 
+  /// Buscar logo do banco nas contas sugeridas
+  String? _buscarLogoBanco(String? banco) {
+    if (banco == null || banco.isEmpty) return null;
+
+    try {
+      final bancoEncontrado = ContasSugeridas.todas.firstWhere(
+        (contaSugerida) => contaSugerida['banco'] == banco,
+        orElse: () => <String, dynamic>{},
+      );
+
+      return bancoEncontrado['logo'] as String?;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Widget de logo do banco para campos pequenos
+  Widget _buildLogoWidget(String? logo, {required double size, required Widget fallback}) {
+    if (logo == null || logo.isEmpty) {
+      return fallback;
+    }
+
+    try {
+      final lowerLogo = logo.toLowerCase();
+      final logoSize = size * 0.8;
+
+      if (lowerLogo.endsWith('.svg')) {
+        return SvgPicture.asset(
+          logo,
+          width: logoSize,
+          height: logoSize,
+          fit: BoxFit.contain,
+          placeholderBuilder: (BuildContext context) => fallback,
+        );
+      }
+
+      return Image.asset(
+        logo,
+        width: logoSize,
+        height: logoSize,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) => fallback,
+      );
+    } catch (e) {
+      return fallback;
+    }
+  }
+
   /// Helper para criar ícone pequeno colorido para campos preenchidos
   Widget _buildSmallColoredIcon({
     required String? icone,
     required Color? cor,
     required Color fallbackColor,
     double size = 18,
+    String? banco, // Novo parâmetro para o banco
   }) {
     return Container(
       width: size,
@@ -1385,9 +1436,24 @@ class _TransacaoFormPageState extends State<TransacaoFormPage> {
         borderRadius: BorderRadius.circular(3),
       ),
       child: Center(
-        child: icone != null && icone.isNotEmpty
-            ? _getIconeByName(icone, size: size * 0.7, color: Colors.white)
-            : Icon(Icons.folder, size: size * 0.7, color: Colors.white),
+        child: () {
+          // Primeiro, tentar usar logo do banco se disponível
+          if (banco != null && banco.isNotEmpty) {
+            final logo = _buscarLogoBanco(banco);
+            if (logo != null) {
+              final fallback = Icon(Icons.account_balance, size: size * 0.7, color: Colors.white);
+              return _buildLogoWidget(logo, size: size, fallback: fallback);
+            }
+          }
+
+          // Se não tem logo do banco, usar ícone normal
+          if (icone != null && icone.isNotEmpty) {
+            return _getIconeByName(icone, size: size * 0.7, color: Colors.white);
+          }
+
+          // Fallback final
+          return Icon(Icons.account_balance, size: size * 0.7, color: Colors.white);
+        }(),
       ),
     );
   }
@@ -2382,6 +2448,7 @@ class _TransacaoFormPageState extends State<TransacaoFormPage> {
                                     ? Color(int.parse(_contaEscolhida!.cor!.replaceAll('#', '0xFF')))
                                     : null,
                                 fallbackColor: Colors.blue,
+                                banco: _contaEscolhida!.banco,
                               )
                             : null,
                         readOnly: true,
