@@ -605,26 +605,62 @@ class _ContasPageState extends State<ContasPage> {
     }
   }
 
-  /// Widget de logo do banco com melhorias visuais
+  /// Buscar cor oficial do banco dos dados sugeridos
+  Color? _getCorFromBankData(String? banco) {
+    if (banco == null || banco.isEmpty) return null;
+
+    try {
+      final bancoEncontrado = ContasSugeridas.todas.firstWhere(
+        (contaSugerida) => contaSugerida['banco'] == banco,
+        orElse: () => <String, dynamic>{},
+      );
+
+      final corString = bancoEncontrado['cor'] as String?;
+      if (corString != null && corString.isNotEmpty) {
+        return _parseColor(corString);
+      }
+    } catch (e) {
+      // Falha silenciosa
+    }
+    return null;
+  }
+
+  /// Widget de logo do banco com gradient da cor oficial
   Widget _buildIconeComLogo(ContaModel conta, {required double size, bool isCompact = false}) {
     final logo = _getLogoBanco(conta);
     final corConta = _parseColor(conta.cor ?? '#008080');
+    final corOficialBanco = _getCorFromBankData(conta.banco);
 
-    // Se tem logo, usar fundo branco para destacar
+    // Usar cor oficial do banco se disponível, senão cor da conta
+    final corParaGradient = corOficialBanco ?? corConta;
+
+    // Se tem logo, usar gradient com cor do banco
     if (logo != null && logo.isNotEmpty) {
       return Container(
-        width: size + 6, // Um pouco maior para logo
-        height: size + 6,
+        width: size + 8, // Ainda maior para melhor destaque
+        height: size + 8,
         decoration: BoxDecoration(
-          color: Colors.white, // Fundo branco para destacar logo
-          borderRadius: BorderRadius.circular(isCompact ? 3 : 4),
+          gradient: RadialGradient(
+            colors: [
+              Colors.white, // Centro branco
+              Colors.white.withAlpha(230), // Quase branco
+              corParaGradient.withAlpha(52), // Cor do banco bem suave na borda
+            ],
+            stops: const [0.0, 0.6, 1.0],
+            radius: 0.8,
+          ),
+          borderRadius: BorderRadius.circular(isCompact ? 4 : 6),
+          border: Border.all(
+            color: corParaGradient.withAlpha(78), // Borda sutil na cor do banco
+            width: 0.5,
+          ),
         ),
-        padding: const EdgeInsets.all(3),
-        child: _buildLogoWidget(logo, size: size, fallbackColor: corConta),
+        padding: const EdgeInsets.all(4),
+        child: _buildLogoWidget(logo, size: size + 2, fallbackColor: corParaGradient), // Logo um pouco maior
       );
     }
 
-    // Fallback: ícone com cor do banco
+    // Fallback: ícone tradicional
     return Icon(
       _iconFromSlug(conta.tipo),
       color: Colors.white,
@@ -1215,7 +1251,7 @@ class _ContasPageState extends State<ContasPage> {
                     ),
                   ),
                   child: Center(
-                    child: _buildIconeComLogo(conta, size: 20), // Aumentado de 17 para 20
+                    child: _buildIconeComLogo(conta, size: 22), // Aumentado para 22px para melhor aproveitamento
                   ),
                 ),
                 
@@ -1330,7 +1366,7 @@ class _ContasPageState extends State<ContasPage> {
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Center(
-                    child: _buildIconeComLogo(conta, size: 16, isCompact: true), // Aumentado de 14 para 16
+                    child: _buildIconeComLogo(conta, size: 18, isCompact: true), // Aumentado para 18px
                   ),
                 ),
                 
