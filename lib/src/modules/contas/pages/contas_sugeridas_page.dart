@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../../shared/theme/app_colors.dart';
-import '../../../shared/utils/currency_formatter.dart';
 import '../data/contas_sugeridas.dart';
 import '../services/conta_service.dart';
 
@@ -18,7 +18,7 @@ class _ContasSugeridasPageState extends State<ContasSugeridasPage> {
   String _buscaTexto = '';
   bool _isLoading = false;
   final Set<String> _contasImportadas = {};
-  bool _carregandoContas = true;
+  String _categoriaFiltro = 'todas';
 
   @override
   void initState() {
@@ -37,10 +37,9 @@ class _ContasSugeridasPageState extends State<ContasSugeridasPage> {
             _contasImportadas.add(conta.banco!);
           }
         }
-        _carregandoContas = false;
       });
     } catch (e) {
-      setState(() => _carregandoContas = false);
+      // Erro ao carregar contas existentes
     }
   }
 
@@ -53,6 +52,7 @@ class _ContasSugeridasPageState extends State<ContasSugeridasPage> {
         children: [
           _buildHeader(),
           _buildBusca(),
+          _buildFiltrosChips(),
           Expanded(child: _buildListaContas()),
         ],
       ),
@@ -157,9 +157,76 @@ class _ContasSugeridasPageState extends State<ContasSugeridasPage> {
     );
   }
 
+  /// Filtros em chips
+  Widget _buildFiltrosChips() {
+    final categorias = [
+      {'key': 'todas', 'label': 'Todas', 'emoji': '🏦'},
+      {'key': 'populares', 'label': 'Populares', 'emoji': '⚡'},
+      {'key': 'digitais', 'label': 'Digitais', 'emoji': '🚀'},
+      {'key': 'tradicionais', 'label': 'Tradicionais', 'emoji': '🏛️'},
+      {'key': 'cooperativas', 'label': 'Cooperativas', 'emoji': '🤝'},
+      {'key': 'investimentos', 'label': 'Investimentos', 'emoji': '💰'},
+    ];
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: categorias.map((categoria) {
+            final count = categoria['key'] == 'todas'
+                ? ContasSugeridas.todas.length
+                : ContasSugeridas.porCategoria(categoria['key']!).length;
+
+            return _buildCategoriaChip(
+              categoria['key']!,
+              '${categoria['emoji']} ${categoria['label']} ($count)',
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+
+  /// Chip de categoria
+  Widget _buildCategoriaChip(String categoria, String label) {
+    final isSelected = _categoriaFiltro == categoria;
+
+    return Container(
+      margin: const EdgeInsets.only(right: 8),
+      child: FilterChip(
+        label: Text(label),
+        selected: isSelected,
+        onSelected: (selected) {
+          setState(() {
+            _categoriaFiltro = categoria;
+          });
+        },
+        selectedColor: AppColors.tealPrimary.withValues(alpha: 0.2),
+        checkmarkColor: AppColors.tealPrimary,
+        labelStyle: TextStyle(
+          color: isSelected ? AppColors.tealPrimary : AppColors.cinzaTexto,
+          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+          fontSize: 12,
+        ),
+      ),
+    );
+  }
+
   /// Lista de contas
   Widget _buildListaContas() {
-    final contasFiltradas = ContasSugeridas.buscar(_buscaTexto);
+    List<Map<String, dynamic>> contasFiltradas;
+
+    if (_buscaTexto.isNotEmpty) {
+      // Se há busca, aplicar busca por texto
+      contasFiltradas = ContasSugeridas.buscar(_buscaTexto);
+    } else if (_categoriaFiltro == 'todas') {
+      // Mostrar todas as contas
+      contasFiltradas = ContasSugeridas.todas;
+    } else {
+      // Filtrar por categoria específica
+      contasFiltradas = ContasSugeridas.porCategoria(_categoriaFiltro);
+    }
 
     if (contasFiltradas.isEmpty) {
       return const Center(
@@ -197,11 +264,13 @@ class _ContasSugeridasPageState extends State<ContasSugeridasPage> {
     );
   }
 
+
   /// Card de conta
   Widget _buildContaCard(Map<String, dynamic> conta, bool jaImportada) {
     final cor = _parseColor(conta['cor'] as String);
     final nome = conta['nome'] as String;
     final banco = conta['banco'] as String;
+    final logo = conta['logo'] as String?;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -227,16 +296,14 @@ class _ContasSugeridasPageState extends State<ContasSugeridasPage> {
                   children: [
                     // Ícone
                     Container(
-                      padding: const EdgeInsets.all(12),
+                      width: 48,
+                      height: 48,
+                      padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
                         color: Colors.white.withAlpha(52),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(
-                        Icons.account_balance,
-                        color: Colors.white,
-                        size: 24,
-                      ),
+                      child: _buildLogoWidget(logo),
                     ),
 
                     const SizedBox(width: 16),
@@ -302,7 +369,7 @@ class _ContasSugeridasPageState extends State<ContasSugeridasPage> {
               Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(jaImportada ? 0.05 : 0.15),
+                  color: Colors.white.withValues(alpha: jaImportada ? 0.05 : 0.15),
                   borderRadius: const BorderRadius.vertical(
                     bottom: Radius.circular(12),
                   ),
@@ -427,6 +494,47 @@ class _ContasSugeridasPageState extends State<ContasSugeridasPage> {
       }
     } catch (e) {
       return AppColors.tealPrimary;
+    }
+  }
+
+  Widget _buildLogoWidget(String? logo) {
+    // Fallback padrão - ajustado para o container 48x48
+    const fallbackIcon = Icon(
+      Icons.account_balance,
+      color: Colors.white,
+      size: 20,
+    );
+
+    if (logo == null || logo.isEmpty) {
+      return fallbackIcon;
+    }
+
+    try {
+      final lowerLogo = logo.toLowerCase();
+
+      if (lowerLogo.endsWith('.svg')) {
+        return SvgPicture.asset(
+          logo,
+          width: 32,
+          height: 32,
+          fit: BoxFit.contain,
+          placeholderBuilder: (BuildContext context) => fallbackIcon,
+        );
+      }
+
+      return Image.asset(
+        logo,
+        width: 32,
+        height: 32,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) {
+          debugPrint('Erro ao carregar imagem $logo: $error');
+          return fallbackIcon;
+        },
+      );
+    } catch (e) {
+      debugPrint('Erro geral ao processar logo $logo: $e');
+      return fallbackIcon;
     }
   }
 }

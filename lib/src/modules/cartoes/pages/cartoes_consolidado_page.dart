@@ -821,6 +821,7 @@ class _CartoesConsolidadoPageState extends State<CartoesConsolidadoPage> with Si
           return CartaoCard(
             cartao: cartao,
             isCompact: true,
+            valorUtilizado: _valoresUtilizados[cartao.id] ?? 0.0,
             gastoPeriodo: _gastosPeriodo[cartao.id] ?? 0.0,
             onTap: () => _abrirGestaoCartao(cartao),
             onMenuAction: (action) => _executarAcaoCartao(action, cartao),

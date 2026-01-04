@@ -40,7 +40,11 @@ class GraficosCategoriaService {
         INNER JOIN categorias c ON t.categoria_id = c.id
         WHERE t.usuario_id = ?
           AND t.tipo = ?
-          AND DATE(t.data) BETWEEN DATE(?) AND DATE(?)
+          AND (
+            (t.cartao_id IS NULL AND DATE(t.data) BETWEEN DATE(?) AND DATE(?))
+            OR
+            (t.cartao_id IS NOT NULL AND DATE(t.fatura_vencimento) BETWEEN DATE(?) AND DATE(?))
+          )
           AND c.ativo = 1
           AND c.tipo = ?
           AND (t.transferencia IS NULL OR t.transferencia = 0)
@@ -50,6 +54,8 @@ class GraficosCategoriaService {
       ''', [
         userId,
         'despesa',
+        dataInicio.toIso8601String().split('T')[0],
+        dataFim.toIso8601String().split('T')[0],
         dataInicio.toIso8601String().split('T')[0],
         dataFim.toIso8601String().split('T')[0],
         'despesa'

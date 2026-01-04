@@ -1227,7 +1227,7 @@ class _ContasPageState extends State<ContasPage> {
           borderRadius: BorderRadius.circular(8),
           onTap: () => _mostrarMenuConta(conta), // MENU REAL!
           child: Container(
-            height: 50,
+            height: 60,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(8),
@@ -1267,6 +1267,8 @@ class _ContasPageState extends State<ContasPage> {
                           fontWeight: FontWeight.w600,
                           color: Colors.white,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       if (conta.banco != null)
                         Text(
@@ -1275,23 +1277,30 @@ class _ContasPageState extends State<ContasPage> {
                             fontSize: 13,
                             color: Colors.white.withAlpha(208),
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                     ],
                   ),
                 ),
                 
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    CurrencyFormatter.format(conta.saldo),
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 140),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      CurrencyFormatter.format(conta.saldo),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ),

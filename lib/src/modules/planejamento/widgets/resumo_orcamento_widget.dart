@@ -100,25 +100,25 @@ class _ResumoOrcamentoWidgetState extends State<ResumoOrcamentoWidget> {
   // Calcular totais igual ao planejamento principal
   double get _totalDespesasPlanejado {
     return _planejamentos
-        .where((p) => p.isDespesa)
+        .where((p) => p.temPlanejamentoReal && p.isDespesa)
         .fold(0.0, (sum, p) => sum + p.valorPlanejado);
   }
 
   double get _totalDespesasRealizado {
     return _planejamentos
-        .where((p) => p.isDespesa)
+        .where((p) => p.temPlanejamentoReal && p.isDespesa)
         .fold(0.0, (sum, p) => sum + (_incluirPendentes ? p.totalMes : p.valorRealizado));
   }
 
   double get _totalReceitasPlanejado {
     return _planejamentos
-        .where((p) => p.isReceita)
+        .where((p) => p.temPlanejamentoReal && p.isReceita)
         .fold(0.0, (sum, p) => sum + p.valorPlanejado);
   }
 
   double get _totalReceitasRealizado {
     return _planejamentos
-        .where((p) => p.isReceita)
+        .where((p) => p.temPlanejamentoReal && p.isReceita)
         .fold(0.0, (sum, p) => sum + (_incluirPendentes ? p.totalMes : p.valorRealizado));
   }
 
@@ -153,69 +153,76 @@ class _ResumoOrcamentoWidgetState extends State<ResumoOrcamentoWidget> {
   }
 
   Widget _buildHeaderVisual() {
-    return ClipRRect(
-      borderRadius: const BorderRadius.only(
-        topLeft: Radius.circular(12),
-        topRight: Radius.circular(12),
-      ),
-      child: Container(
-        height: 70,
-        decoration: BoxDecoration(
-          image: DecorationImage(
-            image: const AssetImage('assets/images/planejamento_background.jpeg'),
-            fit: BoxFit.cover,
-            alignment: Alignment.center,
-            onError: (error, stackTrace) {
-              debugPrint('🚨 Erro ao carregar imagem planejamento_background.jpeg: $error');
-            },
-          ),
+    return GestureDetector(
+      onTap: _navegarParaPlanejamento,
+      child: ClipRRect(
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(12),
+          topRight: Radius.circular(12),
         ),
         child: Container(
+          height: 70,
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Colors.black.withValues(alpha: 0.1),
-                Colors.black.withValues(alpha: 0.5),
-              ],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
+            image: DecorationImage(
+              image: const AssetImage(
+                'assets/images/planejamento_background.jpeg',
+              ),
+              fit: BoxFit.cover,
+              alignment: Alignment.center,
+              onError: (error, stackTrace) {
+                debugPrint(
+                  '🚨 Erro ao carregar imagem planejamento_background.jpeg: $error',
+                );
+              },
             ),
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // Texto elegante
-                const Text(
-                  'Planejamento Financeiro',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    shadows: [
-                      Shadow(
-                        color: Colors.black26,
-                        offset: Offset(0, 1),
-                        blurRadius: 3,
-                      ),
-                    ],
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.black.withValues(alpha: 0.1),
+                  Colors.black.withValues(alpha: 0.5),
+                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Texto elegante
+                  const Text(
+                    'Planejamento Financeiro',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      shadows: [
+                        Shadow(
+                          color: Colors.black26,
+                          offset: Offset(0, 1),
+                          blurRadius: 3,
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                // Ícone elegante
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(20),
+                  // Ícone elegante
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Icon(
+                      Icons.lightbulb_outline,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                   ),
-                  child: const Icon(
-                    Icons.lightbulb_outline,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

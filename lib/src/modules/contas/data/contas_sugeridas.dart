@@ -3,7 +3,7 @@
 class ContasSugeridas {
   /// Lista completa de contas sugeridas
   static const List<Map<String, dynamic>> todas = [
-    // ========== BANCOS DIGITAIS ==========
+    // ========== POPULARES (Bancos Digitais Mais Usados) ==========
 
     {
       'nome': 'Conta Corrente Nubank',
@@ -12,6 +12,7 @@ class ContasSugeridas {
       'saldo_inicial': 0.0,
       'cor': '#8A05BE',
       'icone': 'bank',
+      'logo': 'assets/images/banks/Nubank.svg',
       'categoria': 'populares',
     },
 
@@ -22,6 +23,7 @@ class ContasSugeridas {
       'saldo_inicial': 0.0,
       'cor': '#FF7A00',
       'icone': 'bank',
+      'logo': 'assets/images/banks/Inter.svg',
       'categoria': 'populares',
     },
 
@@ -32,16 +34,7 @@ class ContasSugeridas {
       'saldo_inicial': 0.0,
       'cor': '#1C1C1C',
       'icone': 'bank',
-      'categoria': 'populares',
-    },
-
-    {
-      'nome': 'Conta Corrente PagBank',
-      'banco': 'PagBank',
-      'tipo': 'corrente',
-      'saldo_inicial': 0.0,
-      'cor': '#00B24E',
-      'icone': 'bank',
+      'logo': 'assets/images/banks/C6 Bank.svg',
       'categoria': 'populares',
     },
 
@@ -52,6 +45,7 @@ class ContasSugeridas {
       'saldo_inicial': 0.0,
       'cor': '#11C76F',
       'icone': 'bank',
+      'logo': 'assets/images/banks/PicPay.svg',
       'categoria': 'populares',
     },
 
@@ -62,6 +56,7 @@ class ContasSugeridas {
       'saldo_inicial': 0.0,
       'cor': '#CC092F',
       'icone': 'bank',
+      'logo': 'assets/images/banks/Next.jpeg',
       'categoria': 'populares',
     },
 
@@ -72,16 +67,18 @@ class ContasSugeridas {
       'saldo_inicial': 0.0,
       'cor': '#00D5E4',
       'icone': 'bank',
+      'logo': 'assets/images/banks/Neon.svg',
       'categoria': 'populares',
     },
 
     {
-      'nome': 'Conta Corrente Will Bank',
-      'banco': 'Will Bank',
+      'nome': 'Conta Corrente PagSeguro',
+      'banco': 'PagSeguro',
       'tipo': 'corrente',
       'saldo_inicial': 0.0,
-      'cor': '#FFD100',
+      'cor': '#00B24E',
       'icone': 'bank',
+      'logo': 'assets/images/banks/Pagseguro.svg',
       'categoria': 'populares',
     },
 
@@ -92,17 +89,43 @@ class ContasSugeridas {
       'saldo_inicial': 0.0,
       'cor': '#009EE3',
       'icone': 'bank',
+      'logo': 'assets/images/banks/Mercado Pago.svg',
       'categoria': 'populares',
     },
 
+    // ========== DIGITAIS EMERGENTES ==========
+
     {
-      'nome': 'Conta Corrente Digio',
-      'banco': 'Digio',
+      'nome': 'Conta Corrente Stone',
+      'banco': 'Stone',
       'tipo': 'corrente',
       'saldo_inicial': 0.0,
-      'cor': '#1E90FF',
+      'cor': '#00B24E',
       'icone': 'bank',
-      'categoria': 'populares',
+      'logo': 'assets/images/banks/Stone.svg',
+      'categoria': 'digitais',
+    },
+
+    {
+      'nome': 'Conta Corrente Conta Simples',
+      'banco': 'Conta Simples',
+      'tipo': 'corrente',
+      'saldo_inicial': 0.0,
+      'cor': '#FF6B35',
+      'icone': 'bank',
+      'logo': 'assets/images/banks/Conta Simples.svg',
+      'categoria': 'digitais',
+    },
+
+    {
+      'nome': 'Conta Corrente Modal',
+      'banco': 'Modal',
+      'tipo': 'corrente',
+      'saldo_inicial': 0.0,
+      'cor': '#8E44AD',
+      'icone': 'bank',
+      'logo': 'assets/images/banks/Modal.png',
+      'categoria': 'digitais',
     },
 
     // ========== BANCOS TRADICIONAIS ==========
@@ -114,6 +137,7 @@ class ContasSugeridas {
       'saldo_inicial': 0.0,
       'cor': '#EC7000',
       'icone': 'bank',
+      'logo': 'assets/images/banks/Itaú.svg',
       'categoria': 'tradicionais',
     },
 
@@ -124,6 +148,7 @@ class ContasSugeridas {
       'saldo_inicial': 0.0,
       'cor': '#CC092F',
       'icone': 'bank',
+      'logo': 'assets/images/banks/Bradesco.svg',
       'categoria': 'tradicionais',
     },
 
@@ -134,6 +159,7 @@ class ContasSugeridas {
       'saldo_inicial': 0.0,
       'cor': '#EC0000',
       'icone': 'bank',
+      'logo': 'assets/images/banks/Santander.svg',
       'categoria': 'tradicionais',
     },
 
@@ -144,6 +170,7 @@ class ContasSugeridas {
       'saldo_inicial': 0.0,
       'cor': '#FFF100',
       'icone': 'bank',
+      'logo': 'assets/images/banks/Banco do Brasil.svg',
       'categoria': 'tradicionais',
     },
 
@@ -154,6 +181,7 @@ class ContasSugeridas {
       'saldo_inicial': 0.0,
       'cor': '#0066B3',
       'icone': 'bank',
+      'logo': 'assets/images/banks/Caixa Econômica.svg',
       'categoria': 'tradicionais',
     },
 
@@ -164,6 +192,7 @@ class ContasSugeridas {
       'saldo_inicial': 0.0,
       'cor': '#000000',
       'icone': 'bank',
+      'logo': 'assets/images/banks/BTG Pactual.svg',
       'categoria': 'tradicionais',
     },
 
@@ -174,6 +203,7 @@ class ContasSugeridas {
       'saldo_inicial': 0.0,
       'cor': '#0033A0',
       'icone': 'bank',
+      'logo': 'assets/images/banks/Safra.svg',
       'categoria': 'tradicionais',
     },
 
@@ -184,7 +214,87 @@ class ContasSugeridas {
       'saldo_inicial': 0.0,
       'cor': '#005EB8',
       'icone': 'bank',
+      'logo': 'assets/images/banks/Banrisul.svg',
       'categoria': 'tradicionais',
+    },
+
+    {
+      'nome': 'Conta Corrente BMG',
+      'banco': 'BMG',
+      'tipo': 'corrente',
+      'saldo_inicial': 0.0,
+      'cor': '#0088CC',
+      'icone': 'bank',
+      'logo': 'assets/images/banks/BMG.svg',
+      'categoria': 'tradicionais',
+    },
+
+    {
+      'nome': 'Conta Corrente BRB',
+      'banco': 'BRB',
+      'tipo': 'corrente',
+      'saldo_inicial': 0.0,
+      'cor': '#0088CC',
+      'icone': 'bank',
+      'logo': 'assets/images/banks/BRB.svg',
+      'categoria': 'tradicionais',
+    },
+
+    {
+      'nome': 'Conta Corrente Banese',
+      'banco': 'Banese',
+      'tipo': 'corrente',
+      'saldo_inicial': 0.0,
+      'cor': '#0088CC',
+      'icone': 'bank',
+      'logo': 'assets/images/banks/Banese.svg',
+      'categoria': 'tradicionais',
+    },
+
+    {
+      'nome': 'Conta Corrente Banestes',
+      'banco': 'Banestes',
+      'tipo': 'corrente',
+      'saldo_inicial': 0.0,
+      'cor': '#0088CC',
+      'icone': 'bank',
+      'logo': 'assets/images/banks/Banestes.svg',
+      'categoria': 'tradicionais',
+    },
+
+    {
+      'nome': 'Conta Corrente Original',
+      'banco': 'Original',
+      'tipo': 'corrente',
+      'saldo_inicial': 0.0,
+      'cor': '#0088CC',
+      'icone': 'bank',
+      'logo': 'assets/images/banks/Original.svg',
+      'categoria': 'tradicionais',
+    },
+
+    {
+      'nome': 'Conta Corrente Pine',
+      'banco': 'Pine',
+      'tipo': 'corrente',
+      'saldo_inicial': 0.0,
+      'cor': '#0088CC',
+      'icone': 'bank',
+      'logo': 'assets/images/banks/Pine.svg',
+      'categoria': 'tradicionais',
+    },
+
+    // ========== COOPERATIVAS ==========
+
+    {
+      'nome': 'Conta Corrente Sicoob',
+      'banco': 'Sicoob',
+      'tipo': 'corrente',
+      'saldo_inicial': 0.0,
+      'cor': '#0088CC',
+      'icone': 'bank',
+      'logo': 'assets/images/banks/Sicoob.svg',
+      'categoria': 'cooperativas',
     },
 
     {
@@ -194,17 +304,87 @@ class ContasSugeridas {
       'saldo_inicial': 0.0,
       'cor': '#006B3D',
       'icone': 'bank',
-      'categoria': 'tradicionais',
+      'logo': 'assets/images/banks/Sicredi.svg',
+      'categoria': 'cooperativas',
     },
 
     {
-      'nome': 'Conta Corrente BV',
-      'banco': 'BV',
+      'nome': 'Conta Corrente Ailos',
+      'banco': 'Ailos',
       'tipo': 'corrente',
       'saldo_inicial': 0.0,
-      'cor': '#003DA5',
+      'cor': '#0088CC',
       'icone': 'bank',
-      'categoria': 'tradicionais',
+      'logo': 'assets/images/banks/Ailos.svg',
+      'categoria': 'cooperativas',
+    },
+
+    {
+      'nome': 'Conta Corrente Unicred',
+      'banco': 'Unicred',
+      'tipo': 'corrente',
+      'saldo_inicial': 0.0,
+      'cor': '#0088CC',
+      'icone': 'bank',
+      'logo': 'assets/images/banks/Unicred.svg',
+      'categoria': 'cooperativas',
+    },
+
+    // ========== INVESTIMENTOS ==========
+
+    {
+      'nome': 'Conta Investimentos XP',
+      'banco': 'XP Investimentos',
+      'tipo': 'investimento',
+      'saldo_inicial': 0.0,
+      'cor': '#FFB300',
+      'icone': 'bank',
+      'logo': 'assets/images/banks/XP Investimentos.svg',
+      'categoria': 'investimentos',
+    },
+
+    {
+      'nome': 'Conta Investimentos Rico',
+      'banco': 'Rico',
+      'tipo': 'investimento',
+      'saldo_inicial': 0.0,
+      'cor': '#FF6B35',
+      'icone': 'bank',
+      'logo': 'assets/images/banks/Rico.svg',
+      'categoria': 'investimentos',
+    },
+
+    {
+      'nome': 'Conta Investimentos Clear',
+      'banco': 'Clear',
+      'tipo': 'investimento',
+      'saldo_inicial': 0.0,
+      'cor': '#00B04F',
+      'icone': 'bank',
+      'logo': 'assets/images/banks/Clear.svg',
+      'categoria': 'investimentos',
+    },
+
+    {
+      'nome': 'Conta Investimentos Toro',
+      'banco': 'Toro',
+      'tipo': 'investimento',
+      'saldo_inicial': 0.0,
+      'cor': '#E74C3C',
+      'icone': 'bank',
+      'logo': 'assets/images/banks/Toro.svg',
+      'categoria': 'investimentos',
+    },
+
+    {
+      'nome': 'Conta Investimentos Avenue',
+      'banco': 'Avenue',
+      'tipo': 'investimento',
+      'saldo_inicial': 0.0,
+      'cor': '#3F51B5',
+      'icone': 'bank',
+      'logo': 'assets/images/banks/Avenue.png',
+      'categoria': 'investimentos',
     },
   ];
 

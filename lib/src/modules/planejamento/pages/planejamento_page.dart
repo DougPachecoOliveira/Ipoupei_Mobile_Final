@@ -1097,10 +1097,12 @@ class _PlanejamentoPageState extends State<PlanejamentoPage> with TickerProvider
 
       if (subcategorias.isNotEmpty) {
         for (final sub in subcategorias) {
-          // 🚀 RESPEITAR FILTRO: se incluir pendentes, usa totalMes; senão, só valorRealizado
-          final valorSubcategoria = _incluirPendentes ? sub.totalMes : sub.valorRealizado;
-          valorGastoTotal += valorSubcategoria;
-          valorPlanejadoTotal += sub.valorPlanejado;
+          // 🚀 SOMAR APENAS SUBCATEGORIAS PREENCHIDAS (com temPlanejamentoReal)
+          if (sub.temPlanejamentoReal) {
+            final valorSubcategoria = _incluirPendentes ? sub.totalMes : sub.valorRealizado;
+            valorGastoTotal += valorSubcategoria;
+            valorPlanejadoTotal += sub.valorPlanejado;
+          }
         }
       } else {
         // Se não tem subcategorias, usar o valor da categoria mesmo (também respeitando filtro)
@@ -2038,8 +2040,8 @@ class _PlanejamentoPageState extends State<PlanejamentoPage> with TickerProvider
     // Se for uma subcategoria, buscar a categoria principal e todas as subcategorias
     final String categoriaId = planejamento.categoriaId;
 
-    // Buscar todas as subcategorias desta categoria
-    final subcategorias = _getSubcategoriasPorCategoria(categoriaId);
+    // Buscar TODAS as subcategorias desta categoria para o modal de edição
+    final subcategorias = _getTodasSubcategoriasPorCategoria(categoriaId);
 
     // Se for subcategoria, buscar o planejamento principal da categoria
     PlanejamentoModel? planejamentoPrincipal;
@@ -2602,31 +2604,24 @@ class _PlanejamentoPageState extends State<PlanejamentoPage> with TickerProvider
     });
   }
 
-  /// 🚀 SIMPLES: Buscar subcategorias com lógica inteligente
+  /// 🚀 SIMPLES: Buscar subcategorias PREENCHIDAS para exibir na tela principal
   List<PlanejamentoModel> _getSubcategoriasPorCategoria(String categoriaId) {
-
-    // ✨ MODO CONFIGURAÇÃO INICIAL: Se usuário não tem planejamentos reais, mostrar todas
-    final temPlanejamentosReais = _planejamentoService.planejamentos.any((p) => p.temPlanejamentoReal);
-
-    if (!temPlanejamentosReais) {
-      // Modo configuração inicial: mostrar todas as subcategorias
-      final todasSubcategorias = _planejamentoService.planejamentos
-          .where((p) => p.categoriaId == categoriaId && p.subcategoriaId != null)
-          .toList();
-      return todasSubcategorias;
-    }
-
-    // ✨ MODO NORMAL: APENAS subcategorias com planejamento real
-    final todasSubcategorias = _planejamentoService.planejamentos
+    // Na tela principal: mostrar APENAS subcategorias preenchidas
+    final subcategoriasPreenchidas = _planejamentoService.planejamentos
         .where((p) => p.categoriaId == categoriaId &&
                       p.subcategoriaId != null &&
-                      p.temPlanejamentoReal) // ← FILTRO PARA USUÁRIOS EXPERIENTES
+                      p.temPlanejamentoReal)
         .toList();
 
+    return subcategoriasPreenchidas;
+  }
 
-    // Debug simples
-    for (final sub in todasSubcategorias) {
-    }
+  /// 📝 MODAL: Buscar TODAS as subcategorias para edição/preenchimento
+  List<PlanejamentoModel> _getTodasSubcategoriasPorCategoria(String categoriaId) {
+    // No modal: mostrar TODAS as subcategorias para permitir preenchimento
+    final todasSubcategorias = _planejamentoService.planejamentos
+        .where((p) => p.categoriaId == categoriaId && p.subcategoriaId != null)
+        .toList();
 
     return todasSubcategorias;
   }

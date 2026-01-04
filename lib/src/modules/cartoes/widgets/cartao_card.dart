@@ -82,7 +82,11 @@ class CartaoCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), // ✅ PADDING MAIS COMPACTO
+          height: isCompact ? 60 : null,
+          padding: EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: isCompact ? 6 : 8,
+          ), // ✅ PADDING MAIS COMPACTO
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
             gradient: _buildGradiente(corCartao),

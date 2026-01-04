@@ -27,6 +27,7 @@ class PlanejamentoModel {
   final double mediaHistorica;
   final int totalTransacoesRealizadas;
   final int totalTransacoesPrevistas;
+  final bool temPlanejamentoReal;
 
   const PlanejamentoModel({
     required this.id,
@@ -48,6 +49,7 @@ class PlanejamentoModel {
     this.mediaHistorica = 0.0,
     this.totalTransacoesRealizadas = 0,
     this.totalTransacoesPrevistas = 0,
+    this.temPlanejamentoReal = false,
   });
 
   // ===========================
@@ -140,6 +142,7 @@ class PlanejamentoModel {
       mediaHistorica: (json['media_historica'] as num?)?.toDouble() ?? 0.0,
       totalTransacoesRealizadas: json['total_transacoes_realizadas'] as int? ?? 0,
       totalTransacoesPrevistas: json['total_transacoes_previstas'] as int? ?? 0,
+      temPlanejamentoReal: json['tem_planejamento_real'] as bool? ?? false,
     );
   }
 
@@ -181,6 +184,7 @@ class PlanejamentoModel {
       'media_historica': mediaHistorica,
       'total_transacoes_realizadas': totalTransacoesRealizadas,
       'total_transacoes_previstas': totalTransacoesPrevistas,
+      'tem_planejamento_real': temPlanejamentoReal,
     };
   }
 
@@ -208,6 +212,7 @@ class PlanejamentoModel {
     double? mediaHistorica,
     int? totalTransacoesRealizadas,
     int? totalTransacoesPrevistas,
+    bool? temPlanejamentoReal,
   }) {
     return PlanejamentoModel(
       id: id ?? this.id,
@@ -229,6 +234,7 @@ class PlanejamentoModel {
       mediaHistorica: mediaHistorica ?? this.mediaHistorica,
       totalTransacoesRealizadas: totalTransacoesRealizadas ?? this.totalTransacoesRealizadas,
       totalTransacoesPrevistas: totalTransacoesPrevistas ?? this.totalTransacoesPrevistas,
+      temPlanejamentoReal: temPlanejamentoReal ?? this.temPlanejamentoReal,
     );
   }
 

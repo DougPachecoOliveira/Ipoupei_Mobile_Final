@@ -605,6 +605,48 @@ class DiagnosticoService {
       perfil.remove('sync_status');
       perfil.remove('last_sync');
 
+      // Remover campos locais que não existem no Supabase para evitar falhas no upsert.
+      const supabaseColumns = {
+        'id',
+        'nome',
+        'email',
+        'avatar_url',
+        'telefone',
+        'data_nascimento',
+        'profissao',
+        'perfil_publico',
+        'aceita_notificacoes',
+        'aceita_marketing',
+        'moeda_padrao',
+        'formato_data',
+        'primeiro_dia_semana',
+        'diagnostico_completo',
+        'data_diagnostico',
+        'sentimento_financeiro',
+        'percepcao_controle',
+        'percepcao_gastos',
+        'disciplina_financeira',
+        'relacao_dinheiro',
+        'renda_mensal',
+        'tipo_renda',
+        'conta_ativa',
+        'data_desativacao',
+        'created_at',
+        'updated_at',
+        'media_horas_trabalhadas_mes',
+        'primeiro_acesso',
+        'diagnostico_etapa_atual',
+        'aceita_comunic_email',
+        'aceita_comunic_whatsapp',
+        'precisa_onboarding',
+        'asaas_customer_id',
+        'cpf',
+        'trial_ja_usado',
+        'trial_primeira_vez_em',
+        'asaas_subscription_id',
+      };
+      perfil.removeWhere((key, _) => !supabaseColumns.contains(key));
+
       log('📤 [DIAGNOSTICO_SERVICE] Enviando perfil para Supabase: diagnostico_etapa_atual=${perfil['diagnostico_etapa_atual']}');
 
       // Upload para Supabase
@@ -779,28 +821,38 @@ class DiagnosticoService {
 
       // 1. Limpar no banco local
       final db = LocalDatabase.instance;
+      final userId = _userId ?? await _getCurrentUserId();
+      if (userId == null || userId.isEmpty) {
+        throw Exception('Usuário não autenticado');
+      }
+      _userId = userId;
+
+      final tableInfo = await db.database?.rawQuery('PRAGMA table_info(perfil_usuario)') ?? [];
+      final columnNames = tableInfo.map((column) => column['name']).toSet();
+      final updateData = <String, dynamic>{
+        'diagnostico_etapa_atual': 0,
+        'diagnostico_completo': 0,
+        'sentimento_financeiro': null,
+        'percepcao_controle': null,
+        'percepcao_gastos': null,
+        'disciplina_financeira': null,
+        'relacao_dinheiro': null,
+        'dividas_diagnostico': null,
+        'diagnostico_resultado_json': null, // 🔧 CORREÇÃO: Limpar resultado salvo também
+        'updated_at': DateTime.now().toIso8601String(),
+      };
+      updateData.removeWhere((key, _) => !columnNames.contains(key));
+
       await db.update(
         'perfil_usuario',
-        {
-          'diagnostico_etapa_atual': 0,
-          'diagnostico_completo': 0,
-          'sentimento_financeiro': null,
-          'percepcao_controle': null,
-          'percepcao_gastos': null,
-          'disciplina_financeira': null,
-          'relacao_dinheiro': null,
-          'dividas_diagnostico': null,
-          'diagnostico_resultado_json': null, // 🔧 CORREÇÃO: Limpar resultado salvo também
-          'updated_at': DateTime.now().toIso8601String(),
-        },
+        updateData,
         where: 'id = ?',
-        whereArgs: [_userId],
+        whereArgs: [userId],
       );
 
       // 2. Limpar também no Supabase
       try {
-        final userId = _userId ?? await _getCurrentUserId();
-        if (userId != null) {
+        if (userId.isNotEmpty) {
           await Supabase.instance.client
             .from('perfil_usuario')
             .update({

@@ -342,6 +342,7 @@ class PlanejamentoService {
         'media_historica': (item['media_historica'] as num?)?.toDouble() ?? 0.0,
         'total_transacoes_realizadas': item['total_transacoes_realizadas'] as int? ?? 0,
         'total_transacoes_previstas': item['total_transacoes_previstas'] as int? ?? 0,
+        'tem_planejamento_real': item['id'] != null && item['id'].toString().isNotEmpty,
       });
 
       planejamentosProcessados.add(planejamento);
@@ -521,6 +522,7 @@ class PlanejamentoService {
       'media_historica': mediaHistorica,
       'total_transacoes_realizadas': totalTransacoesRealizadas,
       'total_transacoes_previstas': totalTransacoesPrevistas,
+      'tem_planejamento_real': planejamento != null,
     });
   }
 
@@ -598,6 +600,7 @@ class PlanejamentoService {
         'media_historica': mediaHistorica,
         'total_transacoes_realizadas': valores['transacoes_realizadas']?.toInt() ?? 0,
         'total_transacoes_previstas': valores['transacoes_previstas']?.toInt() ?? 0,
+        'tem_planejamento_real': true,
       });
 
       planejamentosProcessados.add(planejamento);
@@ -672,6 +675,7 @@ class PlanejamentoService {
           'media_historica': 0.0,
           'total_transacoes_realizadas': 0,
           'total_transacoes_previstas': 0,
+          'tem_planejamento_real': false,
         });
 
         planejamentosProcessados.add(planejamentoPrincipal);
@@ -737,6 +741,7 @@ class PlanejamentoService {
           'media_historica': mediaHistorica,
           'total_transacoes_realizadas': valores['transacoes_realizadas']?.toInt() ?? 0,
           'total_transacoes_previstas': valores['transacoes_previstas']?.toInt() ?? 0,
+          'tem_planejamento_real': false,
         });
 
         planejamentosProcessados.add(planejamentoZerado);
