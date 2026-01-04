@@ -625,38 +625,33 @@ class _ContasPageState extends State<ContasPage> {
     return null;
   }
 
-  /// Widget de logo do banco com gradient da cor oficial
+  /// Widget de logo do banco em formato circular
   Widget _buildIconeComLogo(ContaModel conta, {required double size, bool isCompact = false}) {
     final logo = _getLogoBanco(conta);
     final corConta = _parseColor(conta.cor ?? '#008080');
     final corOficialBanco = _getCorFromBankData(conta.banco);
 
     // Usar cor oficial do banco se disponível, senão cor da conta
-    final corParaGradient = corOficialBanco ?? corConta;
+    final corFinal = corOficialBanco ?? corConta;
 
-    // Se tem logo, usar gradient com cor do banco
+    // Se tem logo, usar bolinha branca com logo
     if (logo != null && logo.isNotEmpty) {
       return Container(
-        width: size + 8, // Ainda maior para melhor destaque
-        height: size + 8,
+        width: size + 4,
+        height: size + 4,
         decoration: BoxDecoration(
-          gradient: RadialGradient(
-            colors: [
-              Colors.white, // Centro branco
-              Colors.white.withAlpha(230), // Quase branco
-              corParaGradient.withAlpha(52), // Cor do banco bem suave na borda
-            ],
-            stops: const [0.0, 0.6, 1.0],
-            radius: 0.8,
-          ),
-          borderRadius: BorderRadius.circular(isCompact ? 4 : 6),
-          border: Border.all(
-            color: corParaGradient.withAlpha(78), // Borda sutil na cor do banco
-            width: 0.5,
-          ),
+          color: Colors.white,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withAlpha(26),
+              blurRadius: 2,
+              offset: const Offset(0, 1),
+            ),
+          ],
         ),
-        padding: const EdgeInsets.all(4),
-        child: _buildLogoWidget(logo, size: size + 2, fallbackColor: corParaGradient), // Logo um pouco maior
+        padding: const EdgeInsets.all(2),
+        child: _buildLogoWidget(logo, size: size, fallbackColor: corFinal),
       );
     }
 
@@ -1240,9 +1235,9 @@ class _ContasPageState extends State<ContasPage> {
             ),
             child: Row(
               children: [
-                // 🎨 FAIXA LATERAL COLORIDA (como no offline) - MAIOR
+                // 🎨 FAIXA LATERAL COLORIDA EXPANDIDA
                 Container(
-                  width: 45, // Aumentado de 37 para 45 (+20%)
+                  width: 55, // Expandido para dar mais destaque
                   decoration: BoxDecoration(
                     color: cor, // Cor da conta
                     borderRadius: const BorderRadius.only(
@@ -1251,7 +1246,7 @@ class _ContasPageState extends State<ContasPage> {
                     ),
                   ),
                   child: Center(
-                    child: _buildIconeComLogo(conta, size: 22), // Aumentado para 22px para melhor aproveitamento
+                    child: _buildIconeComLogo(conta, size: 24), // Logo maior na bolinha
                   ),
                 ),
                 
@@ -1359,14 +1354,14 @@ class _ContasPageState extends State<ContasPage> {
             child: Row(
               children: [
                 Container(
-                  width: 28, // Tamanho fixo para logo
-                  height: 28,
+                  width: 32, // Maior para acomodar bolinha
+                  height: 32,
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.25),
-                    borderRadius: BorderRadius.circular(4),
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(6),
                   ),
                   child: Center(
-                    child: _buildIconeComLogo(conta, size: 18, isCompact: true), // Aumentado para 18px
+                    child: _buildIconeComLogo(conta, size: 20, isCompact: true), // Tamanho da bolinha
                   ),
                 ),
                 
