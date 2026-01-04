@@ -6,6 +6,7 @@
 // Baseado em: Card completo de editar_transacao_page.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../../shared/theme/app_colors.dart';
 import '../models/transacao_model.dart';
 import '../../../services/grupos_metadados_service.dart';
@@ -14,6 +15,7 @@ import '../../categorias/data/categoria_icons.dart';
 import '../../categorias/services/categoria_service.dart';
 import '../../contas/services/conta_service.dart';
 import '../../cartoes/services/cartao_service.dart';
+import '../../contas/data/contas_sugeridas.dart';
 
 class TransactionDetailCard extends StatefulWidget {
   final TransacaoModel transacao;
@@ -43,6 +45,8 @@ class _TransactionDetailCardState extends State<TransactionDetailCard> {
   Color? _corConta;
   Color? _corCartao;
   Color? _corCategoria;
+  String? _bancoConta; // Nome do banco da conta
+  String? _logoBanco;  // Caminho do logo do banco
 
   // Metadados do grupo
   GrupoMetadados? _metadadosGrupo;
@@ -105,8 +109,14 @@ class _TransactionDetailCardState extends State<TransactionDetailCard> {
         if (conta != null) {
           _nomeConta = conta.nome;
           _iconeConta = conta.icone;
+          _bancoConta = conta.banco;
           if (conta.cor != null) {
             _corConta = _corDeString(conta.cor!);
+          }
+
+          // Buscar logo do banco
+          if (conta.banco != null && conta.banco!.isNotEmpty) {
+            _logoBanco = _buscarLogoBanco(conta.banco!);
           }
         }
       }
@@ -475,22 +485,82 @@ class _TransactionDetailCardState extends State<TransactionDetailCard> {
     );
   }
 
+  /// Buscar logo do banco nas contas sugeridas
+  String? _buscarLogoBanco(String banco) {
+    if (banco.isEmpty) return null;
+
+    try {
+      final bancoEncontrado = ContasSugeridas.todas.firstWhere(
+        (contaSugerida) => contaSugerida['banco'] == banco,
+        orElse: () => <String, dynamic>{},
+      );
+
+      return bancoEncontrado['logo'] as String?;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Widget de logo do banco
+  Widget _buildLogoWidget(String? logo, {required double size, required IconData fallbackIcon}) {
+    final iconSize = size * 0.6;
+
+    if (logo == null || logo.isEmpty) {
+      return Icon(fallbackIcon, color: Colors.white, size: iconSize);
+    }
+
+    try {
+      final lowerLogo = logo.toLowerCase();
+
+      if (lowerLogo.endsWith('.svg')) {
+        return SvgPicture.asset(
+          logo,
+          width: iconSize,
+          height: iconSize,
+          fit: BoxFit.contain,
+          placeholderBuilder: (BuildContext context) => Icon(
+            fallbackIcon,
+            color: Colors.white,
+            size: iconSize,
+          ),
+        );
+      }
+
+      return Image.asset(
+        logo,
+        width: iconSize,
+        height: iconSize,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) => Icon(
+          fallbackIcon,
+          color: Colors.white,
+          size: iconSize,
+        ),
+      );
+    } catch (e) {
+      return Icon(fallbackIcon, color: Colors.white, size: iconSize);
+    }
+  }
+
   /// Construir ícone quadrado para conta/cartão
   Widget _buildIconeQuadradoConta({double size = 32}) {
     String? iconeString;
     Color cor;
     IconData fallbackIcon;
+    String? logo;
 
     if (widget.transacao.cartaoId != null) {
       // É um cartão
       iconeString = _iconeCartao;
       cor = _corCartao ?? AppColors.roxoPrimario;
       fallbackIcon = Icons.credit_card;
+      logo = null; // Cartões não usam logos de banco
     } else {
-      // É uma conta
+      // É uma conta - usar logo do banco se disponível
       iconeString = _iconeConta;
       cor = _corConta ?? _getCorTipoTransacao();
       fallbackIcon = Icons.account_balance;
+      logo = _logoBanco;
     }
 
     return Container(
@@ -501,9 +571,11 @@ class _TransactionDetailCardState extends State<TransactionDetailCard> {
         borderRadius: BorderRadius.circular(6),
       ),
       child: Center(
-        child: iconeString != null && iconeString.isNotEmpty
-            ? _getIconeByName(iconeString, size: size * 0.6, color: Colors.white)
-            : Icon(fallbackIcon, color: Colors.white, size: size * 0.6),
+        child: logo != null
+            ? _buildLogoWidget(logo, size: size, fallbackIcon: fallbackIcon)
+            : iconeString != null && iconeString.isNotEmpty
+                ? _getIconeByName(iconeString, size: size * 0.6, color: Colors.white)
+                : Icon(fallbackIcon, color: Colors.white, size: size * 0.6),
       ),
     );
   }

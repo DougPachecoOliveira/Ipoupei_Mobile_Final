@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../models/conta_model.dart';
 import '../../shared/theme/app_colors.dart';
 import '../../shared/utils/currency_formatter.dart';
+import '../data/contas_sugeridas.dart';
 
 /// 🏦 ContaCard - Inspirado no CartaoCard mas para contas
 /// Mesmo visual moderno com gradiente e informações detalhadas
@@ -427,6 +429,62 @@ class ContaCard extends StatelessWidget {
   }
 
   /// Ícone da conta em círculo
+  /// Buscar logo do banco nas contas sugeridas
+  String? _getLogoBanco() {
+    if (conta.banco == null || conta.banco!.isEmpty) return null;
+
+    try {
+      // Buscar o banco nas contas sugeridas
+      final bancoEncontrado = ContasSugeridas.todas.firstWhere(
+        (contaSugerida) => contaSugerida['banco'] == conta.banco,
+        orElse: () => <String, dynamic>{},
+      );
+
+      return bancoEncontrado['logo'] as String?;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Widget _buildLogoWidget() {
+    final logo = _getLogoBanco();
+
+    // Fallback padrão
+    final fallbackIcon = Icon(
+      _getIconeConta(),
+      color: Colors.white,
+      size: 18,
+    );
+
+    if (logo == null || logo.isEmpty) {
+      return fallbackIcon;
+    }
+
+    try {
+      final lowerLogo = logo.toLowerCase();
+
+      if (lowerLogo.endsWith('.svg')) {
+        return SvgPicture.asset(
+          logo,
+          width: 24,
+          height: 24,
+          fit: BoxFit.contain,
+          placeholderBuilder: (BuildContext context) => fallbackIcon,
+        );
+      }
+
+      return Image.asset(
+        logo,
+        width: 24,
+        height: 24,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) => fallbackIcon,
+      );
+    } catch (e) {
+      return fallbackIcon;
+    }
+  }
+
   Widget _buildIconeConta() {
     return Container(
       width: 40,
@@ -435,11 +493,7 @@ class ContaCard extends StatelessWidget {
         color: Colors.white.withAlpha(52),
         shape: BoxShape.circle,
       ),
-      child: Icon(
-        _getIconeConta(),
-        color: Colors.white,
-        size: 20,
-      ),
+      child: _buildLogoWidget(),
     );
   }
 }
