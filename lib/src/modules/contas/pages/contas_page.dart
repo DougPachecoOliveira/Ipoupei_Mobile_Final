@@ -20,7 +20,8 @@ import '../../shared/utils/currency_formatter.dart';
 import '../../../shared/components/ui/loading_widget.dart';
 import '../../../shared/components/ui/app_error_widget.dart';
 import '../../../shared/components/ui/app_button.dart';
-import '../widgets/conta_card.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import '../data/contas_sugeridas.dart';
 import '../../../sync/sync_manager.dart';
 import '../../relatorios/pages/relatorios_page.dart';
 import '../../../routes/main_navigation.dart';
@@ -588,6 +589,60 @@ class _ContasPageState extends State<ContasPage> {
     }
   }
 
+  /// Buscar logo do banco nas contas sugeridas
+  String? _getLogoBanco(ContaModel conta) {
+    if (conta.banco == null || conta.banco!.isEmpty) return null;
+
+    try {
+      final bancoEncontrado = ContasSugeridas.todas.firstWhere(
+        (contaSugerida) => contaSugerida['banco'] == conta.banco,
+        orElse: () => <String, dynamic>{},
+      );
+
+      return bancoEncontrado['logo'] as String?;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Widget de logo do banco com fallback para ícone
+  Widget _buildIconeComLogo(ContaModel conta, {required double size}) {
+    final logo = _getLogoBanco(conta);
+    final fallbackIcon = Icon(
+      _iconFromSlug(conta.tipo),
+      color: Colors.white,
+      size: size,
+    );
+
+    if (logo == null || logo.isEmpty) {
+      return fallbackIcon;
+    }
+
+    try {
+      final lowerLogo = logo.toLowerCase();
+
+      if (lowerLogo.endsWith('.svg')) {
+        return SvgPicture.asset(
+          logo,
+          width: size,
+          height: size,
+          fit: BoxFit.contain,
+          placeholderBuilder: (BuildContext context) => fallbackIcon,
+        );
+      }
+
+      return Image.asset(
+        logo,
+        width: size,
+        height: size,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) => fallbackIcon,
+      );
+    } catch (e) {
+      return fallbackIcon;
+    }
+  }
+
   /// Mapper de ícone por tipo (visual do teste1)
   IconData _iconFromSlug(String? slug) {
     if (slug == null || slug.isEmpty) {
@@ -756,18 +811,9 @@ class _ContasPageState extends State<ContasPage> {
             if (_contas.isEmpty)
               _buildVazio()
             else if (_viewMode == 'consolidado')
-              ..._contas.map((conta) => ContaCard(
-                    conta: conta,
-                    isCompact: false,
-                    onTap: () => _navegarParaGestaoCompleta(conta),
-                    onMenuTap: () => _mostrarMenuConta(conta),
-                  ))
+              ..._contas.map((conta) => _buildContaItem(conta))
             else
-              ..._contas.map((conta) => ContaCard(
-                    conta: conta,
-                    isCompact: true,
-                    onTap: () => _mostrarMenuConta(conta),
-                  )),
+              ..._contas.map((conta) => _buildContaSimples(conta)),
 
             const SizedBox(height: 32),
 
@@ -907,11 +953,7 @@ class _ContasPageState extends State<ContasPage> {
             children: [
               _buildResumoCard(),
               const SizedBox(height: 24),
-              ...contas.map((conta) => ContaCard(
-                    conta: conta,
-                    isCompact: true,
-                    onTap: () => _mostrarMenuConta(conta),
-                  )),
+              ...contas.map((conta) => _buildContaSimples(conta)),
               const SizedBox(height: 32),
               _botoesInferiores(),
               const SizedBox(height: 32),
@@ -1105,12 +1147,7 @@ class _ContasPageState extends State<ContasPage> {
       physics: const NeverScrollableScrollPhysics(),
       padding: const EdgeInsets.only(top: 0),
       itemCount: contas.length,
-      itemBuilder: (context, i) => ContaCard(
-        conta: contas[i],
-        isCompact: false,
-        onTap: () => _navegarParaGestaoCompleta(contas[i]),
-        onMenuTap: () => _mostrarMenuConta(contas[i]),
-      ),
+      itemBuilder: (context, i) => _buildContaItem(contas[i]),
     );
   }
 
@@ -1148,11 +1185,7 @@ class _ContasPageState extends State<ContasPage> {
                     ),
                   ),
                   child: Center(
-                    child: Icon(
-                      _iconFromSlug(conta.tipo),
-                      color: Colors.white,
-                      size: 17,
-                    ),
+                    child: _buildIconeComLogo(conta, size: 17),
                   ),
                 ),
                 
@@ -1265,11 +1298,7 @@ class _ContasPageState extends State<ContasPage> {
                     color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(4),
                   ),
-                  child: Icon(
-                    _iconFromSlug(conta.tipo),
-                    color: Colors.white,
-                    size: 14,
-                  ),
+                  child: _buildIconeComLogo(conta, size: 14),
                 ),
                 
                 const SizedBox(width: 12),
