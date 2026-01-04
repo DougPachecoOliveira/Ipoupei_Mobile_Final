@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../models/cartao_model.dart';
 import '../models/fatura_model.dart';
 import '../services/fatura_operations_service.dart';
+import '../../contas/models/conta_model.dart';
+import '../../contas/services/conta_service.dart';
+import '../../contas/data/contas_sugeridas.dart';
+import '../../shared/utils/currency_formatter.dart';
 
 class ModalPagamentoFatura extends StatefulWidget {
   final bool isOpen;
@@ -25,9 +30,12 @@ class ModalPagamentoFatura extends StatefulWidget {
 
 class _ModalPagamentoFaturaState extends State<ModalPagamentoFatura> {
   final FaturaOperationsService _faturaOperations = FaturaOperationsService.instance;
+  final ContaService _contaService = ContaService.instance;
   final _formKey = GlobalKey<FormState>();
-  
+
   String? _contaId;
+  ContaModel? _contaSelecionada;
+  List<ContaModel> _contas = [];
   double? _valorPago;
   DateTime? _dataPagamento = DateTime.now();
   bool _isLoading = false;
@@ -37,6 +45,27 @@ class _ModalPagamentoFaturaState extends State<ModalPagamentoFatura> {
     super.initState();
     if (widget.fatura != null) {
       _valorPago = widget.fatura!.valorTotal;
+    }
+    _carregarContas();
+  }
+
+  /// Carregar contas disponíveis
+  Future<void> _carregarContas() async {
+    try {
+      final contas = await _contaService.getContasAtivas();
+      setState(() {
+        _contas = contas;
+        // Selecionar conta principal se disponível
+        _contaSelecionada = contas.firstWhere(
+          (c) => c.contaPrincipal,
+          orElse: () => contas.isNotEmpty ? contas.first : ContaModel.empty(),
+        );
+        if (_contaSelecionada != null && _contaSelecionada!.id.isNotEmpty) {
+          _contaId = _contaSelecionada!.id;
+        }
+      });
+    } catch (e) {
+      // Erro ao carregar contas
     }
   }
 
@@ -101,25 +130,41 @@ class _ModalPagamentoFaturaState extends State<ModalPagamentoFatura> {
                   // Conta de Pagamento
                   const Text('Conta de Pagamento *'),
                   const SizedBox(height: 8),
-                  DropdownButtonFormField<String>(
-                    value: _contaId,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      hintText: 'Selecione a conta',
+                  InkWell(
+                    onTap: _selecionarConta,
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Row(
+                        children: [
+                          if (_contaSelecionada != null)
+                            _buildContaIcon(_contaSelecionada!)
+                          else
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: Colors.grey[300],
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Icon(Icons.account_balance, color: Colors.grey),
+                            ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              _contaSelecionada?.nome ?? 'Selecione a conta',
+                              style: TextStyle(
+                                color: _contaSelecionada != null ? Colors.black : Colors.grey[600],
+                              ),
+                            ),
+                          ),
+                          const Icon(Icons.arrow_drop_down),
+                        ],
+                      ),
                     ),
-                    validator: (value) => value == null ? 'Selecione uma conta' : null,
-                    onChanged: (value) => setState(() => _contaId = value),
-                    items: const [
-                      // TODO: Buscar contas reais do banco
-                      DropdownMenuItem(
-                        value: 'conta1',
-                        child: Text('Conta Principal'),
-                      ),
-                      DropdownMenuItem(
-                        value: 'conta2',
-                        child: Text('Conta Poupança'),
-                      ),
-                    ],
                   ),
                   
                   const SizedBox(height: 16),
@@ -199,6 +244,204 @@ class _ModalPagamentoFaturaState extends State<ModalPagamentoFatura> {
         ),
       ),
     );
+  }
+
+  /// Selecionar conta com modal que mostra logos
+  Future<void> _selecionarConta() async {
+    if (_contas.isEmpty) return;
+
+    final conta = await showModalBottomSheet<ContaModel>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.6,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          children: [
+            // Handle do modal
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(top: 12, bottom: 8),
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+
+            // Título
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Text(
+                'Selecionar Conta para Pagamento',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+
+            // Lista de contas
+            Expanded(
+              child: ListView.builder(
+                itemCount: _contas.length,
+                itemBuilder: (context, index) {
+                  final conta = _contas[index];
+                  final isSelected = _contaSelecionada?.id == conta.id;
+
+                  return Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      color: isSelected ? Colors.green[50] : null,
+                      border: isSelected ? Border.all(color: Colors.green) : null,
+                    ),
+                    child: ListTile(
+                      leading: _buildContaIcon(conta),
+                      title: Text(conta.nome),
+                      subtitle: Text(
+                        '${conta.banco ?? 'Sem banco'} • ${CurrencyFormatter.format(conta.saldo)}',
+                      ),
+                      trailing: isSelected
+                          ? const Icon(Icons.check_circle, color: Colors.green)
+                          : null,
+                      onTap: () => Navigator.of(context).pop(conta),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (conta != null) {
+      setState(() {
+        _contaSelecionada = conta;
+        _contaId = conta.id;
+      });
+    }
+  }
+
+  /// Ícone da conta com logo do banco
+  Widget _buildContaIcon(ContaModel conta) {
+    final corConta = conta.cor != null && conta.cor!.isNotEmpty
+        ? Color(int.parse(conta.cor!.replaceAll('#', '0xFF')))
+        : Colors.blue;
+
+    // Buscar cor e logo oficial do banco
+    final corOficialBanco = _buscarCorOficialBanco(conta.banco);
+    final corFinal = corOficialBanco ?? corConta;
+    final logo = _buscarLogoBanco(conta.banco);
+
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: corFinal,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Center(
+        child: logo != null && logo.isNotEmpty
+            ? Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                padding: const EdgeInsets.all(2),
+                child: _buildLogoWidget(logo, size: 28),
+              )
+            : Icon(
+                conta.icone != null ? _getIconeFromString(conta.icone!) : Icons.account_balance,
+                color: Colors.white,
+                size: 20,
+              ),
+      ),
+    );
+  }
+
+  /// Buscar logo do banco
+  String? _buscarLogoBanco(String? banco) {
+    if (banco == null || banco.isEmpty) return null;
+
+    try {
+      final bancoEncontrado = ContasSugeridas.todas.firstWhere(
+        (contaSugerida) => contaSugerida['banco'] == banco,
+        orElse: () => <String, dynamic>{},
+      );
+      return bancoEncontrado['logo'] as String?;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Buscar cor oficial do banco
+  Color? _buscarCorOficialBanco(String? banco) {
+    if (banco == null || banco.isEmpty) return null;
+
+    try {
+      final bancoEncontrado = ContasSugeridas.todas.firstWhere(
+        (contaSugerida) => contaSugerida['banco'] == banco,
+        orElse: () => <String, dynamic>{},
+      );
+      final corString = bancoEncontrado['cor'] as String?;
+      if (corString != null && corString.isNotEmpty) {
+        return Color(int.parse(corString.replaceAll('#', '0xFF')));
+      }
+    } catch (e) {
+      // Falha silenciosa
+    }
+    return null;
+  }
+
+  /// Widget do logo
+  Widget _buildLogoWidget(String logo, {required double size}) {
+    final fallback = Icon(Icons.account_balance, color: Colors.white, size: size * 0.7);
+
+    try {
+      final lowerLogo = logo.toLowerCase();
+      if (lowerLogo.endsWith('.svg')) {
+        return SvgPicture.asset(
+          logo,
+          width: size,
+          height: size,
+          fit: BoxFit.contain,
+          placeholderBuilder: (context) => fallback,
+        );
+      }
+      return Image.asset(
+        logo,
+        width: size,
+        height: size,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) => fallback,
+      );
+    } catch (e) {
+      return fallback;
+    }
+  }
+
+  /// Converter string para ícone
+  IconData _getIconeFromString(String icone) {
+    switch (icone.toLowerCase()) {
+      case 'savings':
+        return Icons.savings;
+      case 'account_balance':
+        return Icons.account_balance;
+      case 'account_balance_wallet':
+        return Icons.account_balance_wallet;
+      case 'trending_up':
+        return Icons.trending_up;
+      default:
+        return Icons.account_balance;
+    }
   }
 
   Future<void> _selecionarData() async {
