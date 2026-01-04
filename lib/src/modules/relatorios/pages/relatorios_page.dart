@@ -28,6 +28,7 @@ import 'relatorio_conta_page.dart';
 import '../../diagnostico/widgets/diagnostico_dashboard_widget.dart';
 import '../../../shared/components/sidebar.dart';
 import '../widgets/insights_rapidos_widget.dart';
+import '../../../shared/services/navigation_context_service.dart';
 import '../widgets/graficos_categoria_widget.dart';
 import '../widgets/valor_hora_widget.dart';
 import '../../planejamento/widgets/resumo_orcamento_widget.dart';
@@ -439,12 +440,14 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
         break;
 
       case TipoResumoFinanceiro.receitas:
-        // Navegar para aba Transações com filtro de Receitas (índice 4)
+        // Configurar contexto para receitas e navegar para aba Transações
+        navigationContext.setContextoReceitas();
         Navigator.pushReplacementNamed(context, '/transacoes');
         break;
 
       case TipoResumoFinanceiro.despesas:
-        // Navegar para aba Transações com filtro de Despesas (índice 4)
+        // Configurar contexto para despesas e navegar para aba Transações
+        navigationContext.setContextoDespesas();
         Navigator.pushReplacementNamed(context, '/transacoes');
         break;
 

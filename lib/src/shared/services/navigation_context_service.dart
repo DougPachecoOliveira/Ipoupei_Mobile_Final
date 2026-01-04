@@ -22,6 +22,7 @@ class NavigationContextService extends ChangeNotifier {
   String? _categoriaSelecionadaId;
   Map<String, dynamic> _filtrosAtivos = {};
   DateTime? _mesSelecionado;
+  String? _tipoTransacaoSelecionado; // 'receitas' ou 'despesas'
 
   // Getters
   String? get contaSelecionadaId => _contaSelecionadaId;
@@ -29,6 +30,7 @@ class NavigationContextService extends ChangeNotifier {
   String? get categoriaSelecionadaId => _categoriaSelecionadaId;
   Map<String, dynamic> get filtrosAtivos => Map.from(_filtrosAtivos);
   DateTime? get mesSelecionado => _mesSelecionado;
+  String? get tipoTransacaoSelecionado => _tipoTransacaoSelecionado;
 
   /// Define conta selecionada
   void setContaSelecionada(String? contaId) {
@@ -36,6 +38,7 @@ class NavigationContextService extends ChangeNotifier {
       _contaSelecionadaId = contaId;
       _cartaoSelecionadoId = null; // Limpa cartão ao trocar conta
       _categoriaSelecionadaId = null; // Limpa categoria ao trocar conta
+      _tipoTransacaoSelecionado = null; // Limpa tipo ao trocar conta
       debugPrint('🧭 Conta selecionada: $contaId');
       notifyListeners();
     }
@@ -47,6 +50,7 @@ class NavigationContextService extends ChangeNotifier {
       _cartaoSelecionadoId = cartaoId;
       _contaSelecionadaId = null; // Limpa conta ao trocar cartão
       _categoriaSelecionadaId = null; // Limpa categoria ao trocar cartão
+      _tipoTransacaoSelecionado = null; // Limpa tipo ao trocar cartão
       debugPrint('🧭 Cartão selecionado: $cartaoId');
       notifyListeners();
     }
@@ -58,6 +62,7 @@ class NavigationContextService extends ChangeNotifier {
       _categoriaSelecionadaId = categoriaId;
       _contaSelecionadaId = null; // Limpa conta ao trocar categoria
       _cartaoSelecionadoId = null; // Limpa cartão ao trocar categoria
+      _tipoTransacaoSelecionado = null; // Limpa tipo ao trocar categoria
       debugPrint('🧭 Categoria selecionada: $categoriaId');
       notifyListeners();
     }
@@ -70,6 +75,26 @@ class NavigationContextService extends ChangeNotifier {
       debugPrint('🧭 Mês selecionado: ${mes?.month}/${mes?.year}');
       notifyListeners();
     }
+  }
+
+  /// Define contexto para receitas
+  void setContextoReceitas() {
+    _contaSelecionadaId = null;
+    _cartaoSelecionadoId = null;
+    _categoriaSelecionadaId = null;
+    _tipoTransacaoSelecionado = 'receitas';
+    debugPrint('🧭 Contexto definido para RECEITAS');
+    notifyListeners();
+  }
+
+  /// Define contexto para despesas
+  void setContextoDespesas() {
+    _contaSelecionadaId = null;
+    _cartaoSelecionadoId = null;
+    _categoriaSelecionadaId = null;
+    _tipoTransacaoSelecionado = 'despesas';
+    debugPrint('🧭 Contexto definido para DESPESAS');
+    notifyListeners();
   }
 
   /// Atualiza filtros ativos
@@ -122,9 +147,19 @@ class NavigationContextService extends ChangeNotifier {
     return filtros;
   }
 
-  /// Verifica se deve usar modo contextual (cartões para cartão, todas para conta)
+  /// Verifica se deve usar modo contextual
   bool get deveUsarModoContextual {
     return _cartaoSelecionadoId != null;
+  }
+
+  /// Verifica se deve usar modo receitas
+  bool get deveUsarModoReceitas {
+    return _tipoTransacaoSelecionado == 'receitas';
+  }
+
+  /// Verifica se deve usar modo despesas
+  bool get deveUsarModoDespesas {
+    return _tipoTransacaoSelecionado == 'despesas';
   }
 
   /// Limpa todo o contexto
@@ -133,6 +168,7 @@ class NavigationContextService extends ChangeNotifier {
     _cartaoSelecionadoId = null;
     _categoriaSelecionadaId = null;
     _mesSelecionado = null;
+    _tipoTransacaoSelecionado = null;
     _filtrosAtivos.clear();
     debugPrint('🧹 Contexto de navegação limpo');
     notifyListeners();
@@ -144,6 +180,7 @@ class NavigationContextService extends ChangeNotifier {
            _cartaoSelecionadoId != null ||
            _categoriaSelecionadaId != null ||
            _mesSelecionado != null ||
+           _tipoTransacaoSelecionado != null ||
            _filtrosAtivos.isNotEmpty;
   }
 
@@ -155,6 +192,10 @@ class NavigationContextService extends ChangeNotifier {
       return 'Transações do Cartão';
     } else if (_categoriaSelecionadaId != null) {
       return 'Transações da Categoria';
+    } else if (_tipoTransacaoSelecionado == 'receitas') {
+      return 'Receitas';
+    } else if (_tipoTransacaoSelecionado == 'despesas') {
+      return 'Despesas';
     } else if (_mesSelecionado != null) {
       return 'Transações de ${_mesSelecionado!.month}/${_mesSelecionado!.year}';
     }
@@ -163,7 +204,7 @@ class NavigationContextService extends ChangeNotifier {
 
   @override
   String toString() {
-    return 'NavigationContext{conta: $_contaSelecionadaId, cartao: $_cartaoSelecionadoId, categoria: $_categoriaSelecionadaId, mes: $_mesSelecionado, filtros: $_filtrosAtivos}';
+    return 'NavigationContext{conta: $_contaSelecionadaId, cartao: $_cartaoSelecionadoId, categoria: $_categoriaSelecionadaId, tipo: $_tipoTransacaoSelecionado, mes: $_mesSelecionado, filtros: $_filtrosAtivos}';
   }
 }
 

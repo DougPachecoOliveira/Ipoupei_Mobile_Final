@@ -57,10 +57,16 @@ class _MainNavigationState extends State<MainNavigation> {
     // 🧭 Determinar modo inicial baseado no contexto
     final modoInicial = navigationContext.deveUsarModoContextual
         ? TransacoesPageMode.cartoes
-        : TransacoesPageMode.todas;
+        : navigationContext.deveUsarModoReceitas
+            ? TransacoesPageMode.receitas
+            : navigationContext.deveUsarModoDespesas
+                ? TransacoesPageMode.despesas
+                : TransacoesPageMode.todas;
 
     debugPrint('🧭 MainNavigation: Contexto ativo: ${navigationContext.hasContextoAtivo}');
     debugPrint('🧭 MainNavigation: Modo contextual cartões: ${navigationContext.deveUsarModoContextual}');
+    debugPrint('🧭 MainNavigation: Modo receitas: ${navigationContext.deveUsarModoReceitas}');
+    debugPrint('🧭 MainNavigation: Modo despesas: ${navigationContext.deveUsarModoDespesas}');
     debugPrint('🧭 MainNavigation: Modo inicial: $modoInicial');
     debugPrint('🧭 MainNavigation: Filtros gerados: $filtros');
 
