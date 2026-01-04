@@ -502,7 +502,9 @@ class _PlanejamentoPageState extends State<PlanejamentoPage> with TickerProvider
 
     try {
       // 🚀 MÉTODO SUPER SIMPLES: somar direto todos os planejamentos
-      final todosPlanejamentos = _planejamentoService.planejamentos;
+      final todosPlanejamentos = _planejamentoService.planejamentos
+          .where((p) => p.temPlanejamentoReal)
+          .toList();
 
       _totalReceitasPlanejado = 0.0;
       _totalDespesasPlanejado = 0.0;
@@ -525,7 +527,6 @@ class _PlanejamentoPageState extends State<PlanejamentoPage> with TickerProvider
       _saldoPlanejado = _totalReceitasPlanejado - _totalDespesasPlanejado;
       _saldoRealizado = _totalReceitasRealizado - _totalDespesasRealizado;
 
-      debugPrint('🚀 TOTAIS SIMPLES:');
       debugPrint('  Receitas planejadas: R\$ ${_totalReceitasPlanejado.toStringAsFixed(2)}');
       debugPrint('  Despesas planejadas: R\$ ${_totalDespesasPlanejado.toStringAsFixed(2)}');
       debugPrint('  Saldo planejado: R\$ ${_saldoPlanejado.toStringAsFixed(2)}');
@@ -672,16 +673,22 @@ class _PlanejamentoPageState extends State<PlanejamentoPage> with TickerProvider
   // ===========================
 
   List<PlanejamentoModel> get _receitasFiltradas {
-    if (_searchQuery.isEmpty) return _receitas;
-    return _receitas.where((r) =>
+    // Aplicar lógica inteligente: só exibir categorias que devem ser mostradas
+    var filtrados = _receitas.where((r) => _deveExibirCategoria(r)).toList();
+
+    if (_searchQuery.isEmpty) return filtrados;
+    return filtrados.where((r) =>
       (r.categoriaNome?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false) ||
       (r.subcategoriaNome?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false)
     ).toList();
   }
 
   List<PlanejamentoModel> get _despesasFiltradas {
-    if (_searchQuery.isEmpty) return _despesas;
-    return _despesas.where((d) =>
+    // Aplicar lógica inteligente: só exibir categorias que devem ser mostradas
+    var filtrados = _despesas.where((d) => _deveExibirCategoria(d)).toList();
+
+    if (_searchQuery.isEmpty) return filtrados;
+    return filtrados.where((d) =>
       (d.categoriaNome?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false) ||
       (d.subcategoriaNome?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false)
     ).toList();
@@ -1073,11 +1080,6 @@ class _PlanejamentoPageState extends State<PlanejamentoPage> with TickerProvider
   Widget _buildPlanejamentoCard(PlanejamentoModel planejamento) {
     final subcategorias = _getSubcategoriasPorCategoria(planejamento.categoriaId);
 
-    print('🚀 SIMPLES: Card categoria ${planejamento.categoriaNome}');
-    print('   -> Categoria tem subcategoria?: ${planejamento.subcategoriaId}');
-    print('   -> Valor categoria: R\$ ${planejamento.totalMes.toStringAsFixed(2)}');
-    print('   -> Planejado categoria: R\$ ${planejamento.valorPlanejado.toStringAsFixed(2)}');
-    print('   -> Subcategorias encontradas: ${subcategorias.length}');
 
     // 🚀 SIMPLES: Se JÁ é uma categoria com subcategoria_id, usar só esse valor
     // Se é categoria principal, somar APENAS as subcategorias (não duplicar)
@@ -1088,7 +1090,6 @@ class _PlanejamentoPageState extends State<PlanejamentoPage> with TickerProvider
       // É uma subcategoria específica, usar apenas seu valor (respeitando filtro)
       valorGastoTotal = _incluirPendentes ? planejamento.totalMes : planejamento.valorRealizado;
       valorPlanejadoTotal = planejamento.valorPlanejado;
-      print('   -> SUBCATEGORIA: usando valor individual R\$ ${valorGastoTotal.toStringAsFixed(2)} (filtro: ${_incluirPendentes ? "total" : "efetivado"})');
     } else {
       // É categoria principal, somar APENAS as subcategorias (não a categoria principal)
       valorGastoTotal = 0.0;
@@ -1100,18 +1101,15 @@ class _PlanejamentoPageState extends State<PlanejamentoPage> with TickerProvider
           final valorSubcategoria = _incluirPendentes ? sub.totalMes : sub.valorRealizado;
           valorGastoTotal += valorSubcategoria;
           valorPlanejadoTotal += sub.valorPlanejado;
-          print('   -> Somando subcategoria ${sub.subcategoriaNome}: R\$ ${valorSubcategoria.toStringAsFixed(2)} (filtro: ${_incluirPendentes ? "total" : "efetivado"})');
         }
       } else {
         // Se não tem subcategorias, usar o valor da categoria mesmo (também respeitando filtro)
         final valorCategoria = _incluirPendentes ? planejamento.totalMes : planejamento.valorRealizado;
         valorGastoTotal = valorCategoria;
         valorPlanejadoTotal = planejamento.valorPlanejado;
-        print('   -> SEM SUBCATEGORIAS: usando valor da categoria R\$ ${valorGastoTotal.toStringAsFixed(2)}');
       }
     }
 
-    print('   -> TOTAL FINAL: R\$ ${valorGastoTotal.toStringAsFixed(2)} vs R\$ ${valorPlanejadoTotal.toStringAsFixed(2)}');
 
     final percentual = valorPlanejadoTotal > 0 ? (valorGastoTotal / valorPlanejadoTotal) * 100 : 0.0;
 
@@ -1700,28 +1698,68 @@ class _PlanejamentoPageState extends State<PlanejamentoPage> with TickerProvider
   }
 
   void _mostrarAcoesRapidas() {
+    // ✨ DETECÇÃO INTELIGENTE: Verificar se usuário tem planejamentos reais
+    final temPlanejamentosReais = _planejamentoService.planejamentos.any((p) => p.temPlanejamentoReal);
+
+    if (!temPlanejamentosReais) {
+      // ✨ MODO CONFIGURAÇÃO INICIAL: Mostrar apenas dica para começar
+      showModalBottomSheet(
+        context: context,
+        backgroundColor: Colors.white,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        builder: (context) => Container(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.lightbulb_outline,
+                size: 48,
+                color: Colors.orange,
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Como Começar?',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Toque em qualquer categoria abaixo para definir sua meta de gastos.',
+                style: TextStyle(color: Colors.grey),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Entendi!'),
+              ),
+            ],
+          ),
+        ),
+      );
+      return;
+    }
+
+    // ✨ MODO NORMAL: Mostrar apenas histórico
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
-      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.6,
-        minChildSize: 0.3,
-        maxChildSize: 0.9,
-        expand: false,
-        builder: (context, scrollController) => Container(
-          padding: const EdgeInsets.all(20),
-          child: SingleChildScrollView(
-            controller: scrollController,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             const Text(
-              'Ações Rápidas',
+              'Opções',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -1730,76 +1768,15 @@ class _PlanejamentoPageState extends State<PlanejamentoPage> with TickerProvider
             ),
             const SizedBox(height: 16),
             ListTile(
-              leading: const Icon(Icons.add_circle, color: Colors.blue),
-              title: const Text('Nova Meta', style: TextStyle(color: Colors.black87)),
-              subtitle: const Text('Criar meta para categoria', style: TextStyle(color: Colors.grey)),
+              leading: const Icon(Icons.analytics_outlined, color: Colors.blue),
+              title: const Text('Histórico Geral'),
+              subtitle: const Text('Ver estatísticas e histórico'),
               onTap: () {
                 Navigator.pop(context);
-                _novoPlanejamento();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.copy, color: Colors.green),
-              title: const Text('Copiar Mês Anterior', style: TextStyle(color: Colors.black87)),
-              subtitle: const Text('Copia todas as metas do mês anterior', style: TextStyle(color: Colors.grey)),
-              onTap: () {
-                Navigator.pop(context);
-                _copiarMesAnterior();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.analytics, color: Colors.orange),
-              title: const Text('Aplicar Média Histórica', style: TextStyle(color: Colors.black87)),
-              subtitle: const Text('Preenche metas com base no histórico (3 meses)', style: TextStyle(color: Colors.grey)),
-              onTap: () {
-                Navigator.pop(context);
-                _aplicarMedia3Meses();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.repeat, color: Colors.purple),
-              title: const Text('Repetir pelo Ano', style: TextStyle(color: Colors.black87)),
-              subtitle: const Text('Aplica metas atuais para todos os meses', style: TextStyle(color: Colors.grey)),
-              onTap: () {
-                Navigator.pop(context);
-                _repetirPeloAno();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.savings, color: Colors.teal),
-              title: const Text('Desafio de Economia', style: TextStyle(color: Colors.black87)),
-              subtitle: const Text('Reduz despesas em 10% para economizar', style: TextStyle(color: Colors.grey)),
-              onTap: () {
-                Navigator.pop(context);
-                _aplicarDesafioEconomia();
-              },
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.cleaning_services, color: Colors.red),
-              title: const Text('🧹 Limpar Dados', style: TextStyle(color: Colors.black87)),
-              subtitle: const Text('Remove duplicatas e registros inválidos', style: TextStyle(color: Colors.grey)),
-              onTap: () {
-                Navigator.pop(context);
-                _limparDados();
-              },
-            ),
-
-            // ===========================
-            // RESET DE EMERGÊNCIA
-            // ===========================
-            ListTile(
-              leading: const Icon(Icons.delete_forever, color: Colors.red, size: 28),
-              title: const Text('🚨 Reset Total', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-              subtitle: const Text('Remove TODOS os planejamentos do mês atual', style: TextStyle(color: Colors.grey)),
-              onTap: () {
-                Navigator.pop(context);
-                _resetEmergencia();
+                _mostrarHistoricoGeral();
               },
             ),
           ],
-            ),
-          ),
         ),
       ),
     );
@@ -1830,39 +1807,15 @@ class _PlanejamentoPageState extends State<PlanejamentoPage> with TickerProvider
 
             // Opções do menu
             ListTile(
-              leading: const Icon(Icons.copy, color: AppColors.azul),
-              title: const Text('Copiar Mês Anterior'),
+              leading: const Icon(Icons.analytics_outlined, color: AppColors.azul),
+              title: const Text('Histórico Geral'),
               onTap: () {
                 Navigator.pop(context);
-                _copiarMesAnterior();
+                _mostrarHistoricoGeral();
               },
             ),
             ListTile(
-              leading: const Icon(Icons.analytics, color: AppColors.verdeSucesso),
-              title: const Text('Aplicar Média 3 Meses'),
-              onTap: () {
-                Navigator.pop(context);
-                _aplicarMedia3Meses();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.trending_down, color: AppColors.laranjaAlerta),
-              title: const Text('Reduzir Gastos (%)'),
-              onTap: () {
-                Navigator.pop(context);
-                _mostrarModalReducaoGastos();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.repeat, color: AppColors.roxoPrimario),
-              title: const Text('Repetir para o Ano'),
-              onTap: () {
-                Navigator.pop(context);
-                _repetirParaAno();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.calendar_today, color: AppColors.roxoPrimario),
+              leading: const Icon(Icons.calendar_today, color: AppColors.verdeSucesso),
               title: const Text('Ir para Hoje'),
               onTap: () {
                 Navigator.pop(context);
@@ -2099,7 +2052,6 @@ class _PlanejamentoPageState extends State<PlanejamentoPage> with TickerProvider
 
       // 🚀 CORREÇÃO: Se não existe planejamento principal, criar um automaticamente
       if (planejamentoPrincipal == null) {
-        print('🔧 DEEP DIVE: Criando planejamento principal para categoria $categoriaId');
 
         // Buscar dados da categoria para criar o planejamento principal
         final categoriaInfo = subcategorias.isNotEmpty ? subcategorias.first : planejamento;
@@ -2122,7 +2074,6 @@ class _PlanejamentoPageState extends State<PlanejamentoPage> with TickerProvider
           valorPrevisto: 0.0,
         );
 
-        print('✅ DEEP DIVE: Planejamento principal criado: ${planejamentoPrincipal!.categoriaNome}');
       }
     } else {
       planejamentoPrincipal = planejamento;
@@ -2538,7 +2489,6 @@ class _PlanejamentoPageState extends State<PlanejamentoPage> with TickerProvider
                               setModalState(() => salvando = true);
 
                               try {
-                                print('🔄 Iniciando salvamento inteligente...');
 
                                 // 📋 Coletar apenas subcategorias que foram editadas
                                 final subcategoriasParaSalvar = <PlanejamentoModel>[];
@@ -2554,9 +2504,7 @@ class _PlanejamentoPageState extends State<PlanejamentoPage> with TickerProvider
                                       updatedAt: DateTime.now(),
                                     );
                                     subcategoriasParaSalvar.add(subcategoriaAtualizada);
-                                    print('💾 Salvando ${sub.subcategoriaNome}: R\$ ${novoValor.toStringAsFixed(2)}');
                                   } else {
-                                    print('⏭️ Mantendo ${sub.subcategoriaNome}: R\$ ${sub.valorPlanejado.toStringAsFixed(2)} (não alterado)');
                                   }
                                 }
 
@@ -2567,7 +2515,6 @@ class _PlanejamentoPageState extends State<PlanejamentoPage> with TickerProvider
                                 }
 
                                 // 🚀 UPDATE OTIMISTA - Atualizar tela IMEDIATAMENTE
-                                print('🚀 UPDATE OTIMISTA: Atualizando tela imediatamente...');
                                 _atualizarMultiplosPlanejamentosOtimista(subcategoriasParaSalvar);
 
                                 // 🔄 Fechar modal IMEDIATAMENTE
@@ -2577,27 +2524,16 @@ class _PlanejamentoPageState extends State<PlanejamentoPage> with TickerProvider
                                 _mostrarSucesso('${subcategoriasParaSalvar.length} meta(s) atualizada(s) com sucesso!');
 
                                 // 💾 Salvar em background (sem await para não travar UI)
-                                print('🚨 DEEP DIVE: ANTES de chamar _salvarSubcategoriasBackground');
-                                print('🚨 DEEP DIVE: subcategoriasParaSalvar.length = ${subcategoriasParaSalvar.length}');
-                                print('🚨 DEEP DIVE: planejamentoPrincipal é null? ${planejamentoPrincipal == null}');
-                                print('🚨 DEEP DIVE: subcategorias.length = ${subcategorias.length}');
 
                                 if (planejamentoPrincipal == null) {
-                                  print('❌ DEEP DIVE: planejamentoPrincipal é NULL! Não pode salvar.');
-                                  print('❌ DEEP DIVE: categoriaId = ${subcategoriasParaSalvar.isNotEmpty ? subcategoriasParaSalvar.first.categoriaId : "N/A"}');
                                   _mostrarErro('Erro interno: categoria principal não encontrada');
                                   return;
                                 }
 
-                                print('🚨 DEEP DIVE: planejamentoPrincipal.id = ${planejamentoPrincipal!.id}');
 
                                 try {
-                                  print('🚨 DEEP DIVE: CHAMANDO _salvarSubcategoriasBackground AGORA...');
                                   _salvarSubcategoriasBackground(subcategoriasParaSalvar, planejamentoPrincipal!, subcategorias);
-                                  print('🚨 DEEP DIVE: CHAMADA _salvarSubcategoriasBackground CONCLUÍDA');
                                 } catch (callError) {
-                                  print('🚨 DEEP DIVE: ERRO ao chamar _salvarSubcategoriasBackground: $callError');
-                                  print('🚨 DEEP DIVE: Stack trace: ${StackTrace.current}');
                                 }
 
                               } catch (e) {
@@ -2651,43 +2587,82 @@ class _PlanejamentoPageState extends State<PlanejamentoPage> with TickerProvider
 
   /// 🔄 Toggle expansão categoria
   void _toggleExpansaoCategoria(String categoriaId) {
-    print('🔍 TOGGLE EXPANSÃO - Categoria ID: $categoriaId');
 
     setState(() {
       if (_categoriasExpandidas.contains(categoriaId)) {
         _categoriasExpandidas.remove(categoriaId);
-        print('🔍 CATEGORIA CONTRAÍDA: $categoriaId');
       } else {
         _categoriasExpandidas.add(categoriaId);
-        print('🔍 CATEGORIA EXPANDIDA: $categoriaId');
 
         // Verificar subcategorias disponíveis
         final subcategorias = _getSubcategoriasPorCategoria(categoriaId);
-        print('🔍 SUBCATEGORIAS ENCONTRADAS: ${subcategorias.length}');
         for (final sub in subcategorias) {
-          print('🔍   -> ${sub.subcategoriaNome}: R\$ ${sub.totalMes.toStringAsFixed(2)} vs R\$ ${sub.valorPlanejado.toStringAsFixed(2)}');
         }
       }
     });
   }
 
-  /// 🚀 SIMPLES: Buscar TODAS as subcategorias da categoria
+  /// 🚀 SIMPLES: Buscar subcategorias com lógica inteligente
   List<PlanejamentoModel> _getSubcategoriasPorCategoria(String categoriaId) {
-    print('🚀 SIMPLES: Buscando TODAS subcategorias para categoria: $categoriaId');
 
-    // MÉTODO SUPER SIMPLES: pegar TODOS os planejamentos que tenham subcategoria desta categoria
+    // ✨ MODO CONFIGURAÇÃO INICIAL: Se usuário não tem planejamentos reais, mostrar todas
+    final temPlanejamentosReais = _planejamentoService.planejamentos.any((p) => p.temPlanejamentoReal);
+
+    if (!temPlanejamentosReais) {
+      // Modo configuração inicial: mostrar todas as subcategorias
+      final todasSubcategorias = _planejamentoService.planejamentos
+          .where((p) => p.categoriaId == categoriaId && p.subcategoriaId != null)
+          .toList();
+      return todasSubcategorias;
+    }
+
+    // ✨ MODO NORMAL: APENAS subcategorias com planejamento real
     final todasSubcategorias = _planejamentoService.planejamentos
-        .where((p) => p.categoriaId == categoriaId && p.subcategoriaId != null)
+        .where((p) => p.categoriaId == categoriaId &&
+                      p.subcategoriaId != null &&
+                      p.temPlanejamentoReal) // ← FILTRO PARA USUÁRIOS EXPERIENTES
         .toList();
 
-    print('🔍 SIMPLES: Encontradas ${todasSubcategorias.length} subcategorias');
 
     // Debug simples
     for (final sub in todasSubcategorias) {
-      print('   -> ${sub.subcategoriaNome}: R\$ ${sub.totalMes.toStringAsFixed(2)} vs R\$ ${sub.valorPlanejado.toStringAsFixed(2)}');
     }
 
     return todasSubcategorias;
+  }
+
+  /// 🎯 LÓGICA INTELIGENTE: Verificar se categoria deve ser exibida
+  bool _deveExibirCategoria(PlanejamentoModel categoria) {
+    // 🔢 Contar quantas categorias têm planejamento preenchido
+    final categoriasPreenchidas = _planejamentoService.planejamentos
+        .where((p) => p.temPlanejamentoReal && p.subcategoriaId == null)
+        .map((p) => p.categoriaId)
+        .toSet()
+        .length;
+
+    // Se tem poucas categorias preenchidas (≤ 3), mostrar todas (modo configuração)
+    if (categoriasPreenchidas <= 3) {
+      return true;
+    }
+
+    // Modo normal: mostrar apenas categorias preenchidas ou com subcategorias preenchidas
+    if (categoria.temPlanejamentoReal && categoria.subcategoriaId == null) {
+      return true;
+    }
+
+    // Verificar se tem subcategorias preenchidas
+    final subcategorias = _getSubcategoriasPorCategoria(categoria.categoriaId);
+    final temSubcategorias = subcategorias.isNotEmpty;
+
+    // 🚨 Fallback: Sempre mostrar pelo menos algumas categorias essenciais
+    if (!temSubcategorias && categoriasPreenchidas == 0) {
+      final categoriasEssenciais = ['Transporte', 'Alimentação', 'Casa'];
+      if (categoriasEssenciais.contains(categoria.categoriaNome)) {
+        return true;
+      }
+    }
+
+    return temSubcategorias;
   }
 
   /// 📝 Widget para item de subcategoria
@@ -2838,12 +2813,6 @@ class _PlanejamentoPageState extends State<PlanejamentoPage> with TickerProvider
         somaSubcategorias += subcategoriaEditada.valorPlanejado;
       }
 
-      print('💰 CATEGORIA PRINCIPAL DEBUG:');
-      print('   - ID: ${categoriaPrincipal.id}');
-      print('   - Categoria ID: ${categoriaPrincipal.categoriaId}');
-      print('   - Subcategoria ID: ${categoriaPrincipal.subcategoriaId}');
-      print('   - Valor atual: R\$ ${categoriaPrincipal.valorPlanejado.toStringAsFixed(2)}');
-      print('   - Soma das subcategorias: R\$ ${somaSubcategorias.toStringAsFixed(2)}');
 
       // Só atualizar se a soma mudou
       if ((somaSubcategorias - categoriaPrincipal.valorPlanejado).abs() > 0.01) {
@@ -2855,20 +2824,11 @@ class _PlanejamentoPageState extends State<PlanejamentoPage> with TickerProvider
           updatedAt: DateTime.now(),
         );
 
-        print('🔄 Salvando categoria principal com:');
-        print('   - Categoria ID: ${categoriaPrincipalAtualizada.categoriaId}');
-        print('   - Subcategoria ID: ${categoriaPrincipalAtualizada.subcategoriaId}');
-        print('   - Valor: R\$ ${categoriaPrincipalAtualizada.valorPlanejado}');
 
         await _planejamentoService.salvarPlanejamento(categoriaPrincipalAtualizada);
-        print('✅ Categoria principal atualizada para: R\$ ${somaSubcategorias.toStringAsFixed(2)}');
       } else {
-        print('ℹ️ Categoria principal já está com o valor correto');
       }
     } catch (e) {
-      print('❌ ERRO DETALHADO ao atualizar categoria principal:');
-      print('   - Erro: $e');
-      print('   - Stack: ${StackTrace.current}');
       // Não propagar o erro para não quebrar o fluxo
     }
   }
@@ -2978,7 +2938,6 @@ class _PlanejamentoPageState extends State<PlanejamentoPage> with TickerProvider
       }
       _calcularTotais();
     });
-    print('🚀 UPDATE OTIMISTA: ${planejamentoAtualizado.categoriaNome} → R\$ ${planejamentoAtualizado.valorPlanejado}');
   }
 
   /// 🚀 UPDATE OTIMISTA MÚLTIPLO - Para várias subcategorias
@@ -2999,7 +2958,6 @@ class _PlanejamentoPageState extends State<PlanejamentoPage> with TickerProvider
       }
       _calcularTotais();
     });
-    print('🚀 UPDATE OTIMISTA MÚLTIPLO: ${planejamentosAtualizados.length} planejamentos atualizados');
   }
 
   /// 💾 SALVAR EM BACKGROUND - Não trava a UI
@@ -3009,65 +2967,31 @@ class _PlanejamentoPageState extends State<PlanejamentoPage> with TickerProvider
     List<PlanejamentoModel> todasSubcategorias,
   ) async {
     try {
-      print('🚀 SALVAMENTO BACKGROUND - DEBUG DETALHADO');
-      print('💾 Salvando ${subcategoriasParaSalvar.length} subcategorias em background...');
 
-      print('🔍 VALIDAÇÃO DADOS - Categoria Principal:');
-      print('   ID: ${planejamentoPrincipal.id}');
-      print('   Categoria ID: ${planejamentoPrincipal.categoriaId}');
-      print('   Subcategoria ID: ${planejamentoPrincipal.subcategoriaId}');
-      print('   Nome: ${planejamentoPrincipal.categoriaNome}');
-      print('   Valor: ${planejamentoPrincipal.valorPlanejado}');
 
-      print('🔍 VALIDAÇÃO DADOS - Subcategorias para salvar:');
-      for (int i = 0; i < subcategoriasParaSalvar.length; i++) {
-        final sub = subcategoriasParaSalvar[i];
-        print('   [$i] ID: ${sub.id}');
-        print('   [$i] Categoria ID: ${sub.categoriaId}');
-        print('   [$i] Subcategoria ID: ${sub.subcategoriaId}');
-        print('   [$i] Nome: ${sub.subcategoriaNome}');
-        print('   [$i] Valor: ${sub.valorPlanejado}');
-      }
 
       // 🔥 PRIMEIRO: Garantir que a categoria principal EXISTE no banco
-      print('🔥 PASSO 1: Garantindo categoria principal existe...');
       await _garantirCategoriaPrincipalExiste(planejamentoPrincipal);
-      print('✅ PASSO 1: Categoria principal processada');
 
       // Salvar subcategorias
-      print('💾 PASSO 2: Salvando subcategorias individuais...');
       for (int i = 0; i < subcategoriasParaSalvar.length; i++) {
         final subcategoria = subcategoriasParaSalvar[i];
-        print('   Salvando [$i/${subcategoriasParaSalvar.length}]: ${subcategoria.subcategoriaNome}...');
 
         try {
           await _planejamentoService.salvarPlanejamento(subcategoria);
-          print('   ✅ Salvo: ${subcategoria.subcategoriaNome}');
         } catch (subError) {
-          print('   ❌ ERRO ao salvar ${subcategoria.subcategoriaNome}: $subError');
-          print('   ❌ Stack trace: ${StackTrace.current}');
           rethrow;
         }
       }
-      print('✅ PASSO 2: Todas subcategorias salvas');
 
       // Atualizar categoria principal
-      print('🔄 PASSO 3: Atualizando categoria principal...');
       await _atualizarCategoriaPrincipal(planejamentoPrincipal, todasSubcategorias, subcategoriasParaSalvar);
-      print('✅ PASSO 3: Categoria principal atualizada');
 
-      print('✅ SALVAMENTO BACKGROUND CONCLUÍDO COM SUCESSO');
 
       // 🔄 REFRESH AUTOMÁTICO: Recarregar dados após salvamento
-      print('🔄 Aplicando refresh automático após salvamento...');
       await Future.delayed(const Duration(milliseconds: 500));
       await _planejamentoService.carregarPlanejamentos();
-      print('✅ Refresh automático concluído');
     } catch (e, stackTrace) {
-      print('❌ ERRO CRÍTICO NO SALVAMENTO BACKGROUND:');
-      print('   Erro: $e');
-      print('   Tipo: ${e.runtimeType}');
-      print('   Stack trace: $stackTrace');
       // TODO: Implementar reversão otimista se necessário
       _mostrarErro('Erro ao sincronizar: $e');
     }
@@ -3078,7 +3002,6 @@ class _PlanejamentoPageState extends State<PlanejamentoPage> with TickerProvider
     try {
       // PULAR salvamento se for temporário
       if (categoriaPrincipal.id.startsWith('temp_')) {
-        print('⚠️ Pulando salvamento de categoria temporária');
         return;
       }
 
@@ -3090,16 +3013,11 @@ class _PlanejamentoPageState extends State<PlanejamentoPage> with TickerProvider
         updatedAt: categoriaPrincipal.updatedAt ?? DateTime.now(),
       );
 
-      print('🔥 Garantindo que categoria principal existe:');
-      print('   - Categoria ID: ${categoriaPrincipalBase.categoriaId}');
-      print('   - Subcategoria ID: ${categoriaPrincipalBase.subcategoriaId}');
 
       // Salvar/atualizar categoria principal (vai fazer UPSERT)
       await _planejamentoService.salvarPlanejamento(categoriaPrincipalBase);
 
-      print('✅ Categoria principal garantida no banco');
     } catch (e) {
-      print('❌ Erro ao garantir categoria principal: $e');
     }
   }
 }
