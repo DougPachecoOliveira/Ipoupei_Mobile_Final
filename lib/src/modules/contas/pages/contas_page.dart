@@ -663,7 +663,7 @@ class _ContasPageState extends State<ContasPage> {
     );
   }
 
-  /// Widget de logo com fallback
+  /// Widget de logo com fallback melhorado
   Widget _buildLogoWidget(String logo, {required double size, required Color fallbackColor}) {
     final fallbackIcon = Container(
       width: size,
@@ -688,7 +688,10 @@ class _ContasPageState extends State<ContasPage> {
           width: size,
           height: size,
           fit: BoxFit.contain,
-          placeholderBuilder: (BuildContext context) => fallbackIcon,
+          placeholderBuilder: (BuildContext context) {
+            debugPrint('🚨 SVG Placeholder usado para: $logo');
+            return fallbackIcon;
+          },
         );
       }
 
@@ -697,9 +700,13 @@ class _ContasPageState extends State<ContasPage> {
         width: size,
         height: size,
         fit: BoxFit.contain,
-        errorBuilder: (context, error, stackTrace) => fallbackIcon,
+        errorBuilder: (context, error, stackTrace) {
+          debugPrint('🚨 Erro ao carregar logo $logo: $error');
+          return fallbackIcon;
+        },
       );
     } catch (e) {
+      debugPrint('🚨 Erro geral no logo $logo: $e');
       return fallbackIcon;
     }
   }
