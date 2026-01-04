@@ -625,6 +625,70 @@ class _TransacaoFormPageState extends State<TransacaoFormPage> {
   }
 
 
+  /// Widget do ícone da conta no modal com logo do banco
+  Widget _buildModalContaIcon(ContaModel conta) {
+    final corConta = conta.cor != null && conta.cor!.isNotEmpty
+        ? Color(int.parse(conta.cor!.replaceAll('#', '0xFF')))
+        : Colors.blue;
+
+    // Buscar cor oficial do banco
+    final corOficialBanco = _buscarCorOficialBanco(conta.banco);
+    final corFinal = corOficialBanco ?? corConta;
+
+    // Buscar logo do banco
+    final logo = _buscarLogoBanco(conta.banco);
+
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: corFinal,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Center(
+        child: logo != null && logo.isNotEmpty
+            ? Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                padding: const EdgeInsets.all(2),
+                child: _buildLogoWidget(logo, size: 28, fallbackIcon: _buildFallbackIcon(conta)),
+              )
+            : _buildFallbackIcon(conta),
+      ),
+    );
+  }
+
+  /// Ícone de fallback quando não tem logo do banco
+  Widget _buildFallbackIcon(ContaModel conta) {
+    return conta.icone != null && conta.icone!.isNotEmpty
+        ? _getIconeByName(conta.icone!, size: 20, color: Colors.white)
+        : const Icon(Icons.account_balance, color: Colors.white, size: 20);
+  }
+
+  /// Buscar cor oficial do banco
+  Color? _buscarCorOficialBanco(String? banco) {
+    if (banco == null || banco.isEmpty) return null;
+
+    try {
+      final bancoEncontrado = ContasSugeridas.todas.firstWhere(
+        (contaSugerida) => contaSugerida['banco'] == banco,
+        orElse: () => <String, dynamic>{},
+      );
+
+      final corString = bancoEncontrado['cor'] as String?;
+      if (corString != null && corString.isNotEmpty) {
+        return Color(int.parse(corString.replaceAll('#', '0xFF')));
+      }
+    } catch (e) {
+      // Falha silenciosa
+    }
+    return null;
+  }
+
   /// 🏦 SELECIONAR CONTA (IGUAL CARTÃO - SCROLLÁVEL)
   Future<void> _selecionarConta() async {
     if (_contas.isEmpty) return;
@@ -687,21 +751,7 @@ class _TransacaoFormPageState extends State<TransacaoFormPage> {
                       color: isSelected ? AppColors.cinzaClaro : null,
                     ),
                     child: ListTile(
-                      leading: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: conta.cor != null && conta.cor!.isNotEmpty
-                              ? Color(int.parse(conta.cor!.replaceAll('#', '0xFF')))
-                              : Colors.blue,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Center(
-                          child: conta.icone != null && conta.icone!.isNotEmpty
-                              ? _getIconeByName(conta.icone!, size: 20, color: Colors.white)
-                              : const Icon(Icons.account_balance, color: Colors.white, size: 20),
-                        ),
-                      ),
+                      leading: _buildModalContaIcon(conta),
                       title: Row(
                         children: [
                           Text(
