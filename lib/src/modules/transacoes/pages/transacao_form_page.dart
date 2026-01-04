@@ -655,7 +655,7 @@ class _TransacaoFormPageState extends State<TransacaoFormPage> {
                   borderRadius: BorderRadius.circular(4),
                 ),
                 padding: const EdgeInsets.all(2),
-                child: _buildLogoWidget(logo, size: 28, fallbackIcon: _buildFallbackIcon(conta)),
+                child: _buildLogoWidget(logo, size: 28, fallback: _buildFallbackIcon(conta)),
               )
             : _buildFallbackIcon(conta),
       ),
