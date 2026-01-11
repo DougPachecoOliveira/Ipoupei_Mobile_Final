@@ -31,7 +31,7 @@ class CartaoColorPalette {
     'Rosa Millennial': '#F7CAC9',
   };
 
-  /// LARANJAS - tons energéticos
+  /// LARANJAS - tons energéticos e vibrantes
   static const Map<String, String> laranjas = {
     'Laranja Clássico': '#FF9800',
     'Laranja Escuro': '#E65100',
@@ -39,34 +39,60 @@ class CartaoColorPalette {
     'Laranja Coral': '#FF7043',
     'Laranja Pêssego': '#FFAB40',
     'Laranja Tangerina': '#FF8F00',
-    'Laranja Pastel': '#FFE0B2',
     'Laranja Sunset': '#FF9100',
+    'Laranja Queimado': '#CC5500',
+    'Laranja Terracota': '#A0522D',
+    'Laranja Cobre': '#B87333',
+    'Laranja Papaya': '#FF9F40',
+    'Laranja Mandarina': '#FF8C42',
+    'Laranja Bronze': '#CD7F32',
+    'Laranja Ferrugem': '#A0390E',
+    'Laranja Canela': '#D2691E',
+    'Laranja Caramelo': '#D2B48C',
   };
 
-  /// AMARELOS - tons solares e dourados
+  /// AMARELOS - tons solares, dourados e metálicos
   static const Map<String, String> amarelos = {
-    'Amarelo Clássico': '#FFEB3B',
     'Amarelo Ouro': '#FFC107',
-    'Amarelo Limão': '#CDDC39',
-    'Amarelo Canário': '#FFFF00',
     'Amarelo Mostarda': '#F57F17',
-    'Amarelo Pastel': '#FFF9C4',
     'Amarelo Âmbar': '#FFA000',
     'Amarelo Sol': '#FFCA28',
+    'Amarelo Dourado': '#DAA520',
+    'Amarelo Ouro Velho': '#CFB53B',
+    'Amarelo Latão': '#B5A642',
+    'Amarelo Ocre': '#CC7722',
+    'Amarelo Mel': '#FFA500',
+    'Amarelo Champanhe': '#F7E7CE',
+    'Amarelo Bronze': '#CD7F32',
+    'Amarelo Antigo': '#FADA5E',
+    'Amarelo Cobre Escuro': '#B87333',
+    'Amarelo Minerva': '#C9B037',
+    'Amarelo Imperial': '#FFD700',
+    'Amarelo Vegas Gold': '#C5B358',
   };
 
-  /// VERDES - tons naturais e vibrantes
+  /// VERDES - tons naturais, vibrantes e sofisticados
   static const Map<String, String> verdes = {
     'Verde Clássico': '#4CAF50',
     'Verde Escuro': '#2E7D32',
     'Verde Esmeralda': '#00C853',
     'Verde Lima': '#8BC34A',
     'Verde Oliva': '#689F38',
-    'Verde Menta': '#A7FFEB',
     'Verde Floresta': '#388E3C',
-    'Verde Neon': '#76FF03',
-    'Verde Pastel': '#C8E6C9',
     'Verde Teal': '#009688',
+    'Verde Militar': '#4B5320',
+    'Verde Musgo': '#8A9A5B',
+    'Verde Jade': '#00A86B',
+    'Verde Malachita': '#0BDA51',
+    'Verde Petroleo': '#317873',
+    'Verde Abacate': '#568203',
+    'Verde Sage': '#9CAF88',
+    'Verde Hunter': '#355E3B',
+    'Verde Pinheiro': '#01796F',
+    'Verde Menta Escuro': '#00755E',
+    'Verde Cedro': '#004225',
+    'Verde Amazônia': '#3B7F32',
+    'Verde Eucalipto': '#228B22',
   };
 
   /// AZUIS - tons oceânicos e tecnológicos
@@ -95,32 +121,62 @@ class CartaoColorPalette {
     'Roxo Deep': '#512DA8',
   };
 
-  /// NEUTROS - tons sofisticados
+  /// NEUTROS - tons sofisticados, cinzas e terrosos
   static const Map<String, String> neutros = {
     'Cinza Grafite': '#424242',
     'Cinza Chumbo': '#616161',
     'Cinza Prata': '#9E9E9E',
-    'Cinza Claro': '#BDBDBD',
     'Preto Elegante': '#212121',
-    'Branco Gelo': '#FAFAFA',
-    'Bege': '#F5F5DC',
+    'Cinza Carvão': '#36454F',
+    'Cinza Antracite': '#2F4F4F',
+    'Cinza Ardósia': '#2F2F2F',
+    'Cinza Ferro': '#71797E',
+    'Cinza Alumínio': '#848482',
+    'Cinza Platina': '#808080',
+    'Cinza Titanio': '#878681',
+    'Cinza Aço Escuro': '#4C4C4C',
+    'Cinza Meteorito': '#3C3C3C',
+    'Cinza Fumaça': '#555555',
+    'Cinza Pólvora': '#414A4C',
+    'Bege Escuro': '#A0937D',
     'Marrom Café': '#5D4037',
     'Marrom Chocolate': '#3E2723',
-    'Bronze': '#CD7F32',
+    'Marrom Nogueira': '#654321',
+    'Marrom Couro': '#8B4513',
+    'Marrom Mogno': '#C04000',
+    'Marrom Castanha': '#800000',
+    'Taupe': '#483C32',
+    'Cáqui': '#C3B091',
+    'Sépia': '#704214',
   };
 
-  /// TONS ESPECIAIS - cores únicas e modernas
+  /// TONS ESPECIAIS - metálicos, dourados e cores únicas
   static const Map<String, String> especiais = {
     'Dourado': '#FFD700',
+    'Ouro Rosa': '#E8B4B8',
+    'Ouro Branco': '#F8F8FF',
+    'Ouro Antigo': '#CFB53B',
     'Prateado': '#C0C0C0',
+    'Prata Escura': '#A8A8A8',
     'Cobre': '#B87333',
-    'Rose Gold': '#E8B4B8',
+    'Cobre Rosé': '#B76E79',
+    'Latão': '#B5A642',
+    'Estanho': '#918F8C',
+    'Níquel': '#727472',
     'Champagne': '#F7E7CE',
-    'Mint': '#98FB98',
-    'Coral Vivo': '#FF6B6B',
-    'Lavanda French': '#9BB5FF',
-    'Sage Green': '#9CAF88',
-    'Dusty Rose': '#DCAE96',
+    'Champagne Dourado': '#D4AF37',
+    'Bronze Clássico': '#CD7F32',
+    'Bronze Escuro': '#8B4513',
+    'Ônix': '#353839',
+    'Hematita': '#383838',
+    'Grafite Premium': '#1C1C1C',
+    'Carvão Ativado': '#36454F',
+    'Azul Meia-noite': '#0B1F3A',
+    'Vinho Profundo': '#5A0F2B',
+    'Terracota': '#A3471F',
+    'Petrolio Escuro': '#0F4C5C',
+    'Ametista Escura': '#2D1B3D',
+    'Sage Premium': '#9CAF88',
   };
 
   /// Método para obter TODAS as cores em uma lista única

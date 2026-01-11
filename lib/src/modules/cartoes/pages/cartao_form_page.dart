@@ -20,8 +20,9 @@ import '../../contas/models/conta_model.dart';
 import '../../contas/services/conta_service.dart';
 // Removido import do SmartField para não quebrar outros modais
 import '../../shared/theme/app_colors.dart';
-import '../../shared/theme/cartao_color_palette.dart';
 import '../../../shared/components/loading/ipoupei_loading_system.dart';
+import '../../../shared/components/color_picker/advanced_color_picker.dart';
+import '../../../shared/components/color_picker/models/color_picker_config.dart';
 
 /// MoneyInputFormatter para formatação de moeda
 class MoneyInputFormatter extends TextInputFormatter {
@@ -1501,139 +1502,20 @@ class _CartaoFormPageState extends State<CartaoFormPage> {
     return alteracoes;
   }
 
-  /// Modal com todas as cores estendidas (70+ opções)
-  void _mostrarModalCoresExtendidas() {
-    showModalBottomSheet(
+  /// Modal com todas as cores estendidas usando o novo seletor
+  Future<void> _mostrarModalCoresExtendidas() async {
+    final selectedColor = await AdvancedColorPicker.show(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.9,
-        maxChildSize: 0.95,
-        minChildSize: 0.5,
-        builder: (context, scrollController) => Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: Column(
-            children: [
-              // Handle drag
-              Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.symmetric(vertical: 12),
-                decoration: BoxDecoration(
-                  color: Colors.grey.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              
-              // Header
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Escolha uma cor',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.close),
-                    ),
-                  ],
-                ),
-              ),
-              
-              // Lista de cores por categoria
-              Expanded(
-                child: ListView.builder(
-                  controller: scrollController,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: CartaoColorPalette.categorias.length,
-                  itemBuilder: (context, index) {
-                    final categoria = CartaoColorPalette.categorias[index];
-                    final coresCategoria = CartaoColorPalette.getCoresPorCategoria(categoria.toLowerCase());
-                    
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Título da categoria
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          child: Text(
-                            categoria,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.black87,
-                            ),
-                          ),
-                        ),
-                        
-                        // Grid de cores da categoria
-                        GridView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 6,
-                            crossAxisSpacing: 12,
-                            mainAxisSpacing: 12,
-                            childAspectRatio: 1,
-                          ),
-                          itemCount: coresCategoria.length,
-                          itemBuilder: (context, colorIndex) {
-                            final nomeColor = coresCategoria.keys.elementAt(colorIndex);
-                            final valorColor = coresCategoria.values.elementAt(colorIndex);
-                            final isSelected = _corSelecionada == valorColor;
-                            
-                            return GestureDetector(
-                              onTap: () {
-                                setState(() => _corSelecionada = valorColor);
-                                Navigator.pop(context);
-                              },
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: CartaoColorPalette.hexToColor(valorColor),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: isSelected ? Colors.white : Colors.transparent,
-                                    width: 3,
-                                  ),
-                                  boxShadow: [
-                                    if (isSelected)
-                                      BoxShadow(
-                                        color: Colors.black.withValues(alpha: 0.2),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                  ],
-                                ),
-                                child: isSelected
-                                    ? const Icon(Icons.check, color: Colors.white, size: 20)
-                                    : null,
-                              ),
-                            );
-                          },
-                        ),
-                        
-                        const SizedBox(height: 8),
-                      ],
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+      type: ColorPickerType.card,
+      currentColor: _corSelecionada,
+      bankName: _bandeiraSelecionada, // Sugerir cores baseadas na bandeira
     );
+
+    if (selectedColor != null) {
+      setState(() {
+        _corSelecionada = selectedColor;
+      });
+    }
   }
 
   Widget _buildBotoesAcao() {

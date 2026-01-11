@@ -330,6 +330,107 @@ class ContasSugeridas {
       'categoria': 'cooperativas',
     },
 
+    // ========== BENEFÍCIOS CORPORATIVOS ==========
+
+    {
+      'nome': 'iFood Benefícios',
+      'banco': 'iFood',
+      'tipo': 'beneficio',
+      'saldo_inicial': 0.0,
+      'cor': '#EA1D2C',
+      'icone': 'card',
+      'logo': 'assets/images/banks/iFood Beneficios.svg',
+      'categoria': 'beneficios',
+    },
+
+    {
+      'nome': 'Alelo Benefícios',
+      'banco': 'Alelo',
+      'tipo': 'beneficio',
+      'saldo_inicial': 0.0,
+      'cor': '#00A859',
+      'icone': 'card',
+      'logo': 'assets/images/banks/Alelo.svg',
+      'categoria': 'beneficios',
+    },
+
+    {
+      'nome': 'VR Benefícios',
+      'banco': 'VR',
+      'tipo': 'beneficio',
+      'saldo_inicial': 0.0,
+      'cor': '#2E7D32',
+      'icone': 'card',
+      'logo': 'assets/images/banks/VR.svg',
+      'categoria': 'beneficios',
+    },
+
+    {
+      'nome': 'Mercado Pago Benefícios',
+      'banco': 'Mercado Pago',
+      'tipo': 'beneficio',
+      'saldo_inicial': 0.0,
+      'cor': '#000000',
+      'icone': 'card',
+      'logo': 'assets/images/banks/Mercado Pago Beneficios.png',
+      'categoria': 'beneficios',
+    },
+
+    {
+      'nome': 'Sodexo Benefícios',
+      'banco': 'Sodexo',
+      'tipo': 'beneficio',
+      'saldo_inicial': 0.0,
+      'cor': '#005EB8',
+      'icone': 'card',
+      'logo': 'assets/images/banks/sodexo.png',
+      'categoria': 'beneficios',
+    },
+
+    {
+      'nome': 'Pluxee Benefícios',
+      'banco': 'Pluxee',
+      'tipo': 'beneficio',
+      'saldo_inicial': 0.0,
+      'cor': '#00A651',
+      'icone': 'card',
+      'logo': 'assets/images/banks/Pluxee.jpeg',
+      'categoria': 'beneficios',
+    },
+
+    {
+      'nome': 'Up Benefícios',
+      'banco': 'Up',
+      'tipo': 'beneficio',
+      'saldo_inicial': 0.0,
+      'cor': '#FF8C00',
+      'icone': 'card',
+      'logo': 'assets/images/banks/Up Beneficios.jpg',
+      'categoria': 'beneficios',
+    },
+
+    {
+      'nome': 'Ben Visa',
+      'banco': 'Ben Visa',
+      'tipo': 'beneficio',
+      'saldo_inicial': 0.0,
+      'cor': '#000000',
+      'icone': 'card',
+      'logo': 'assets/images/banks/Ben Visa.png',
+      'categoria': 'beneficios',
+    },
+
+    {
+      'nome': 'Swile',
+      'banco': 'Swile',
+      'tipo': 'beneficio',
+      'saldo_inicial': 0.0,
+      'cor': '#000000',
+      'icone': 'card',
+      'logo': 'assets/images/banks/Swile.svg',
+      'categoria': 'beneficios',
+    },
+
     // ========== INVESTIMENTOS ==========
 
     {

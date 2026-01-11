@@ -13,6 +13,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 // Imports do projeto mobile
 import '../../shared/theme/app_colors.dart';
@@ -27,6 +28,7 @@ import '../../contas/services/conta_service.dart';
 import '../../../shared/utils/operation_feedback_helper.dart';
 import '../../transacoes/components/tipo_selector.dart';
 import '../../transacoes/components/smart_field.dart';
+import '../../contas/data/contas_sugeridas.dart';
 
 /// ✅ FORMATTER EXATO DO PROJETO ORIGINAL
 class MoneyInputFormatter extends TextInputFormatter {
@@ -738,12 +740,11 @@ class _PagamentoFaturaPageState extends State<PagamentoFaturaPage> {
                       itemBuilder: (context, index) {
                         final contaItem = _contas[index];
                         return ListTile(
-                          leading: Icon(
-                            Icons.account_balance_wallet,
-                            color: AppColors.roxoHeader,
-                          ),
+                          leading: _buildContaIconLogo(contaItem),
                           title: Text(contaItem.nome),
-                          subtitle: Text(CurrencyFormatter.format(contaItem.saldo)),
+                          subtitle: Text(
+                            '${contaItem.banco ?? 'Sem banco'} • ${CurrencyFormatter.format(contaItem.saldo)}',
+                          ),
                           onTap: () => Navigator.pop(context, contaItem),
                         );
                       },
@@ -1044,6 +1045,106 @@ class _PagamentoFaturaPageState extends State<PagamentoFaturaPage> {
         );
       },
     );
+  }
+
+  /// Ícone da conta com logo do banco
+  Widget _buildContaIconLogo(ContaModel conta) {
+    final corConta = conta.cor != null && conta.cor!.isNotEmpty
+        ? Color(int.parse(conta.cor!.replaceAll('#', '0xFF')))
+        : AppColors.roxoHeader;
+
+    // Buscar cor e logo oficial do banco
+    final corOficialBanco = _buscarCorOficialBanco(conta.banco);
+    final corFinal = corOficialBanco ?? corConta;
+    final logo = _buscarLogoBanco(conta.banco);
+
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: corFinal,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Center(
+        child: logo != null && logo.isNotEmpty
+            ? Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                padding: const EdgeInsets.all(2),
+                child: _buildLogoWidget(logo, size: 28),
+              )
+            : Icon(
+                Icons.account_balance_wallet,
+                color: Colors.white,
+                size: 20,
+              ),
+      ),
+    );
+  }
+
+  /// Buscar logo do banco
+  String? _buscarLogoBanco(String? banco) {
+    if (banco == null || banco.isEmpty) return null;
+
+    try {
+      final bancoEncontrado = ContasSugeridas.todas.firstWhere(
+        (contaSugerida) => contaSugerida['banco'] == banco,
+        orElse: () => <String, dynamic>{},
+      );
+      return bancoEncontrado['logo'] as String?;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Buscar cor oficial do banco
+  Color? _buscarCorOficialBanco(String? banco) {
+    if (banco == null || banco.isEmpty) return null;
+
+    try {
+      final bancoEncontrado = ContasSugeridas.todas.firstWhere(
+        (contaSugerida) => contaSugerida['banco'] == banco,
+        orElse: () => <String, dynamic>{},
+      );
+      final corString = bancoEncontrado['cor'] as String?;
+      if (corString != null && corString.isNotEmpty) {
+        return Color(int.parse(corString.replaceAll('#', '0xFF')));
+      }
+    } catch (e) {
+      // Falha silenciosa
+    }
+    return null;
+  }
+
+  /// Widget do logo
+  Widget _buildLogoWidget(String logo, {required double size}) {
+    final fallback = Icon(Icons.account_balance, color: Colors.white, size: size * 0.7);
+
+    try {
+      final lowerLogo = logo.toLowerCase();
+      if (lowerLogo.endsWith('.svg')) {
+        return SvgPicture.asset(
+          logo,
+          width: size,
+          height: size,
+          fit: BoxFit.contain,
+          placeholderBuilder: (context) => fallback,
+        );
+      }
+      return Image.asset(
+        logo,
+        width: size,
+        height: size,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) => fallback,
+      );
+    } catch (e) {
+      return fallback;
+    }
   }
 
   Widget _buildConfirmacaoHeader() {
