@@ -55,9 +55,35 @@ class CartaoService {
       await _localDb.database?.insert('cartoes', cartaoData);
       await _localDb.addToSyncQueue('cartoes', cartaoData['id'] as String, 'INSERT', cartaoData);
 
+      // 🚀 ENVIO DIRETO AO SUPABASE (temporário até sync_queue funcionar)
+      try {
+        await Supabase.instance.client
+          .from('cartoes')
+          .insert({
+            'id': cartaoData['id'],
+            'usuario_id': cartaoData['usuario_id'],
+            'nome': cartaoData['nome'],
+            'bandeira': cartaoData['bandeira'],
+            'banco': cartaoData['banco'],
+            'limite': cartaoData['limite'],
+            'dia_fechamento': cartaoData['dia_fechamento'],
+            'dia_vencimento': cartaoData['dia_vencimento'],
+            'conta_debito_id': cartaoData['conta_debito_id'], // ✅ CAMPO IMPORTANTE!
+            'cor': cartaoData['cor'],
+            'observacoes': cartaoData['observacoes'],
+            'ativo': cartaoData['ativo'] == 1,
+            'created_at': cartaoData['created_at'],
+            'updated_at': cartaoData['updated_at'],
+          });
+
+        log('🚀 Cartão criado enviado para Supabase: ${cartaoData['nome']}');
+      } catch (supabaseError) {
+        log('⚠️ Erro ao criar no Supabase (continua funcionando offline): $supabaseError');
+      }
+
       final cartao = CartaoModel.fromJson(cartaoData);
       log('✅ Cartão criado: ${cartao.nome} - Limite: ${cartao.limiteFormatado}');
-      
+
       return cartao;
     } catch (e) {
       log('❌ Erro ao criar cartão: $e');
@@ -166,16 +192,49 @@ class CartaoService {
         syncStatus: 'pending',
       );
 
+      // Criar mapa sem campo 'icone' para o update local
+      final dadosParaUpdate = Map<String, dynamic>.from(cartaoAtualizado.toJson());
+      dadosParaUpdate.remove('icone'); // Remove campo que não existe na tabela local
+
       await _localDb.database?.update(
         'cartoes',
-        cartaoAtualizado.toJson(),
+        dadosParaUpdate,
         where: 'id = ? AND usuario_id = ?',
         whereArgs: [cartao.id, userId],
       );
 
       await _localDb.addToSyncQueue('cartoes', cartao.id, 'UPDATE', cartaoAtualizado.toJson());
+
+      // 🚀 ENVIO DIRETO AO SUPABASE (temporário até sync_queue funcionar)
+      try {
+        log('🔄 Enviando cartão UPDATE para Supabase: ${cartao.nome}');
+
+        await Supabase.instance.client
+          .from('cartoes')
+          .update({
+            'nome': cartaoAtualizado.nome,
+            'bandeira': cartaoAtualizado.bandeira,
+            'banco': cartaoAtualizado.banco,
+            'limite': cartaoAtualizado.limite,
+            'dia_fechamento': cartaoAtualizado.diaFechamento,
+            'dia_vencimento': cartaoAtualizado.diaVencimento,
+            'conta_debito_id': cartaoAtualizado.contaDebitoId, // ✅ CAMPO IMPORTANTE!
+            'cor': cartaoAtualizado.cor,
+            'observacoes': cartaoAtualizado.observacoes,
+            'ativo': cartaoAtualizado.ativo,
+            'updated_at': cartaoAtualizado.updatedAt.toIso8601String(),
+          })
+          .eq('id', cartao.id)
+          .eq('usuario_id', userId);
+
+        log('✅ Cartão atualizado no Supabase: ${cartao.nome}');
+      } catch (supabaseError) {
+        log('⚠️ Erro ao enviar UPDATE para Supabase: $supabaseError');
+        log('📱 Continuando funcionando offline...');
+      }
+
       log('✅ Cartão atualizado: ${cartao.nome}');
-      
+
       return true;
     } catch (e) {
       log('❌ Erro ao atualizar cartão: $e');
@@ -307,6 +366,31 @@ class CartaoService {
     return erros;
   }
 
+  /// ✅ 9.5. GERAR NOME ÚNICO COM SUFIXOS (2), (3), etc.
+  Future<String> gerarNomeUnico(String nomeBase, {String? cartaoIdExcluir}) async {
+    String nomeTestado = nomeBase;
+    int sufixo = 1;
+
+    // Testar nome original primeiro
+    bool duplicado = await verificarNomeDuplicado(nomeTestado, cartaoIdExcluir: cartaoIdExcluir);
+
+    // Se não há duplicata, retorna nome original
+    if (!duplicado) {
+      return nomeTestado;
+    }
+
+    // Se há duplicata, tentar com sufixos
+    while (duplicado && sufixo <= 99) { // Limite de 99 sufixos
+      sufixo++;
+      nomeTestado = '$nomeBase ($sufixo)';
+      duplicado = await verificarNomeDuplicado(nomeTestado, cartaoIdExcluir: cartaoIdExcluir);
+      log('🔄 Testando nome: "$nomeTestado" - Duplicado: $duplicado');
+    }
+
+    log('✅ Nome único gerado: "$nomeTestado"');
+    return nomeTestado;
+  }
+
   /// ✅ 10. VERIFICAR NOME DUPLICADO
   Future<bool> verificarNomeDuplicado(String nome, {String? cartaoIdExcluir}) async {
     try {
@@ -321,12 +405,18 @@ class CartaoService {
         whereArgs.add(cartaoIdExcluir);
       }
 
+      log('🔍 Verificando nome duplicado: "$nome"');
+
       final result = await _localDb.database?.query(
         'cartoes',
         where: where,
         whereArgs: whereArgs,
         limit: 1,
       ) ?? [];
+
+      if (result.isNotEmpty) {
+        log('📝 Nome duplicado encontrado: ${result.first['nome']}');
+      }
 
       return result.isNotEmpty;
     } catch (e) {

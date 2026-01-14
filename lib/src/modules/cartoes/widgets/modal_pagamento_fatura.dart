@@ -7,6 +7,7 @@ import '../../contas/models/conta_model.dart';
 import '../../contas/services/conta_service.dart';
 import '../../contas/data/contas_sugeridas.dart';
 import '../../shared/utils/currency_formatter.dart';
+import '../../../shared/widgets/modal_selecao_conta.dart';
 
 class ModalPagamentoFatura extends StatefulWidget {
   final bool isOpen;
@@ -246,78 +247,18 @@ class _ModalPagamentoFaturaState extends State<ModalPagamentoFatura> {
     );
   }
 
-  /// Selecionar conta com modal que mostra logos
+  /// Selecionar conta usando modal elegante reutilizável
   Future<void> _selecionarConta() async {
     if (_contas.isEmpty) return;
 
-    final conta = await showModalBottomSheet<ContaModel>(
+    final conta = await ModalSelecaoConta.mostrar(
       context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.6,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: Column(
-          children: [
-            // Handle do modal
-            Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(top: 12, bottom: 8),
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-
-            // Título
-            const Padding(
-              padding: EdgeInsets.all(16),
-              child: Text(
-                'Selecionar Conta para Pagamento',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-
-            // Lista de contas
-            Expanded(
-              child: ListView.builder(
-                itemCount: _contas.length,
-                itemBuilder: (context, index) {
-                  final conta = _contas[index];
-                  final isSelected = _contaSelecionada?.id == conta.id;
-
-                  return Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
-                      color: isSelected ? Colors.green[50] : null,
-                      border: isSelected ? Border.all(color: Colors.green) : null,
-                    ),
-                    child: ListTile(
-                      leading: _buildContaIcon(conta),
-                      title: Text(conta.nome),
-                      subtitle: Text(
-                        '${conta.banco ?? 'Sem banco'} • ${CurrencyFormatter.format(conta.saldo)}',
-                      ),
-                      trailing: isSelected
-                          ? const Icon(Icons.check_circle, color: Colors.green)
-                          : null,
-                      onTap: () => Navigator.of(context).pop(conta),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
+      contas: _contas,
+      contaSelecionada: _contaSelecionada,
+      titulo: 'Selecionar Conta para Pagamento',
+      subtitulo: null,
+      mostrarSaldo: true,
+      permitirNenhuma: false,
     );
 
     if (conta != null) {

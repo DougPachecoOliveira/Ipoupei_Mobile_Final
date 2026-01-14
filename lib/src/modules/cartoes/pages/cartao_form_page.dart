@@ -12,6 +12,8 @@
 // ✅ Validação em tempo real
 // ✅ Seleção de bandeiras e cores
 
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/cartao_model.dart';
@@ -20,6 +22,7 @@ import '../../contas/models/conta_model.dart';
 import '../../contas/services/conta_service.dart';
 // Removido import do SmartField para não quebrar outros modais
 import '../../shared/theme/app_colors.dart';
+import '../../../shared/widgets/modal_selecao_conta.dart';
 import '../../../shared/components/loading/ipoupei_loading_system.dart';
 import '../../../shared/components/color_picker/advanced_color_picker.dart';
 import '../../../shared/components/color_picker/models/color_picker_config.dart';
@@ -261,28 +264,30 @@ class _CartaoFormPageState extends State<CartaoFormPage> {
            _contaDebitoId != cartao.contaDebitoId || // ✅ Já está aqui
            _corSelecionada != cartao.cor;
            
-    // Debug log para verificar mudanças
+    // Debug log para verificar mudanças apenas em desenvolvimento
     if (widget.modo == 'editar' && _contaDebitoId != cartao.contaDebitoId) {
-      print('🔍 DEBUG: Conta débito mudou - Atual: $_contaDebitoId, Original: ${cartao.contaDebitoId}');
+      // Debug info disponível se necessário
     }
     
     return resultado;
   }
 
   Future<void> _salvarCartao() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
 
     // ✅ VALIDAÇÕES AVANÇADAS DE REGRAS DE NEGÓCIO
     final diaFechamento = int.tryParse(_diaFechamentoController.text) ?? 0;
     final diaVencimento = int.tryParse(_diaVencimentoController.text) ?? 0;
-    
+
     final validationErrors = <String>[];
-    
+
     // Regra 0: Bandeira é obrigatória
     if (_bandeiraSelecionada == null || _bandeiraSelecionada!.isEmpty) {
       validationErrors.add('Selecione a bandeira do cartão');
     }
-    
+
     // Regra 1: Dia de fechamento não pode ser igual ao dia de vencimento
     if (diaFechamento == diaVencimento) {
       validationErrors.add('O dia de fechamento não pode ser igual ao dia de vencimento');
@@ -418,14 +423,17 @@ class _CartaoFormPageState extends State<CartaoFormPage> {
         diaVencimento: int.tryParse(_diaVencimentoController.text) ?? 0,
       );
 
-      // Verificar nome duplicado
-      final nomeDuplicado = await _cartaoService.verificarNomeDuplicado(
-        _nomeController.text,
+      // ✅ Gerar nome único automaticamente se houver duplicata
+      final nomeOriginal = _nomeController.text.trim();
+      final nomeUnico = await _cartaoService.gerarNomeUnico(
+        nomeOriginal,
         cartaoIdExcluir: widget.cartao?.id,
       );
 
-      if (nomeDuplicado) {
-        _erros['nome'] = 'Já existe um cartão com este nome';
+      // Se o nome foi alterado para ser único, atualizar o campo
+      if (nomeUnico != nomeOriginal) {
+        _nomeController.text = nomeUnico;
+        log('📝 Nome ajustado para: "$nomeUnico"');
       }
 
       if (_erros.isNotEmpty) {
@@ -435,31 +443,31 @@ class _CartaoFormPageState extends State<CartaoFormPage> {
 
       // Criar ou atualizar
       CartaoModel resultado;
-      
+
       if (widget.modo == 'criar') {
         resultado = await _cartaoService.criarCartao(
-          nome: _nomeController.text.trim(),
+          nome: nomeUnico, // ✅ Usar nome único gerado
           limite: limite,
           diaFechamento: int.parse(_diaFechamentoController.text),
           diaVencimento: int.parse(_diaVencimentoController.text),
           bandeira: _bandeiraSelecionada,
           contaDebitoId: _contaDebitoId,
           cor: _corSelecionada,
-          observacoes: _observacoesController.text.trim().isEmpty 
-              ? null 
+          observacoes: _observacoesController.text.trim().isEmpty
+              ? null
               : _observacoesController.text.trim(),
         );
       } else {
         final cartaoAtualizado = widget.cartao!.copyWith(
-          nome: _nomeController.text.trim(),
+          nome: nomeUnico, // ✅ Usar nome único gerado
           limite: limite,
           diaFechamento: int.parse(_diaFechamentoController.text),
           diaVencimento: int.parse(_diaVencimentoController.text),
           bandeira: _bandeiraSelecionada,
           contaDebitoId: _contaDebitoId,
           cor: _corSelecionada,
-          observacoes: _observacoesController.text.trim().isEmpty 
-              ? null 
+          observacoes: _observacoesController.text.trim().isEmpty
+              ? null
               : _observacoesController.text.trim(),
         );
 
@@ -1356,8 +1364,8 @@ class _CartaoFormPageState extends State<CartaoFormPage> {
     );
   }
 
-  /// Selector de conta padrão (Bottom Sheet)
-  void _showContaPadraoSelector() {
+  /// Selector de conta padrão usando modal elegante
+  Future<void> _showContaPadraoSelector() async {
     if (_contas.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Nenhuma conta disponível')),
@@ -1365,103 +1373,37 @@ class _CartaoFormPageState extends State<CartaoFormPage> {
       return;
     }
 
-    showModalBottomSheet(
+    // Buscar conta atualmente selecionada
+    ContaModel? contaAtual;
+    if (_contaDebitoId != null) {
+      try {
+        contaAtual = _contas.firstWhere((c) => c.id == _contaDebitoId);
+      } catch (e) {
+        contaAtual = null;
+      }
+    }
+
+    final conta = await ModalSelecaoConta.mostrar(
       context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.7,
-        maxChildSize: 0.9,
-        minChildSize: 0.3,
-        builder: (context, scrollController) => Container(
-          padding: const EdgeInsets.all(16),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: Column(
-            children: [
-              // Handle drag
-              Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(
-                  color: Colors.grey.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const Text(
-                'Conta Padrão para Pagamento',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Esta conta será sugerida automaticamente para pagamentos da fatura',
-                style: TextStyle(fontSize: 14, color: Colors.grey),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              
-              Expanded(
-                child: ListView(
-                  controller: scrollController,
-                  children: [
-                    // Opção "Nenhuma"
-                    ListTile(
-                      leading: const Icon(Icons.block, color: Colors.grey),
-                      title: const Text('Nenhuma conta padrão'),
-                      trailing: _contaSelecionada == null
-                          ? Icon(Icons.check, color: AppColors.roxoHeader)
-                          : null,
-                      onTap: () {
-                        setState(() {
-                          _contaSelecionada = null;
-                          _contaDebitoId = null; // ✅ Sincronizar para salvamento
-                        });
-                        Navigator.pop(context);
-                      },
-                    ),
-                    
-                    if (_contas.isNotEmpty) const Divider(),
-                    
-                    // Contas disponíveis
-                    ..._contas.map((conta) {
-                      final isSelected = _contaSelecionada == conta.id;
-                      return ListTile(
-                        leading: CircleAvatar(
-                          radius: 12,
-                          backgroundColor: conta.cor != null
-                              ? Color(int.parse(conta.cor!.replaceAll('#', '0xFF')))
-                              : AppColors.roxoHeader,
-                          child: conta.cor == null 
-                              ? const Icon(Icons.account_balance, size: 12, color: Colors.white)
-                              : null,
-                        ),
-                        title: Text(conta.nome),
-                        subtitle: conta.banco != null ? Text(conta.banco!) : null,
-                        trailing: isSelected 
-                            ? Icon(Icons.check, color: AppColors.roxoHeader)
-                            : null,
-                        onTap: () {
-                          setState(() {
-                            _contaSelecionada = conta.id;
-                            _contaDebitoId = conta.id; // ✅ Sincronizar para salvamento
-                          });
-                          Navigator.pop(context);
-                        },
-                      );
-                    }).toList(),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+      contas: _contas,
+      contaSelecionada: contaAtual,
+      titulo: 'Conta Padrão para Pagamento',
+      subtitulo: 'Esta conta será sugerida automaticamente para pagamentos da fatura',
+      mostrarSaldo: true,
+      permitirNenhuma: true,
+      textoNenhuma: 'Nenhuma conta padrão',
     );
+
+    // Atualizar seleção
+    setState(() {
+      if (conta == null) {
+        _contaSelecionada = null;
+        _contaDebitoId = null;
+      } else {
+        _contaSelecionada = conta.id;
+        _contaDebitoId = conta.id;
+      }
+    });
   }
 
   /// Detectar alterações específicas
