@@ -1,11 +1,11 @@
 // 🏦 Gestão Conta Page - iPoupei Mobile
-// 
+//
 // Página de gestão completa da conta com insights e métricas
 // UX idêntica ao iPoupei Device mas usando nossos stores
-// 
+//
 // Features:
 // - AppBar com seletor de mês
-// - Card da conta com botões de ação  
+// - Card da conta com botões de ação
 // - Métricas resumo (3 cards)
 // - Insights e dicas
 // - Gráficos (evolução, entradas vs saídas, categorias)
@@ -35,10 +35,7 @@ import '../../../shared/components/navigation/app_bottom_navigation.dart';
 class GestaoContaPage extends StatefulWidget {
   final ContaModel conta;
 
-  const GestaoContaPage({
-    super.key,
-    required this.conta,
-  });
+  const GestaoContaPage({super.key, required this.conta});
 
   @override
   State<GestaoContaPage> createState() => _GestaoContaPageState();
@@ -48,10 +45,10 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
   DateTime _mesAtual = DateTime.now();
   bool _carregando = true;
   String? _erro;
-  
+
   // ✅ CONTA ATUAL (atualizada após edições)
   late ContaModel _contaAtual;
-  
+
   // 📊 DADOS MOCKADOS (em produção viriam dos nossos stores)
   double _saldoMedio = 0.0;
   double _maiorEntrada = 0.0;
@@ -83,41 +80,47 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
   @override
   void dispose() {
     // 🧹 Remover listener
-    ContasRefreshNotifier.instance.refreshTrigger.removeListener(_onContasMudaram);
+    ContasRefreshNotifier.instance.refreshTrigger.removeListener(
+      _onContasMudaram,
+    );
     super.dispose();
   }
 
   /// 🔔 Callback quando contas mudaram (transação efetivada/desefetivada)
   void _onContasMudaram() {
     if (!mounted) return; // Evita erro se página foi fechada
-    debugPrint('🔔 GestaoContaPage: recebeu notificação de mudança, recarregando...');
+    debugPrint(
+      '🔔 GestaoContaPage: recebeu notificação de mudança, recarregando...',
+    );
     _carregarDados();
   }
 
   /// 📡 CARREGAR TODOS OS DADOS DA GESTÃO DA CONTA - TOLERANTE A FALHAS
   Future<void> _carregarDados() async {
     setState(() => _carregando = true);
-    
+
     // CORREÇÃO CRÍTICA: Não usar Future.wait() que falha tudo se um der erro
     // Cada carregamento é independente e pode falhar sem afetar os outros
-    
+
     final futures = [
       _recarregarContaAtual(), // ✅ PRIMEIRO: Recarrega dados da conta
       _carregarMetricasResumo(),
-      _carregarEvolucaoSaldo(), 
+      _carregarEvolucaoSaldo(),
       _carregarEntradasVsSaidas(),
       _carregarGastosPorCategoria(),
     ];
-    
+
     // Aguardar todos, mas capturar erros individuais
     await Future.wait(
-      futures.map((future) => future.catchError((error) {
-        debugPrint('⚠️ Erro em carregamento individual: $error');
-        // Retorna void para não quebrar o Future.wait
-        return;
-      })),
+      futures.map(
+        (future) => future.catchError((error) {
+          debugPrint('⚠️ Erro em carregamento individual: $error');
+          // Retorna void para não quebrar o Future.wait
+          return;
+        }),
+      ),
     );
-    
+
     setState(() {
       _carregando = false;
       _erro = null; // Mesmo com erros parciais, mostra o que conseguiu carregar
@@ -128,28 +131,28 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
   Future<void> _recarregarContaAtual() async {
     try {
       debugPrint('🔄 Recarregando dados da conta ${_contaAtual.nome}...');
-      
+
       // Busca contas atualizadas
       final contas = await ContaService.instance.fetchContas();
-      
+
       // Busca a conta atualizada
       final contaAtualizada = contas.firstWhere(
         (c) => c.id == _contaAtual.id,
         orElse: () => _contaAtual,
       );
-      
+
       // Atualiza a conta atual se houve mudanças
       if (contaAtualizada.contaPrincipal != _contaAtual.contaPrincipal ||
           contaAtualizada.nome != _contaAtual.nome ||
           contaAtualizada.saldo != _contaAtual.saldo) {
-        
         setState(() {
           _contaAtual = contaAtualizada;
         });
-        
-        debugPrint('✅ Conta atualizada: Principal=${contaAtualizada.contaPrincipal}, Nome=${contaAtualizada.nome}');
+
+        debugPrint(
+          '✅ Conta atualizada: Principal=${contaAtualizada.contaPrincipal}, Nome=${contaAtualizada.nome}',
+        );
       }
-      
     } catch (e) {
       debugPrint('⚠️ Erro ao recarregar conta: $e');
     }
@@ -158,24 +161,28 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
   /// 📈 CARREGAR MÉTRICAS DE RESUMO (DADOS REAIS)
   Future<void> _carregarMetricasResumo() async {
     try {
-      debugPrint('🔄 Carregando métricas para conta ${_contaAtual.nome} (ID: ${_contaAtual.id})');
-      
+      debugPrint(
+        '🔄 Carregando métricas para conta ${_contaAtual.nome} (ID: ${_contaAtual.id})',
+      );
+
       final metricas = await ContaAnalyticsService.instance.fetchMetricasResumo(
         contaId: _contaAtual.id,
         mesAtual: _mesAtual,
       );
-      
+
       debugPrint('📊 Métricas recebidas: $metricas');
-      
+
       // Aceita zeros como dados válidos (não há transações = zero)
       _saldoMedio = metricas['saldoMedio'] ?? 0.0;
       _maiorEntrada = metricas['maiorEntrada'] ?? 0.0;
       _maiorSaida = metricas['maiorSaida'] ?? 0.0;
       _entradaMesAtual = metricas['entradaMesAtual'] ?? 0.0;
       _saidaMesAtual = metricas['saidaMesAtual'] ?? 0.0;
-      
-      debugPrint('✅ Dados carregados - Saldo médio: R\$ ${_saldoMedio.toStringAsFixed(2)}, Maior entrada: R\$ ${_maiorEntrada.toStringAsFixed(2)}, Maior saída: R\$ ${_maiorSaida.toStringAsFixed(2)}');
-      
+
+      debugPrint(
+        '✅ Dados carregados - Saldo médio: R\$ ${_saldoMedio.toStringAsFixed(2)}, Maior entrada: R\$ ${_maiorEntrada.toStringAsFixed(2)}, Maior saída: R\$ ${_maiorSaida.toStringAsFixed(2)}',
+      );
+
       if (_saldoMedio == 0.0 && _maiorEntrada == 0.0 && _maiorSaida == 0.0) {
         debugPrint('ℹ️ Conta sem movimentação - exibindo zeros');
       }
@@ -194,56 +201,70 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
   Future<void> _carregarEvolucaoSaldo() async {
     try {
       debugPrint('📈 Carregando evolução do saldo...');
-      
-      final dadosEvolucao = await ContaAnalyticsService.instance.fetchEvolucaoSaldo(
-        contaId: _contaAtual.id,
-        mesAtual: _mesAtual,
-      );
-      
+
+      final dadosEvolucao = await ContaAnalyticsService.instance
+          .fetchEvolucaoSaldo(contaId: _contaAtual.id, mesAtual: _mesAtual);
+
       debugPrint('🔍 DEBUGANDO EVOLUÇÃO: dadosEvolucao = $dadosEvolucao');
       debugPrint('🔍 DEBUGANDO EVOLUÇÃO: length = ${dadosEvolucao.length}');
-      
+
       setState(() {
         _evolucaoSaldo.clear();
         _evolucaoSaldo.addAll(dadosEvolucao);
       });
       debugPrint('✅ Evolução carregada: ${dadosEvolucao.length} registros');
-      
+
       // Se não há dados de evolução, criar dados de 12 meses zerados para mostrar no gráfico
       if (_evolucaoSaldo.isEmpty) {
         final agora = DateTime.now();
-        _evolucaoSaldo.addAll(List.generate(12, (i) {
-          final mes = DateTime(agora.year, agora.month - (11 - i), 1);
-          return {
-            'mes': _formatarMesAbrev(mes),
-            'saldo': 0.0, // Saldo zero para cada mês
-            'isAtual': i == 11, // Último mês é atual
-          };
-        }));
-        debugPrint('ℹ️ Sem movimentação histórica - mostrando linha zero dos últimos 12 meses');
+        _evolucaoSaldo.addAll(
+          List.generate(12, (i) {
+            final mes = DateTime(agora.year, agora.month - (11 - i), 1);
+            return {
+              'mes': _formatarMesAbrev(mes),
+              'saldo': 0.0, // Saldo zero para cada mês
+              'isAtual': i == 11, // Último mês é atual
+            };
+          }),
+        );
+        debugPrint(
+          'ℹ️ Sem movimentação histórica - mostrando linha zero dos últimos 12 meses',
+        );
       }
     } catch (e) {
       debugPrint('❌ Erro ao carregar evolução do saldo: $e');
-      
+
       // Em caso de erro, mostrar linha zero dos últimos 12 meses
       _evolucaoSaldo.clear();
       final agora = DateTime.now();
-      _evolucaoSaldo.addAll(List.generate(12, (i) {
-        final mes = DateTime(agora.year, agora.month - (11 - i), 1);
-        return {
-          'mes': _formatarMesAbrev(mes),
-          'saldo': 0.0, // Saldo zero por erro
-          'isAtual': i == 11, // Último mês é atual
-        };
-      }));
+      _evolucaoSaldo.addAll(
+        List.generate(12, (i) {
+          final mes = DateTime(agora.year, agora.month - (11 - i), 1);
+          return {
+            'mes': _formatarMesAbrev(mes),
+            'saldo': 0.0, // Saldo zero por erro
+            'isAtual': i == 11, // Último mês é atual
+          };
+        }),
+      );
     }
   }
 
   /// 📅 FORMATAR MÊS ABREVIADO
   String _formatarMesAbrev(DateTime data) {
     final meses = [
-      'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
-      'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
+      'Jan',
+      'Fev',
+      'Mar',
+      'Abr',
+      'Mai',
+      'Jun',
+      'Jul',
+      'Ago',
+      'Set',
+      'Out',
+      'Nov',
+      'Dez',
     ];
     return '${meses[data.month - 1]}/${data.year.toString().substring(2)}';
   }
@@ -252,53 +273,37 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
   Future<void> _carregarEntradasVsSaidas() async {
     try {
       debugPrint('💰 Carregando entradas vs saídas...');
-      
-      final dadosEntradas = await ContaAnalyticsService.instance.fetchEntradasVsSaidas(
-        contaId: _contaAtual.id,
-        mesAtual: _mesAtual,
-      );
-      
+
+      final dadosEntradas = await ContaAnalyticsService.instance
+          .fetchEntradasVsSaidas(contaId: _contaAtual.id, mesAtual: _mesAtual);
+
       debugPrint('🔍 DEBUGANDO ENTRADAS: dadosEntradas = $dadosEntradas');
       debugPrint('🔍 DEBUGANDO ENTRADAS: length = ${dadosEntradas.length}');
-      
+
       setState(() {
         _entradasVsSaidas.clear();
         _entradasVsSaidas.addAll(dadosEntradas);
       });
-      debugPrint('✅ Entradas vs saídas carregadas: ${dadosEntradas.length} registros');
-      
+      debugPrint(
+        '✅ Entradas vs saídas carregadas: ${dadosEntradas.length} registros',
+      );
+
       // Se não há dados, criar entradas zeradas para mostrar no gráfico
       if (_entradasVsSaidas.isEmpty) {
         _entradasVsSaidas.addAll([
-          {
-            'tipo': 'Entradas',
-            'valor': 0.0,
-            'cor': '#4CAF50'
-          },
-          {
-            'tipo': 'Saídas', 
-            'valor': 0.0,
-            'cor': '#F44336'
-          }
+          {'tipo': 'Entradas', 'valor': 0.0, 'cor': '#4CAF50'},
+          {'tipo': 'Saídas', 'valor': 0.0, 'cor': '#F44336'},
         ]);
         debugPrint('ℹ️ Sem transações no mês - mostrando zeros');
       }
     } catch (e) {
       debugPrint('❌ Erro ao carregar entradas vs saídas: $e');
-      
+
       // Em caso de erro, mostrar zeros
       _entradasVsSaidas.clear();
       _entradasVsSaidas.addAll([
-        {
-          'tipo': 'Entradas',
-          'valor': 0.0,
-          'cor': '#4CAF50'
-        },
-        {
-          'tipo': 'Saídas', 
-          'valor': 0.0,
-          'cor': '#F44336'
-        }
+        {'tipo': 'Entradas', 'valor': 0.0, 'cor': '#4CAF50'},
+        {'tipo': 'Saídas', 'valor': 0.0, 'cor': '#F44336'},
       ]);
     }
   }
@@ -307,13 +312,16 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
   Future<void> _carregarGastosPorCategoria() async {
     try {
       debugPrint('🏷️ Carregando gastos por categoria...');
-      
-      _gastosPorCategoria = await ContaAnalyticsService.instance.fetchGastosPorCategoria(
-        contaId: _contaAtual.id,
-        mesAtual: _mesAtual,
+
+      _gastosPorCategoria = await ContaAnalyticsService.instance
+          .fetchGastosPorCategoria(
+            contaId: _contaAtual.id,
+            mesAtual: _mesAtual,
+          );
+      debugPrint(
+        '✅ Gastos por categoria carregados: ${_gastosPorCategoria.length} categorias',
       );
-      debugPrint('✅ Gastos por categoria carregados: ${_gastosPorCategoria.length} categorias');
-      
+
       // Se não há dados, criar categorias zeradas para mostrar no gráfico
       if (_gastosPorCategoria.isEmpty) {
         _gastosPorCategoria = [
@@ -327,7 +335,7 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
       }
     } catch (e) {
       debugPrint('❌ Erro ao carregar gastos por categoria: $e');
-      
+
       // Em caso de erro, mostrar zeros
       _gastosPorCategoria = [
         CategoriaValor(nome: 'Alimentação', valor: 0.0, color: '#FF9800'),
@@ -401,7 +409,7 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
         return CorrecaoSaldoPage(conta: _contaAtual);
       },
     );
-    
+
     if (resultado == true) {
       await _carregarDados();
     }
@@ -412,7 +420,9 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
     navigationContext.setContaSelecionada(_contaAtual.id);
     navigationContext.setMesSelecionado(_mesAtual);
 
-    debugPrint('🧭 Navegando para transações da conta: ${_contaAtual.nome} (${_contaAtual.id})');
+    debugPrint(
+      '🧭 Navegando para transações da conta: ${_contaAtual.nome} (${_contaAtual.id})',
+    );
     debugPrint('🧭 Mês selecionado: ${_mesAtual.month}/${_mesAtual.year}');
 
     Navigator.push(
@@ -458,7 +468,9 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Arquivar Conta'),
-        content: Text('Deseja arquivar a conta "${_contaAtual.nome}"?\n\nEla ficará oculta das visualizações principais mas pode ser restaurada a qualquer momento.'),
+        content: Text(
+          'Deseja arquivar a conta "${_contaAtual.nome}"?\n\nEla ficará oculta das visualizações principais mas pode ser restaurada a qualquer momento.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -480,11 +492,16 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
 
         // Volta para a página anterior (lista de contas)
         if (mounted) {
-          Navigator.pop(context, true); // Retorna true para indicar que houve mudança
+          Navigator.pop(
+            context,
+            true,
+          ); // Retorna true para indicar que houve mudança
 
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('📦 Conta "${_contaAtual.nome}" arquivada com sucesso!'),
+              content: Text(
+                '📦 Conta "${_contaAtual.nome}" arquivada com sucesso!',
+              ),
               backgroundColor: Colors.orange,
             ),
           );
@@ -503,19 +520,26 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
   }
 
   void _navegarParaArquivadas() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => const ContasArquivadasPage(),
-      ),
-    ).then((_) {
-      // Quando voltar, pode recarregar se necessário
-      _carregarDados();
-    });
+    Navigator.of(context)
+        .push(
+          MaterialPageRoute(builder: (context) => const ContasArquivadasPage()),
+        )
+        .then((_) {
+          // Quando voltar, pode recarregar se necessário
+          _carregarDados();
+        });
   }
 
   /// 📊 Constrói seções do PieChart com animações de toque
   List<PieChartSectionData> _buildPieChartSections() {
-    final cores = [Colors.blue, Colors.green, Colors.orange, Colors.red, Colors.purple, Colors.teal];
+    final cores = [
+      Colors.blue,
+      Colors.green,
+      Colors.orange,
+      Colors.red,
+      Colors.purple,
+      Colors.teal,
+    ];
     final total = _gastosPorCategoria.fold(0.0, (sum, cat) => sum + cat.valor);
 
     return _gastosPorCategoria.take(6).map((categoria) {
@@ -534,13 +558,15 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
           fontSize: isTouched ? 14 : 12,
           fontWeight: FontWeight.bold,
           color: Colors.white,
-          shadows: isTouched ? [
-            const Shadow(
-              color: Colors.black45,
-              offset: Offset(1, 1),
-              blurRadius: 2,
-            ),
-          ] : null,
+          shadows: isTouched
+              ? [
+                  const Shadow(
+                    color: Colors.black45,
+                    offset: Offset(1, 1),
+                    blurRadius: 2,
+                  ),
+                ]
+              : null,
         ),
         borderSide: BorderSide(
           color: isTouched ? Colors.white : Colors.transparent,
@@ -557,44 +583,36 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
       appBar: _buildAppBarOriginal(),
       body: _carregando
           ? const Center(
-              child: CircularProgressIndicator(
-                color: AppColors.tealPrimary,
-              ),
+              child: CircularProgressIndicator(color: AppColors.tealPrimary),
             )
           : _erro != null
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.error_outline,
-                        size: 64,
-                        color: Colors.grey.shade400,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        _erro!,
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey.shade600,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 24),
-                      ElevatedButton(
-                        onPressed: _carregarDados,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.tealPrimary,
-                        ),
-                        child: const Text('Tentar novamente'),
-                      ),
-                    ],
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: Colors.grey.shade400,
                   ),
-                )
-              : RefreshIndicator(
-                onRefresh: _carregarDados,
-                child: _buildBody(),
+                  const SizedBox(height: 16),
+                  Text(
+                    _erro!,
+                    style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: _carregarDados,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.tealPrimary,
+                    ),
+                    child: const Text('Tentar novamente'),
+                  ),
+                ],
               ),
+            )
+          : RefreshIndicator(onRefresh: _carregarDados, child: _buildBody()),
       bottomNavigationBar: AppBottomNavigation(
         currentIndex: 0, // Contas é o índice 0
         onTap: _onBottomNavigationTap,
@@ -641,7 +659,11 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.chevron_right, color: Colors.white, size: 28),
+            icon: const Icon(
+              Icons.chevron_right,
+              color: Colors.white,
+              size: 28,
+            ),
             onPressed: _proximoMes,
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
@@ -669,7 +691,7 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
               constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
             ),
           ),
-          
+
           // Título
           const Text(
             'Gestão da Conta',
@@ -679,20 +701,27 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
               fontWeight: FontWeight.w600,
             ),
           ),
-          
+
           const Spacer(),
-          
+
           // Seletor de mês integrado
           Row(
             children: [
               IconButton(
-                icon: const Icon(Icons.chevron_left, color: Colors.white, size: 28),
+                icon: const Icon(
+                  Icons.chevron_left,
+                  color: Colors.white,
+                  size: 28,
+                ),
                 onPressed: _mesAnterior,
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(16),
@@ -707,7 +736,11 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.chevron_right, color: Colors.white, size: 28),
+                icon: const Icon(
+                  Icons.chevron_right,
+                  color: Colors.white,
+                  size: 28,
+                ),
                 onPressed: _proximoMes,
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
@@ -726,22 +759,56 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
         children: [
           // Card da conta + ações
           _buildCardContaComAcoes(),
-          
+
           const SizedBox(height: 12),
-          
+
           // 3 quadradinhos de resumo
           _buildResumoMetricas(),
-          
+
           const SizedBox(height: 12),
-          
+
           // Card de insights + dicas
           _buildCardInsights(),
-          
+
           const SizedBox(height: 12),
-          
+
           // Gráficos
           _buildGraficos(),
-          
+
+          // Botão Voltar
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.tealPrimary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.arrow_back, size: 20),
+                    SizedBox(width: 8),
+                    Text(
+                      'Voltar às Contas',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
           const SizedBox(height: 32),
         ],
       ),
@@ -773,7 +840,7 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
             child: _buildCardConta(),
           ),
-          
+
           // Chips de ações (sem padding lateral)
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
@@ -823,93 +890,95 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
             ),
             child: Row(
               children: [
-              // 🎨 FAIXA LATERAL COLORIDA (como no contas_page)
-              Container(
-                width: 37,
-                decoration: BoxDecoration(
-                  color: cor, // Cor da conta
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(12),
-                    bottomLeft: Radius.circular(12),
+                // 🎨 FAIXA LATERAL COLORIDA (como no contas_page)
+                Container(
+                  width: 37,
+                  decoration: BoxDecoration(
+                    color: cor, // Cor da conta
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(12),
+                      bottomLeft: Radius.circular(12),
+                    ),
+                  ),
+                  child: Center(
+                    child: Icon(
+                      _iconFromSlug(_contaAtual.tipo),
+                      color: Colors.white,
+                      size: 17,
+                    ),
                   ),
                 ),
-                child: Center(
-                  child: Icon(
-                    _iconFromSlug(_contaAtual.tipo),
-                    color: Colors.white,
-                    size: 17,
-                  ),
-                ),
-              ),
 
-              // Conteúdo principal
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(11),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Primeira linha: Nome + Saldo
-                      Expanded(
-                        child: Row(
+                // Conteúdo principal
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(11),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Primeira linha: Nome + Saldo
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  _contaAtual.nome,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.cinzaEscuro,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                CurrencyFormatter.format(_contaAtual.saldo),
+                                style: TextStyle(
+                                  fontSize: 21,
+                                  fontWeight: FontWeight.bold,
+                                  color: saldoNegativo
+                                      ? Colors.red[600]
+                                      : Colors.green[600],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // Segunda linha: Banco + Menu
+                        Row(
                           children: [
                             Expanded(
                               child: Text(
-                                _contaAtual.nome,
+                                '${_contaAtual.banco ?? 'Sem banco'} • Conta',
                                 style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.cinzaEscuro,
-                ),
+                                  fontSize: 13,
+                                  color: AppColors.cinzaTexto,
+                                ),
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            const SizedBox(width: 8),
-                            Text(
-                              CurrencyFormatter.format(_contaAtual.saldo),
-                              style: TextStyle(
-                                fontSize: 21,
-                                fontWeight: FontWeight.bold,
-                                color: saldoNegativo ? Colors.red[600] : Colors.green[600],
+
+                            // Menu três pontinhos
+                            InkWell(
+                              borderRadius: BorderRadius.circular(16),
+                              onTap: () => _mostrarMenuConta(),
+                              child: Padding(
+                                padding: const EdgeInsets.all(4),
+                                child: Icon(
+                                  Icons.more_horiz,
+                                  color: AppColors.cinzaTexto,
+                                  size: 20,
+                                ),
                               ),
                             ),
                           ],
                         ),
-                      ),
-
-                      // Segunda linha: Banco + Menu
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              '${_contaAtual.banco ?? 'Sem banco'} • Conta',
-                              style: const TextStyle(
-                                fontSize: 13,
-                                color: AppColors.cinzaTexto,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-
-                          // Menu três pontinhos
-                          InkWell(
-                            borderRadius: BorderRadius.circular(16),
-                            onTap: () => _mostrarMenuConta(),
-                            child: Padding(
-                              padding: const EdgeInsets.all(4),
-                              child: Icon(
-                                Icons.more_horiz,
-                                color: AppColors.cinzaTexto,
-                                size: 20,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
               ],
             ),
           ),
@@ -925,54 +994,66 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
         // Primeira linha: 3 chips
         Row(
           children: [
-            Expanded(child: _buildChipElegante(
-              icone: Icons.edit,
-              titulo: 'EDITAR',
-              cor: AppColors.azul,
-              onTap: () => _navegarParaAcao('editar_conta'),
-            )),
+            Expanded(
+              child: _buildChipElegante(
+                icone: Icons.edit,
+                titulo: 'EDITAR',
+                cor: AppColors.azul,
+                onTap: () => _navegarParaAcao('editar_conta'),
+              ),
+            ),
             const SizedBox(width: 12),
-            Expanded(child: _buildChipElegante(
-              icone: Icons.account_balance_wallet,
-              titulo: 'SALDO',
-              cor: AppColors.tealPrimary,
-              onTap: () => _navegarParaAcao('ajustar_saldo'),
-            )),
+            Expanded(
+              child: _buildChipElegante(
+                icone: Icons.account_balance_wallet,
+                titulo: 'SALDO',
+                cor: AppColors.tealPrimary,
+                onTap: () => _navegarParaAcao('ajustar_saldo'),
+              ),
+            ),
             const SizedBox(width: 12),
-            Expanded(child: _buildChipElegante(
-              icone: Icons.swap_horiz,
-              titulo: 'TRANSFERIR',
-              cor: AppColors.roxoPrimario,
-              onTap: () => _navegarParaAcao('transferir'),
-            )),
+            Expanded(
+              child: _buildChipElegante(
+                icone: Icons.swap_horiz,
+                titulo: 'TRANSFERIR',
+                cor: AppColors.roxoPrimario,
+                onTap: () => _navegarParaAcao('transferir'),
+              ),
+            ),
           ],
         ),
-        
+
         const SizedBox(height: 12),
-        
+
         // Segunda linha: 3 chips
         Row(
           children: [
-            Expanded(child: _buildChipElegante(
-              icone: Icons.analytics,
-              titulo: 'TRANSAÇÕES',
-              cor: AppColors.verdeSucesso,
-              onTap: () => _navegarParaAcao('ver_transacoes'),
-            )),
+            Expanded(
+              child: _buildChipElegante(
+                icone: Icons.analytics,
+                titulo: 'TRANSAÇÕES',
+                cor: AppColors.verdeSucesso,
+                onTap: () => _navegarParaAcao('ver_transacoes'),
+              ),
+            ),
             const SizedBox(width: 12),
-            Expanded(child: _buildChipElegante(
-              icone: Icons.archive,
-              titulo: 'ARQUIVAR',
-              cor: AppColors.cinzaTexto,
-              onTap: () => _navegarParaAcao('arquivar'),
-            )),
+            Expanded(
+              child: _buildChipElegante(
+                icone: Icons.archive,
+                titulo: 'ARQUIVAR',
+                cor: AppColors.cinzaTexto,
+                onTap: () => _navegarParaAcao('arquivar'),
+              ),
+            ),
             const SizedBox(width: 12),
-            Expanded(child: _buildChipElegante(
-              icone: Icons.folder_open,
-              titulo: 'ARQUIVADAS',
-              cor: AppColors.cinzaMedio,
-              onTap: () => _navegarParaAcao('ver_arquivadas'),
-            )),
+            Expanded(
+              child: _buildChipElegante(
+                icone: Icons.folder_open,
+                titulo: 'ARQUIVADAS',
+                cor: AppColors.cinzaMedio,
+                onTap: () => _navegarParaAcao('ver_arquivadas'),
+              ),
+            ),
           ],
         ),
       ],
@@ -996,10 +1077,7 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: AppColors.cinzaClaro,
-              width: 1,
-            ),
+            border: Border.all(color: AppColors.cinzaClaro, width: 1),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.08),
@@ -1019,15 +1097,11 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(
-                  icone,
-                  color: cor,
-                  size: 20,
-                ),
+                child: Icon(icone, color: cor, size: 20),
               ),
-              
+
               const SizedBox(height: 12),
-              
+
               // Título
               Text(
                 titulo,
@@ -1115,10 +1189,7 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
           // Título embaixo (igual ao device)
           Text(
             titulo,
-            style: const TextStyle(
-              fontSize: 12,
-              color: AppColors.cinzaTexto,
-            ),
+            style: const TextStyle(fontSize: 12, color: AppColors.cinzaTexto),
             textAlign: TextAlign.center,
           ),
         ],
@@ -1196,34 +1267,36 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Insights baseados nos dados
-            ...(_generateInsights().map((insight) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    insight['icone'] as IconData,
-                    color: insight['cor'] as Color,
-                    size: 16,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      insight['texto'] as String,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: AppColors.cinzaTexto,
-                        height: 1.4,
+            ...(_generateInsights().map(
+              (insight) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      insight['icone'] as IconData,
+                      color: insight['cor'] as Color,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        insight['texto'] as String,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: AppColors.cinzaTexto,
+                          height: 1.4,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ))),
+            )),
           ],
         ),
       ),
@@ -1236,17 +1309,16 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
       children: [
         // Gráfico de evolução do saldo
         _buildGraficoEvolucaoSaldo(),
-        
+
         const SizedBox(height: 12),
-        
+
         // Gráfico de entradas vs saídas
         _buildGraficoEntradasVsSaidas(),
-        
+
         const SizedBox(height: 12),
-        
+
         // Gráfico de categorias (se houver dados)
-        if (_gastosPorCategoria.isNotEmpty)
-          _buildGraficoCategorias(),
+        if (_gastosPorCategoria.isNotEmpty) _buildGraficoCategorias(),
       ],
     );
   }
@@ -1254,7 +1326,7 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
   /// 📈 GRÁFICO DE EVOLUÇÃO DO SALDO
   Widget _buildGraficoEvolucaoSaldo() {
     if (_evolucaoSaldo.isEmpty) return const SizedBox.shrink();
-    
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
@@ -1301,24 +1373,32 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Legenda do gráfico
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _buildLegendaItem('Saldo Real', AppColors.tealPrimary, isSolid: true),
+                  _buildLegendaItem(
+                    'Saldo Real',
+                    AppColors.tealPrimary,
+                    isSolid: true,
+                  ),
                   const SizedBox(width: 24),
-                  _buildLegendaItem('Projeção', AppColors.tealPrimary.withValues(alpha: 0.6), isSolid: false),
+                  _buildLegendaItem(
+                    'Projeção',
+                    AppColors.tealPrimary.withValues(alpha: 0.6),
+                    isSolid: false,
+                  ),
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Gráfico de linha (placeholder igual ao device)
             SizedBox(
               height: 200,
@@ -1382,11 +1462,14 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
                                 interval: 1,
                                 getTitlesWidget: (value, meta) {
                                   final index = value.toInt();
-                                  if (index >= 0 && index < _evolucaoSaldo.length) {
+                                  if (index >= 0 &&
+                                      index < _evolucaoSaldo.length) {
                                     final item = _evolucaoSaldo[index];
                                     final mes = item['mes'] as String;
                                     return Text(
-                                      mes.split('/')[0], // Só o mês (Set, Out, etc.)
+                                      mes.split(
+                                        '/',
+                                      )[0], // Só o mês (Set, Out, etc.)
                                       style: TextStyle(
                                         fontSize: 10,
                                         color: Colors.grey.shade600,
@@ -1412,28 +1495,42 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
                                 },
                               ),
                             ),
-                            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                            topTitles: const AxisTitles(
+                              sideTitles: SideTitles(showTitles: false),
+                            ),
+                            rightTitles: const AxisTitles(
+                              sideTitles: SideTitles(showTitles: false),
+                            ),
                           ),
                           borderData: FlBorderData(show: false),
                           lineBarsData: [
-                            // Linha sólida para dados reais (passado + atual) 
+                            // Linha sólida para dados reais (passado + atual)
                             LineChartBarData(
-                              spots: _evolucaoSaldo.asMap().entries
-                                  .where((entry) => !(entry.value['isProjecao'] ?? false))
+                              spots: _evolucaoSaldo
+                                  .asMap()
+                                  .entries
+                                  .where(
+                                    (entry) =>
+                                        !(entry.value['isProjecao'] ?? false),
+                                  )
                                   .map((entry) {
-                                final index = entry.key;
-                                final item = entry.value;
-                                final saldo = ((item['saldo'] as num?) ?? 0.0).toDouble();
-                                return FlSpot(index.toDouble(), saldo);
-                              }).toList(),
+                                    final index = entry.key;
+                                    final item = entry.value;
+                                    final saldo =
+                                        ((item['saldo'] as num?) ?? 0.0)
+                                            .toDouble();
+                                    return FlSpot(index.toDouble(), saldo);
+                                  })
+                                  .toList(),
                               isCurved: true,
                               curveSmoothness: 0.2,
                               color: AppColors.tealPrimary,
                               barWidth: 3,
                               belowBarData: BarAreaData(
                                 show: true,
-                                color: AppColors.tealPrimary.withValues(alpha: 0.1),
+                                color: AppColors.tealPrimary.withValues(
+                                  alpha: 0.1,
+                                ),
                               ),
                               dotData: FlDotData(
                                 show: true,
@@ -1449,31 +1546,52 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
                             ),
                             // Linha conectada para projeção (atual + futuro)
                             LineChartBarData(
-                              spots: _evolucaoSaldo.asMap().entries
-                                  .where((entry) => (entry.value['isAtual'] ?? false) || (entry.value['isProjecao'] ?? false))
+                              spots: _evolucaoSaldo
+                                  .asMap()
+                                  .entries
+                                  .where(
+                                    (entry) =>
+                                        (entry.value['isAtual'] ?? false) ||
+                                        (entry.value['isProjecao'] ?? false),
+                                  )
                                   .map((entry) {
-                                final index = entry.key;
-                                final item = entry.value;
-                                final saldo = ((item['saldo'] as num?) ?? 0.0).toDouble();
-                                return FlSpot(index.toDouble(), saldo);
-                              }).toList(),
+                                    final index = entry.key;
+                                    final item = entry.value;
+                                    final saldo =
+                                        ((item['saldo'] as num?) ?? 0.0)
+                                            .toDouble();
+                                    return FlSpot(index.toDouble(), saldo);
+                                  })
+                                  .toList(),
                               isCurved: true,
                               curveSmoothness: 0.2,
-                              color: AppColors.tealPrimary.withValues(alpha: 0.6),
+                              color: AppColors.tealPrimary.withValues(
+                                alpha: 0.6,
+                              ),
                               barWidth: 2,
                               dashArray: [8, 4], // Linha pontilhada
                               belowBarData: BarAreaData(
                                 show: true,
-                                color: AppColors.tealPrimary.withValues(alpha: 0.05),
+                                color: AppColors.tealPrimary.withValues(
+                                  alpha: 0.05,
+                                ),
                               ),
                               dotData: FlDotData(
                                 show: true,
                                 getDotPainter: (spot, percent, barData, index) {
                                   // Ponto atual fica sólido para conectar as linhas
-                                  final isAtualIndex = index == _evolucaoSaldo.indexWhere((item) => item['isAtual'] ?? false);
+                                  final isAtualIndex =
+                                      index ==
+                                      _evolucaoSaldo.indexWhere(
+                                        (item) => item['isAtual'] ?? false,
+                                      );
                                   return FlDotCirclePainter(
                                     radius: isAtualIndex ? 4 : 3,
-                                    color: isAtualIndex ? AppColors.tealPrimary : AppColors.tealPrimary.withValues(alpha: 0.8),
+                                    color: isAtualIndex
+                                        ? AppColors.tealPrimary
+                                        : AppColors.tealPrimary.withValues(
+                                            alpha: 0.8,
+                                          ),
                                     strokeWidth: isAtualIndex ? 2 : 1,
                                     strokeColor: Colors.white,
                                   );
@@ -1484,11 +1602,13 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
                           lineTouchData: LineTouchData(
                             enabled: true,
                             touchTooltipData: LineTouchTooltipData(
-                              getTooltipColor: (touchedSpot) => AppColors.tealPrimary.withValues(alpha: 0.9),
+                              getTooltipColor: (touchedSpot) =>
+                                  AppColors.tealPrimary.withValues(alpha: 0.9),
                               getTooltipItems: (touchedSpots) {
                                 return touchedSpots.map((spot) {
                                   final index = spot.x.toInt();
-                                  if (index >= 0 && index < _evolucaoSaldo.length) {
+                                  if (index >= 0 &&
+                                      index < _evolucaoSaldo.length) {
                                     final item = _evolucaoSaldo[index];
                                     final mes = item['mes'] as String;
                                     return LineTooltipItem(
@@ -1518,7 +1638,7 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
   /// 💸 GRÁFICO DE ENTRADAS VS SAÍDAS
   Widget _buildGraficoEntradasVsSaidas() {
     if (_entradasVsSaidas.isEmpty) return const SizedBox.shrink();
-    
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
@@ -1565,9 +1685,9 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Gráfico de barras real
             SizedBox(
               height: 200,
@@ -1585,14 +1705,20 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              _buildLegendaItem('Entradas', AppColors.verdeSucesso),
+                              _buildLegendaItem(
+                                'Entradas',
+                                AppColors.verdeSucesso,
+                              ),
                               const SizedBox(width: 24),
-                              _buildLegendaItem('Saídas', AppColors.vermelhoErro),
+                              _buildLegendaItem(
+                                'Saídas',
+                                AppColors.vermelhoErro,
+                              ),
                             ],
                           ),
-                          
+
                           const SizedBox(height: 24),
-                          
+
                           Expanded(
                             child: Center(
                               child: Column(
@@ -1632,14 +1758,17 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            _buildLegendaItem('Entradas', AppColors.verdeSucesso),
+                            _buildLegendaItem(
+                              'Entradas',
+                              AppColors.verdeSucesso,
+                            ),
                             const SizedBox(width: 24),
                             _buildLegendaItem('Saídas', AppColors.vermelhoErro),
                           ],
                         ),
-                        
+
                         const SizedBox(height: 16),
-                        
+
                         // Gráfico de barras
                         Expanded(
                           child: Padding(
@@ -1664,11 +1793,14 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
                                       reservedSize: 30,
                                       getTitlesWidget: (value, meta) {
                                         final index = value.toInt();
-                                        if (index >= 0 && index < _entradasVsSaidas.length) {
+                                        if (index >= 0 &&
+                                            index < _entradasVsSaidas.length) {
                                           final item = _entradasVsSaidas[index];
                                           final mes = item['mes'] as String;
                                           return Text(
-                                            mes.split('/')[0], // Só o mês (Set, Out, etc.)
+                                            mes.split(
+                                              '/',
+                                            )[0], // Só o mês (Set, Out, etc.)
                                             style: TextStyle(
                                               fontSize: 10,
                                               color: Colors.grey.shade600,
@@ -1685,7 +1817,9 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
                                       reservedSize: 50,
                                       getTitlesWidget: (value, meta) {
                                         return Text(
-                                          CurrencyFormatter.formatCompact(value),
+                                          CurrencyFormatter.formatCompact(
+                                            value,
+                                          ),
                                           style: TextStyle(
                                             fontSize: 9,
                                             color: Colors.grey.shade600,
@@ -1694,63 +1828,80 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
                                       },
                                     ),
                                   ),
-                                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                  topTitles: const AxisTitles(
+                                    sideTitles: SideTitles(showTitles: false),
+                                  ),
+                                  rightTitles: const AxisTitles(
+                                    sideTitles: SideTitles(showTitles: false),
+                                  ),
                                 ),
                                 borderData: FlBorderData(show: false),
-                                barGroups: _entradasVsSaidas.asMap().entries.map((entry) {
-                                  final index = entry.key;
-                                  final item = entry.value;
-                                  final entradas = ((item['entradas'] as num?) ?? 0.0).toDouble();
-                                  final saidas = ((item['saidas'] as num?) ?? 0.0).toDouble();
-                                  
-                                  return BarChartGroupData(
-                                    x: index,
-                                    barRods: [
-                                      BarChartRodData(
-                                        toY: entradas,
-                                        color: AppColors.verdeSucesso,
-                                        width: 12,
-                                        borderRadius: const BorderRadius.only(
-                                          topLeft: Radius.circular(4),
-                                          topRight: Radius.circular(4),
-                                        ),
-                                      ),
-                                      BarChartRodData(
-                                        toY: saidas,
-                                        color: AppColors.vermelhoErro,
-                                        width: 12,
-                                        borderRadius: const BorderRadius.only(
-                                          topLeft: Radius.circular(4),
-                                          topRight: Radius.circular(4),
-                                        ),
-                                      ),
-                                    ],
-                                    barsSpace: 4,
-                                  );
-                                }).toList(),
+                                barGroups: _entradasVsSaidas
+                                    .asMap()
+                                    .entries
+                                    .map((entry) {
+                                      final index = entry.key;
+                                      final item = entry.value;
+                                      final entradas =
+                                          ((item['entradas'] as num?) ?? 0.0)
+                                              .toDouble();
+                                      final saidas =
+                                          ((item['saidas'] as num?) ?? 0.0)
+                                              .toDouble();
+
+                                      return BarChartGroupData(
+                                        x: index,
+                                        barRods: [
+                                          BarChartRodData(
+                                            toY: entradas,
+                                            color: AppColors.verdeSucesso,
+                                            width: 12,
+                                            borderRadius:
+                                                const BorderRadius.only(
+                                                  topLeft: Radius.circular(4),
+                                                  topRight: Radius.circular(4),
+                                                ),
+                                          ),
+                                          BarChartRodData(
+                                            toY: saidas,
+                                            color: AppColors.vermelhoErro,
+                                            width: 12,
+                                            borderRadius:
+                                                const BorderRadius.only(
+                                                  topLeft: Radius.circular(4),
+                                                  topRight: Radius.circular(4),
+                                                ),
+                                          ),
+                                        ],
+                                        barsSpace: 4,
+                                      );
+                                    })
+                                    .toList(),
                                 barTouchData: BarTouchData(
                                   enabled: true,
                                   touchTooltipData: BarTouchTooltipData(
                                     getTooltipColor: (group) => Colors.black87,
-                                    getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                                      if (groupIndex < _entradasVsSaidas.length) {
-                                        final item = _entradasVsSaidas[groupIndex];
-                                        final mes = item['mes'] as String;
-                                        final isEntrada = rodIndex == 0;
-                                        final valor = rod.toY;
-                                        
-                                        return BarTooltipItem(
-                                          '$mes\n${isEntrada ? 'Entrada' : 'Saída'}: ${CurrencyFormatter.format(valor)}',
-                                          const TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 10,
-                                          ),
-                                        );
-                                      }
-                                      return null;
-                                    },
+                                    getTooltipItem:
+                                        (group, groupIndex, rod, rodIndex) {
+                                          if (groupIndex <
+                                              _entradasVsSaidas.length) {
+                                            final item =
+                                                _entradasVsSaidas[groupIndex];
+                                            final mes = item['mes'] as String;
+                                            final isEntrada = rodIndex == 0;
+                                            final valor = rod.toY;
+
+                                            return BarTooltipItem(
+                                              '$mes\n${isEntrada ? 'Entrada' : 'Saída'}: ${CurrencyFormatter.format(valor)}',
+                                              const TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 10,
+                                              ),
+                                            );
+                                          }
+                                          return null;
+                                        },
                                   ),
                                 ),
                               ),
@@ -1814,11 +1965,12 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Gráfico Pizza com container completo
-            _gastosPorCategoria.isEmpty || _gastosPorCategoria.every((cat) => cat.valor == 0.0)
+            _gastosPorCategoria.isEmpty ||
+                    _gastosPorCategoria.every((cat) => cat.valor == 0.0)
                 ? Center(
                     child: Container(
                       width: 180,
@@ -1826,7 +1978,10 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
                       decoration: BoxDecoration(
                         color: Colors.grey.shade50,
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.grey.shade200, width: 2),
+                        border: Border.all(
+                          color: Colors.grey.shade200,
+                          width: 2,
+                        ),
                       ),
                       child: Center(
                         child: Column(
@@ -1877,23 +2032,31 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
                               child: PieChart(
                                 PieChartData(
                                   pieTouchData: PieTouchData(
-                                    touchCallback: (FlTouchEvent event, pieTouchResponse) {
-                                      setState(() {
-                                        if (!event.isInterestedForInteractions ||
-                                            pieTouchResponse == null ||
-                                            pieTouchResponse.touchedSection == null) {
-                                          _touchedIndex = -1;
-                                          return;
-                                        }
-                                        _touchedIndex = pieTouchResponse.touchedSection!.touchedSectionIndex;
-                                      });
-                                    },
+                                    touchCallback:
+                                        (FlTouchEvent event, pieTouchResponse) {
+                                          setState(() {
+                                            if (!event
+                                                    .isInterestedForInteractions ||
+                                                pieTouchResponse == null ||
+                                                pieTouchResponse
+                                                        .touchedSection ==
+                                                    null) {
+                                              _touchedIndex = -1;
+                                              return;
+                                            }
+                                            _touchedIndex = pieTouchResponse
+                                                .touchedSection!
+                                                .touchedSectionIndex;
+                                          });
+                                        },
                                   ),
                                   sectionsSpace: 2,
                                   centerSpaceRadius: 50,
                                   sections: _buildPieChartSections(),
                                 ),
-                                swapAnimationDuration: const Duration(milliseconds: 800),
+                                swapAnimationDuration: const Duration(
+                                  milliseconds: 800,
+                                ),
                                 swapAnimationCurve: Curves.easeInOutCubic,
                               ),
                             ),
@@ -1907,14 +2070,26 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 ..._gastosPorCategoria.take(6).map((categoria) {
-                                  final cores = [Colors.blue, Colors.green, Colors.orange, Colors.red, Colors.purple, Colors.teal];
-                                  final index = _gastosPorCategoria.indexOf(categoria);
+                                  final cores = [
+                                    Colors.blue,
+                                    Colors.green,
+                                    Colors.orange,
+                                    Colors.red,
+                                    Colors.purple,
+                                    Colors.teal,
+                                  ];
+                                  final index = _gastosPorCategoria.indexOf(
+                                    categoria,
+                                  );
                                   final cor = cores[index % cores.length];
 
                                   return Padding(
                                     padding: const EdgeInsets.only(bottom: 8),
                                     child: GestureDetector(
-                                      onTap: () => _navegarParaTransacoesComFiltroCategoria(categoria.nome),
+                                      onTap: () =>
+                                          _navegarParaTransacoesComFiltroCategoria(
+                                            categoria.nome,
+                                          ),
                                       child: Row(
                                         children: [
                                           Container(
@@ -1922,13 +2097,15 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
                                             height: 12,
                                             decoration: BoxDecoration(
                                               color: cor,
-                                              borderRadius: BorderRadius.circular(2),
+                                              borderRadius:
+                                                  BorderRadius.circular(2),
                                             ),
                                           ),
                                           const SizedBox(width: 8),
                                           Expanded(
                                             child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
                                               children: [
                                                 Text(
                                                   categoria.nome,
@@ -1939,7 +2116,9 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
                                                   ),
                                                 ),
                                                 Text(
-                                                  CurrencyFormatter.format(categoria.valor),
+                                                  CurrencyFormatter.format(
+                                                    categoria.valor,
+                                                  ),
                                                   style: const TextStyle(
                                                     fontSize: 11,
                                                     color: Colors.grey,
@@ -1988,7 +2167,9 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
   }
 
   /// 🧭 Navegar para TransacoesPage com filtro da conta e categoria específica
-  Future<void> _navegarParaTransacoesComFiltroCategoria(String nomeCategoria) async {
+  Future<void> _navegarParaTransacoesComFiltroCategoria(
+    String nomeCategoria,
+  ) async {
     // Define o contexto de navegação com a conta atual
     navigationContext.setContaSelecionada(widget.conta.id);
 
@@ -2020,27 +2201,19 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
           Container(
             width: 12,
             height: 12,
-            decoration: BoxDecoration(
-              color: cor,
-              shape: BoxShape.circle,
-            ),
+            decoration: BoxDecoration(color: cor, shape: BoxShape.circle),
           )
         else
           // Linha pontilhada para projeção
           SizedBox(
             width: 16,
             height: 3,
-            child: CustomPaint(
-              painter: DashedLinePainter(color: cor),
-            ),
+            child: CustomPaint(painter: DashedLinePainter(color: cor)),
           ),
         const SizedBox(width: 8),
         Text(
           texto,
-          style: const TextStyle(
-            fontSize: 12,
-            color: AppColors.cinzaTexto,
-          ),
+          style: const TextStyle(fontSize: 12, color: AppColors.cinzaTexto),
         ),
       ],
     );
@@ -2051,50 +2224,63 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
   /// Formatar mês e ano (Jan 2024)
   String _formatarMesAno(DateTime data) {
     final meses = [
-      'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
-      'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
+      'Jan',
+      'Fev',
+      'Mar',
+      'Abr',
+      'Mai',
+      'Jun',
+      'Jul',
+      'Ago',
+      'Set',
+      'Out',
+      'Nov',
+      'Dez',
     ];
     return '${meses[data.month - 1]}/${data.year.toString().substring(2)}';
   }
 
-
   /// Gerar insights automáticos baseados nos dados
   List<Map<String, dynamic>> _generateInsights() {
     List<Map<String, dynamic>> insights = [];
-    
+
     final saldo = widget.conta.saldo;
     final percentualMedio = (_saldoMedio / saldo);
-    
+
     if (percentualMedio > 0.9) {
       insights.add({
         'icone': Icons.trending_up,
         'cor': AppColors.verdeSucesso,
-        'texto': 'Seu saldo está ${percentualMedio > 1 ? 'acima' : 'próximo'} da média! Continue mantendo esse controle.',
+        'texto':
+            'Seu saldo está ${percentualMedio > 1 ? 'acima' : 'próximo'} da média! Continue mantendo esse controle.',
       });
     } else if (percentualMedio < 0.7) {
       insights.add({
         'icone': Icons.warning_amber,
         'cor': Colors.orange,
-        'texto': 'Seu saldo atual está abaixo da média dos últimos meses. Considere revisar seus gastos.',
+        'texto':
+            'Seu saldo atual está abaixo da média dos últimos meses. Considere revisar seus gastos.',
       });
     }
-    
+
     if (_entradaMesAtual > _saidaMesAtual) {
       insights.add({
         'icone': Icons.thumb_up,
         'cor': AppColors.verdeSucesso,
-        'texto': 'Suas entradas estão superando as saídas este mês. Ótimo controle financeiro!',
+        'texto':
+            'Suas entradas estão superando as saídas este mês. Ótimo controle financeiro!',
       });
     }
-    
+
     if (insights.isEmpty) {
       insights.add({
         'icone': Icons.info_outline,
         'cor': AppColors.tealPrimary,
-        'texto': 'Continue acompanhando sua conta para receber insights personalizados.',
+        'texto':
+            'Continue acompanhando sua conta para receber insights personalizados.',
       });
     }
-    
+
     return insights;
   }
 
@@ -2112,11 +2298,11 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
     if (slug == null || slug.isEmpty) {
       return Icons.account_balance_wallet_outlined;
     }
-    
+
     switch (slug.toLowerCase()) {
       case 'corrente':
         return Icons.account_balance;
-      case 'poupanca':  
+      case 'poupanca':
         return Icons.savings;
       case 'carteira':
         return Icons.account_balance_wallet;
@@ -2133,9 +2319,7 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
   void _navegarParaRelatoriosComFiltro() {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const RelatoriosPage(),
-      ),
+      MaterialPageRoute(builder: (context) => const RelatoriosPage()),
     );
   }
 
@@ -2158,7 +2342,7 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
-            
+
             ListTile(
               leading: const Icon(Icons.edit, color: AppColors.tealPrimary),
               title: const Text('Editar Conta'),
@@ -2167,16 +2351,19 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
                 _navegarParaAcao('editar_conta');
               },
             ),
-            
+
             ListTile(
-              leading: const Icon(Icons.account_balance, color: AppColors.tealPrimary),
+              leading: const Icon(
+                Icons.account_balance,
+                color: AppColors.tealPrimary,
+              ),
               title: const Text('Ajustar Saldo'),
               onTap: () {
                 Navigator.pop(context);
                 _navegarParaAcao('ajustar_saldo');
               },
             ),
-            
+
             ListTile(
               leading: const Icon(Icons.archive, color: Colors.orange),
               title: const Text('Arquivar Conta'),
@@ -2220,7 +2407,7 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
 /// 🎨 CUSTOM PAINTER PARA LINHA PONTILHADA
 class DashedLinePainter extends CustomPainter {
   final Color color;
-  
+
   DashedLinePainter({required this.color});
 
   @override
@@ -2235,7 +2422,9 @@ class DashedLinePainter extends CustomPainter {
     double startX = 0;
 
     while (startX < size.width) {
-      final endX = (startX + dashWidth < size.width) ? startX + dashWidth : size.width;
+      final endX = (startX + dashWidth < size.width)
+          ? startX + dashWidth
+          : size.width;
       canvas.drawLine(
         Offset(startX, size.height / 2),
         Offset(endX, size.height / 2),

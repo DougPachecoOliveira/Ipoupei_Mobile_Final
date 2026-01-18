@@ -12,6 +12,7 @@ import '../../categorias/services/categoria_service.dart';
 import '../../categorias/models/categoria_model.dart';
 import '../../categorias/data/categoria_icons.dart';
 import '../../../database/local_database.dart';
+import '../../../shared/services/user_preferences_service.dart';
 
 enum TipoDespesa { simples, parcelada, recorrente }
 
@@ -225,11 +226,23 @@ class _DespesaCartaoPageState extends State<DespesaCartaoPage> {
         debugPrint('📦 Cartões ativos: ${_cartoes.length}');
         
         if (_cartaoSelecionado == null && _cartoes.isNotEmpty) {
-          // Selecionar o primeiro cartão ativo
-          _cartaoSelecionado = _cartoes.first;
+          // ⭐ PRIORIZAR CARTÃO FAVORITO
+          final preferencesService = UserPreferencesService.instance;
+          if (preferencesService.hasCartaoFavorito) {
+            final cartaoFavorito = _cartoes.firstWhere(
+              (c) => c.id == preferencesService.cartaoFavoritoId,
+              orElse: () => _cartoes.first,
+            );
+            _cartaoSelecionado = cartaoFavorito;
+            debugPrint('⭐ Cartão favorito pré-selecionado: ${_cartaoSelecionado?.nome}');
+          } else {
+            // Fallback: Selecionar o primeiro cartão ativo
+            _cartaoSelecionado = _cartoes.first;
+            debugPrint('💳 Primeiro cartão selecionado: ${_cartaoSelecionado?.nome}');
+          }
+
           _cartaoController.text = _cartaoSelecionado!.nome;
-          debugPrint('💳 Cartão selecionado: ${_cartaoSelecionado?.nome}');
-          
+
           // Calcular fatura após setState para garantir que UI está atualizada
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) {

@@ -6,6 +6,8 @@ import '../services/categoria_service.dart';
 import '../data/categoria_icons.dart';
 import '../models/categoria_model.dart';
 import 'escolher_icone_modal.dart';
+import '../../../shared/components/color_picker/advanced_color_picker.dart';
+import '../../../shared/components/color_picker/models/color_picker_config.dart';
 
 /// Modal compacto e reutilizável para criar/editar categorias
 class CriarCategoriaModal extends StatefulWidget {
@@ -48,27 +50,17 @@ class _CriarCategoriaModalState extends State<CriarCategoriaModal> {
   }
   
   List<String> get _coresPrincipais {
-    return widget.tipo == 'despesa' 
-        ? [
-            '#DC3545', // Vermelho principal
-            '#FF6B6B', // Coral
-            '#E74C3C', // Vermelho claro
-            '#F39C12', // Laranja
-            '#E67E22', // Laranja escuro
-            '#8B5CF6', // Roxo
-            '#6366F1', // Índigo
-            '#EC4899', // Rosa
-          ]
-        : [
-            '#008080', // Teal principal
-            '#10B981', // Verde sucesso
-            '#06D6A0', // Verde água
-            '#3B82F6', // Azul
-            '#1E40AF', // Azul escuro
-            '#6366F1', // Roxo
-            '#8B5CF6', // Violeta
-            '#EC4899', // Rosa
-          ];
+    // Cores padronizadas (iguais aos cartões - cores de bancos brasileiros)
+    return [
+      '#8A05BE', // Roxo Nubank
+      '#FF6500', // Laranja Inter
+      '#FFD700', // Amarelo C6
+      '#21C25E', // Verde PicPay
+      '#DC143C', // Vermelho Santander
+      '#1E3A8A', // Azul BTG
+      '#000000', // Preto XP
+      '#6B7280', // Cinza Padrão
+    ];
   }
 
   // ✅ MÉTODO SORTEAR (todas as cores disponíveis)
@@ -89,10 +81,25 @@ class _CriarCategoriaModalState extends State<CriarCategoriaModal> {
     final random = Random();
     final coresDisponiveis = _todasAsCores.where((cor) => cor != _corSelecionada).toList();
     final novaCor = coresDisponiveis[random.nextInt(coresDisponiveis.length)];
-    
+
     setState(() {
       _corSelecionada = novaCor;
     });
+  }
+
+  /// 🎨 Mostrar modal com seletor de cores avançado
+  Future<void> _mostrarModalCoresExtendidas() async {
+    final selectedColor = await AdvancedColorPicker.show(
+      context: context,
+      type: ColorPickerType.category,
+      currentColor: _corSelecionada,
+      categoryType: widget.tipo,
+    );
+    if (selectedColor != null) {
+      setState(() {
+        _corSelecionada = selectedColor;
+      });
+    }
   }
 
   @override
@@ -112,9 +119,9 @@ class _CriarCategoriaModalState extends State<CriarCategoriaModal> {
         _nomeController.text = widget.nomeInicial!;
       }
       
-      // Cor padrão baseada no tipo
-      _corSelecionada = _coresPrincipais.first;
-      
+      // Cor padrão: roxo Nubank (primeira da lista padronizada)
+      _corSelecionada = _coresPrincipais.first; // '#8A05BE'
+
       // Ícone padrão baseado no tipo
       _iconeSelecionado = widget.tipo == 'despesa' ? '💰' : '💸';
     }
@@ -292,28 +299,69 @@ class _CriarCategoriaModalState extends State<CriarCategoriaModal> {
           ],
         ),
         const SizedBox(height: 12),
-        Wrap(
-          spacing: 8,
-          children: _coresPrincipais.map((cor) {
-            final isSelected = cor == _corSelecionada;
-            return GestureDetector(
-              onTap: () => setState(() => _corSelecionada = cor),
-              child: Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: Color(int.parse(cor.replaceAll('#', '0xFF'))),
-                  borderRadius: BorderRadius.circular(8),
-                  border: isSelected 
-                    ? Border.all(color: Colors.black87, width: 3)
-                    : null,
+        SizedBox(
+          height: 44,
+          child: Row(
+            children: [
+              // Lista de cores principais
+              Expanded(
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _coresPrincipais.length,
+                  itemBuilder: (context, index) {
+                    final cor = _coresPrincipais[index];
+                    final corAtual = Color(int.parse(cor.replaceFirst('#', '0xFF')));
+                    final selecionada = cor == _corSelecionada;
+
+                    return Container(
+                      margin: EdgeInsets.only(right: 16),
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _corSelecionada = cor;
+                          });
+                        },
+                        child: Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: corAtual,
+                            shape: BoxShape.circle,
+                            border: selecionada
+                                ? Border.all(color: Colors.grey[400]!, width: 3)
+                                : Border.all(color: Colors.grey[300]!, width: 1),
+                          ),
+                          child: selecionada
+                              ? const Icon(
+                                  Icons.check,
+                                  color: Colors.white,
+                                  size: 20,
+                                )
+                              : null,
+                        ),
+                      ),
+                    );
+                  },
                 ),
-                child: isSelected 
-                  ? const Icon(Icons.check, color: Colors.white, size: 20)
-                  : null,
               ),
-            );
-          }).toList(),
+
+              // Botão "Mais Cores"
+              GestureDetector(
+                onTap: _mostrarModalCoresExtendidas,
+                child: Container(
+                  width: 44,
+                  height: 44,
+                  margin: const EdgeInsets.only(left: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.grey[300]!),
+                  ),
+                  child: const Icon(Icons.add, color: Colors.grey, size: 20),
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );

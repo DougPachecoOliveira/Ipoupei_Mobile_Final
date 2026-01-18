@@ -105,7 +105,7 @@ class _CartoesConsolidadoPageState extends State<CartoesConsolidadoPage> with Si
 
     try {
       // Carregar cartões ativos
-      _cartoes = await _cartaoService.listarTodosCartoes();
+      _cartoes = await _cartaoService.listarCartoesAtivos();
 
       if (_cartoes.isEmpty) {
         setState(() {

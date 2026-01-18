@@ -18,6 +18,8 @@ import '../services/conta_service.dart';
 import '../../../shared/components/loading/ipoupei_loading_system.dart';
 import '../../shared/theme/app_colors.dart';
 import '../../../shared/components/ui/smart_currency_input.dart';
+import '../../../shared/components/color_picker/advanced_color_picker.dart';
+import '../../../shared/components/color_picker/models/color_picker_config.dart';
 import 'correcao_saldo_page.dart';
 
 class ContaFormPage extends StatefulWidget {
@@ -198,16 +200,16 @@ class _ContaFormPageState extends State<ContaFormPage> {
     Icons.auto_awesome,
   ];
 
-  // Cores disponíveis (como na screenshot)
+  // Cores disponíveis (iguais aos cartões - cores de bancos brasileiros)
   final List<String> _coresDisponiveis = [
-    '#00BCD4', // Azul claro (primeira selecionada na screenshot)
-    '#F44336', // Vermelho
-    '#9C27B0', // Roxo
-    '#FF9800', // Laranja
-    '#4CAF50', // Verde
-    '#FFC107', // Amarelo
-    '#795548', // Marrom
-    '#607D8B', // Azul acinzentado
+    '#8A05BE', // Roxo Nubank
+    '#FF6500', // Laranja Inter
+    '#FFD700', // Amarelo C6
+    '#21C25E', // Verde PicPay
+    '#DC143C', // Vermelho Santander
+    '#1E3A8A', // Azul BTG
+    '#000000', // Preto XP
+    '#6B7280', // Cinza Padrão
   ];
 
   @override
@@ -437,43 +439,66 @@ class _ContaFormPageState extends State<ContaFormPage> {
           const SizedBox(height: 12),
           SizedBox(
             height: 44,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: _coresDisponiveis.length,
-              itemBuilder: (context, index) {
-                final cor = _coresDisponiveis[index];
-                final corAtual = Color(int.parse(cor.replaceFirst('#', '0xFF')));
-                final selecionada = cor == _corSelecionada;
+            child: Row(
+              children: [
+                // Lista de cores principais
+                Expanded(
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _coresDisponiveis.length,
+                    itemBuilder: (context, index) {
+                      final cor = _coresDisponiveis[index];
+                      final corAtual = Color(int.parse(cor.replaceFirst('#', '0xFF')));
+                      final selecionada = cor == _corSelecionada;
 
-                return Container(
-                  margin: EdgeInsets.only(right: index == _coresDisponiveis.length - 1 ? 0 : 16),
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _corSelecionada = cor;
-                      });
-                    },
-                    child: Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: corAtual,
-                        shape: BoxShape.circle,
-                        border: selecionada
-                            ? Border.all(color: Colors.grey[400]!, width: 3)
-                            : Border.all(color: Colors.grey[300]!, width: 1),
-                      ),
-                      child: selecionada
-                          ? const Icon(
+                      return Container(
+                        margin: EdgeInsets.only(right: 16),
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _corSelecionada = cor;
+                            });
+                          },
+                          child: Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: corAtual,
+                              shape: BoxShape.circle,
+                              border: selecionada
+                                  ? Border.all(color: Colors.grey[400]!, width: 3)
+                                  : Border.all(color: Colors.grey[300]!, width: 1),
+                            ),
+                            child: selecionada
+                                ? const Icon(
                               Icons.check,
                               color: Colors.white,
                               size: 20,
                             )
                           : null,
-                    ),
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
+                ),
+
+                // Botão "Mais Cores"
+                GestureDetector(
+                  onTap: _mostrarModalCoresExtendidas,
+                  child: Container(
+                    width: 44,
+                    height: 44,
+                    margin: const EdgeInsets.only(left: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AppColors.cinzaBorda),
+                    ),
+                    child: const Icon(Icons.add, color: Colors.grey, size: 20),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -497,6 +522,21 @@ class _ContaFormPageState extends State<ContaFormPage> {
         return Icons.more_horiz;
       default:
         return Icons.account_balance;
+    }
+  }
+
+  /// 🎨 Modal com todas as cores estendidas usando o novo seletor
+  Future<void> _mostrarModalCoresExtendidas() async {
+    final selectedColor = await AdvancedColorPicker.show(
+      context: context,
+      type: ColorPickerType.account,
+      currentColor: _corSelecionada,
+      bankName: _bancoSelecionado, // Sugerir cores baseadas no banco
+    );
+    if (selectedColor != null) {
+      setState(() {
+        _corSelecionada = selectedColor;
+      });
     }
   }
 

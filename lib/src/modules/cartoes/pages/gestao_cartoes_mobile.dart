@@ -21,6 +21,7 @@ import 'cartao_form_page.dart';
 import '../widgets/cartao_card.dart';
 import 'pagamento_fatura_page.dart';
 import 'despesa_cartao_page.dart';
+import 'cartoes_arquivados_page.dart';
 import '../../../shared/services/navigation_context_service.dart';
 import '../../transacoes/pages/transacao_form_page.dart';
 import '../../transacoes/pages/transacoes_page.dart';
@@ -30,20 +31,18 @@ import '../../../routes/main_navigation.dart';
 class GestaoCartoesMobilePage extends StatefulWidget {
   final CartaoModel cartao;
 
-  const GestaoCartoesMobilePage({
-    super.key,
-    required this.cartao,
-  });
+  const GestaoCartoesMobilePage({super.key, required this.cartao});
 
   @override
-  State<GestaoCartoesMobilePage> createState() => _GestaoCartoesMobilePageState();
+  State<GestaoCartoesMobilePage> createState() =>
+      _GestaoCartoesMobilePageState();
 }
 
 class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
   DateTime _mesAtual = DateTime.now();
   bool _carregando = true;
   String? _erro;
-  
+
   // Dados do cartão - apenas valores reais
   double _gastoMedio = 0.0;
   double _economia = 0.0;
@@ -59,10 +58,12 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
   final FaturaService _faturaService = FaturaService();
   final TransacaoService _transacaoService = TransacaoService.instance;
   final CartaoDataService _cartaoDataService = CartaoDataService.instance;
-  final FaturaDetectionService _faturaDetectionService = FaturaDetectionService.instance;
-  final PagamentoFaturaService _pagamentoService = PagamentoFaturaService.instance;
+  final FaturaDetectionService _faturaDetectionService =
+      FaturaDetectionService.instance;
+  final PagamentoFaturaService _pagamentoService =
+      PagamentoFaturaService.instance;
   final SyncManager _syncManager = SyncManager.instance;
-  
+
   // Cache para evitar reprocessamento
   String? _ultimoMesCarregado;
   Map<String, dynamic>? _cacheResumo;
@@ -76,7 +77,9 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
     // 🧭 Configurar contexto de navegação
     navigationContext.setCartaoSelecionado(widget.cartao.id);
     navigationContext.setMesSelecionado(_mesAtual);
-    debugPrint('🧭 Contexto configurado: Cartão ${widget.cartao.nome} (${widget.cartao.id})');
+    debugPrint(
+      '🧭 Contexto configurado: Cartão ${widget.cartao.nome} (${widget.cartao.id})',
+    );
 
     _inicializarLocale();
   }
@@ -92,12 +95,12 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
 
   Future<void> _carregarDados() async {
     setState(() => _carregando = true);
-    
+
     try {
       // Load current invoice and enhanced data
       await _carregarFaturaAtual();
       await _carregarDadosEnhanced();
-      
+
       setState(() {
         _carregando = false;
         _erro = null;
@@ -116,17 +119,18 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
     try {
       // Use card real data when available
       final limite = widget.cartao.limite ?? 0;
-      
+
       // Busca resumo consolidado real do mês atual
       final mesAtual = DateFormat('yyyy-MM').format(_mesAtual);
-      
+
       // ✅ VERIFICAR CACHE PRIMEIRO
       final agora = DateTime.now();
-      final cacheValido = _ultimoMesCarregado == mesAtual && 
-                         _cacheResumo != null &&
-                         _ultimoCacheTime != null &&
-                         agora.difference(_ultimoCacheTime!) < _cacheDuration;
-      
+      final cacheValido =
+          _ultimoMesCarregado == mesAtual &&
+          _cacheResumo != null &&
+          _ultimoCacheTime != null &&
+          agora.difference(_ultimoCacheTime!) < _cacheDuration;
+
       Map<String, dynamic> resumo;
       if (cacheValido) {
         debugPrint('✅ Usando cache para mês: $mesAtual');
@@ -134,83 +138,90 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
       } else {
         debugPrint('🔄 Carregando dados para mês: $mesAtual');
         resumo = await _cartaoDataService.fetchResumoConsolidado(mesAtual);
-        
+
         // Salvar no cache
         _ultimoMesCarregado = mesAtual;
         _cacheResumo = resumo;
         _ultimoCacheTime = agora;
       }
-      
+
       // ✅ CORRIGIDO: Usar o mesmo método do consolidado para valor utilizado
-      final valorUtilizadoReal = await _cartaoDataService.calcularLimiteUtilizado(widget.cartao.id);
+      final valorUtilizadoReal = await _cartaoDataService
+          .calcularLimiteUtilizado(widget.cartao.id);
       _valorUtilizado = valorUtilizadoReal;
       _gastoMesAtual = resumo['total_gasto_periodo']?.toDouble() ?? 0.0;
-      
-      debugPrint('💳 Valor utilizado: R\$ ${_valorUtilizado.toStringAsFixed(2)} (Método correto do consolidado)');
+
+      debugPrint(
+        '💳 Valor utilizado: R\$ ${_valorUtilizado.toStringAsFixed(2)} (Método correto do consolidado)',
+      );
       debugPrint('💰 Gasto período: R\$ ${_gastoMesAtual.toStringAsFixed(2)}');
-      
+
       // Debug: Verificar se existem transações do cartão
       await _debugTransacoesCartao();
-      
+
       // Busca gasto médio dos últimos 3 meses se houver dados históricos
       try {
         final historico = await _buscarHistoricoGastos();
         if (historico.isNotEmpty) {
-          _gastoMedio = historico.fold(0.0, (sum, valor) => sum + valor) / historico.length;
+          _gastoMedio =
+              historico.fold(0.0, (sum, valor) => sum + valor) /
+              historico.length;
         } else {
           _gastoMedio = limite * 0.45; // Fallback
         }
       } catch (e) {
         _gastoMedio = limite * 0.45; // Fallback
       }
-      
+
       _economia = _gastoMedio - _gastoMesAtual;
-      
+
       // Days to due date
       if (_faturaAtual != null) {
         _diasParaVencimento = _faturaAtual!.diasAteVencimento;
       } else {
         _diasParaVencimento = widget.cartao.diaVencimento ?? 15;
       }
-      
+
       // Load real data
       await _carregarGastosPorCategoriaReais();
       await _carregarEvolucaoGastosReais();
       await _carregarGastosPorDiaReais();
-      
     } catch (e) {
       debugPrint('Erro ao carregar dados enhanced: $e');
       // Fallback para dados mockados em caso de erro
       await _carregarDadosFallback();
     }
   }
-  
+
   /// Fallback para dados mockados quando dados reais falham
   Future<void> _carregarDadosFallback() async {
     final limite = widget.cartao.limite ?? 0;
     // ✅ CORRIGIDO: Usar método correto mesmo no fallback
     try {
-      _valorUtilizado = await _cartaoDataService.calcularLimiteUtilizado(widget.cartao.id);
+      _valorUtilizado = await _cartaoDataService.calcularLimiteUtilizado(
+        widget.cartao.id,
+      );
     } catch (e) {
       _valorUtilizado = limite * 0.35; // Só como último recurso
     }
     _gastoMedio = limite * 0.45;
     _gastoMesAtual = _valorUtilizado;
     _economia = _gastoMedio - _gastoMesAtual;
-    
-    _diasParaVencimento = _faturaAtual?.diasAteVencimento ?? widget.cartao.diaVencimento ?? 15;
-    
+
+    _diasParaVencimento =
+        _faturaAtual?.diasAteVencimento ?? widget.cartao.diaVencimento ?? 15;
+
     await _carregarGastosPorCategoriaReais();
     await _carregarEvolucaoGastosReais();
     await _carregarGastosPorDiaReais();
   }
-  
+
   /// Debug: Verificar transações do cartão no banco local
   Future<void> _debugTransacoesCartao() async {
     try {
       final db = LocalDatabase.instance.database;
       final userId = AuthIntegration.instance.authService.currentUser?.id;
-      
+
       if (userId == null) {
         debugPrint('❌ Debug: Usuário não autenticado');
         return;
@@ -219,41 +230,46 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
         debugPrint('❌ Debug: Database não inicializado');
         return;
       }
-      
+
       // Contar total de transações do cartão
       final totalTransacoes = await db.query(
         'transacoes',
         where: 'cartao_id = ? AND usuario_id = ?',
         whereArgs: [widget.cartao.id, userId],
       );
-      
-      debugPrint('🔍 Debug: ${totalTransacoes.length} transações encontradas para o cartão ${widget.cartao.id}');
-      
+
+      debugPrint(
+        '🔍 Debug: ${totalTransacoes.length} transações encontradas para o cartão ${widget.cartao.id}',
+      );
+
       // Mostrar as primeiras 3 transações se houver
       if (totalTransacoes.isNotEmpty) {
         for (int i = 0; i < totalTransacoes.length && i < 3; i++) {
           final t = totalTransacoes[i];
-          debugPrint('  💰 ${t['descricao']}: R\$ ${t['valor']} (${t['data']})');
+          debugPrint(
+            '  💰 ${t['descricao']}: R\$ ${t['valor']} (${t['data']})',
+          );
         }
       } else {
         debugPrint('  ⚠️ Nenhuma transação encontrada - usando dados mockados');
       }
-      
     } catch (e) {
       debugPrint('❌ Erro no debug de transações: $e');
     }
   }
-  
+
   /// Busca histórico de gastos dos últimos meses para calcular média real
   Future<List<double>> _buscarHistoricoGastos() async {
     final historico = <double>[];
-    
+
     for (int i = 1; i <= 3; i++) {
       final mesAnterior = DateTime(_mesAtual.year, _mesAtual.month - i, 1);
       final mesFormatado = DateFormat('yyyy-MM').format(mesAnterior);
-      
+
       try {
-        final resumoMes = await _cartaoDataService.fetchResumoConsolidado(mesFormatado);
+        final resumoMes = await _cartaoDataService.fetchResumoConsolidado(
+          mesFormatado,
+        );
         final valorMes = resumoMes['valorUtilizado']?.toDouble() ?? 0.0;
         if (valorMes > 0) {
           historico.add(valorMes);
@@ -262,28 +278,45 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
         debugPrint('Erro ao buscar histórico do mês $mesFormatado: $e');
       }
     }
-    
+
     return historico;
   }
-  
+
   /// Carrega gastos reais por categoria
   Future<void> _carregarGastosPorCategoriaReais() async {
     try {
-      final faturaVencimento = _faturaAtual?.dataVencimento.toIso8601String().split('T')[0] 
-          ?? DateFormat('yyyy-MM-dd').format(DateTime(_mesAtual.year, _mesAtual.month + 1, widget.cartao.diaVencimento ?? 15));
-      
-      debugPrint('🔍 Buscando gastos por categoria - Cartão: ${widget.cartao.id}, Fatura: $faturaVencimento');
-      
-      final gastosReais = await _cartaoDataService.fetchGastosPorCategoria(widget.cartao.id, faturaVencimento);
+      final faturaVencimento =
+          _faturaAtual?.dataVencimento.toIso8601String().split('T')[0] ??
+          DateFormat('yyyy-MM-dd').format(
+            DateTime(
+              _mesAtual.year,
+              _mesAtual.month + 1,
+              widget.cartao.diaVencimento ?? 15,
+            ),
+          );
+
+      debugPrint(
+        '🔍 Buscando gastos por categoria - Cartão: ${widget.cartao.id}, Fatura: $faturaVencimento',
+      );
+
+      final gastosReais = await _cartaoDataService.fetchGastosPorCategoria(
+        widget.cartao.id,
+        faturaVencimento,
+      );
       debugPrint('📊 Gastos por categoria encontrados: ${gastosReais.length}');
-      
+
       if (gastosReais.isNotEmpty) {
-        final totalGastos = gastosReais.fold(0.0, (sum, gasto) => sum + (gasto['valor_total'] as num).toDouble());
-        
+        final totalGastos = gastosReais.fold(
+          0.0,
+          (sum, gasto) => sum + (gasto['valor_total'] as num).toDouble(),
+        );
+
         _gastosPorCategoria = gastosReais.map((gasto) {
           final valor = (gasto['valor_total'] as num).toDouble();
-          final percentual = totalGastos > 0 ? ((valor / totalGastos) * 100).toStringAsFixed(1) : '0.0';
-          
+          final percentual = totalGastos > 0
+              ? ((valor / totalGastos) * 100).toStringAsFixed(1)
+              : '0.0';
+
           return {
             'categoria': gasto['categoria_nome'] as String? ?? 'Sem categoria',
             'valor': CurrencyFormatter.format(valor),
@@ -299,21 +332,23 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
       _gastosPorCategoria = [];
     }
   }
-  
+
   /// Carrega evolução real de gastos dos últimos meses
   Future<void> _carregarEvolucaoGastosReais() async {
     try {
       _evolucaoGastos.clear();
-      
+
       for (int i = 5; i >= 0; i--) {
         final mesData = DateTime(_mesAtual.year, _mesAtual.month - i, 1);
         final mesFormatado = DateFormat('yyyy-MM').format(mesData);
         final mesNome = DateFormat('MMM', 'pt_BR').format(mesData);
-        
+
         try {
-          final resumoMes = await _cartaoDataService.fetchResumoConsolidado(mesFormatado);
+          final resumoMes = await _cartaoDataService.fetchResumoConsolidado(
+            mesFormatado,
+          );
           final valorMes = resumoMes['valorUtilizado']?.toDouble() ?? 0.0;
-          
+
           _evolucaoGastos.add({
             'mes': mesNome,
             'valor': valorMes,
@@ -328,7 +363,7 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
           });
         }
       }
-      
+
       // Se não conseguiu nenhum dado real, usa mockados
       if (_evolucaoGastos.every((m) => (m['valor'] as double) == 0.0)) {
         _evolucaoGastos = [];
@@ -338,7 +373,7 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
       _evolucaoGastos = [];
     }
   }
-  
+
   /// Carrega gastos reais por dia da semana
   Future<void> _carregarGastosPorDiaReais() async {
     try {
@@ -350,50 +385,58 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
       _gastosPorDiaReais = [];
     }
   }
-  
 
   Future<void> _carregarFaturaAtual() async {
     try {
       // ✅ NOVA LÓGICA: Detectar fatura do mês atual sempre
-      debugPrint('🔍 Detectando fatura atual para cartão: ${widget.cartao.nome} - Mês: ${_mesAtual.month}/${_mesAtual.year}');
-      
+      debugPrint(
+        '🔍 Detectando fatura atual para cartão: ${widget.cartao.nome} - Mês: ${_mesAtual.month}/${_mesAtual.year}',
+      );
+
       // ✅ BUSCAR FATURA REAL (igual tela Faturas) - DADOS CONSISTENTES
       _faturaAtual = await _cartaoDataService.buscarFaturaReal(
-        widget.cartao.id, 
-        mesReferencia: _mesAtual
+        widget.cartao.id,
+        mesReferencia: _mesAtual,
       );
-      
+
       if (_faturaAtual != null) {
-        debugPrint('✅ Fatura detectada: ${_faturaAtual!.valorTotalFormatado} - Status: ${_faturaAtual!.paga ? "PAGA" : "EM ABERTO"}');
-        debugPrint('📊 Valor total: R\$ ${_faturaAtual!.valorTotal} - Valor restante: R\$ ${_faturaAtual!.valorRestante}');
-      } else {
-        debugPrint('⚠️ Nenhuma fatura encontrada para o período ${_mesAtual.month}/${_mesAtual.year}');
-        
-        // Tentar buscar qualquer transação não efetivada do cartão para debug
-        final transacoesPendentes = await LocalDatabase.instance.database?.query(
-          'transacoes',
-          where: 'cartao_id = ? AND efetivado = 0',
-          whereArgs: [widget.cartao.id],
+        debugPrint(
+          '✅ Fatura detectada: ${_faturaAtual!.valorTotalFormatado} - Status: ${_faturaAtual!.paga ? "PAGA" : "EM ABERTO"}',
         );
-        
+        debugPrint(
+          '📊 Valor total: R\$ ${_faturaAtual!.valorTotal} - Valor restante: R\$ ${_faturaAtual!.valorRestante}',
+        );
+      } else {
+        debugPrint(
+          '⚠️ Nenhuma fatura encontrada para o período ${_mesAtual.month}/${_mesAtual.year}',
+        );
+
+        // Tentar buscar qualquer transação não efetivada do cartão para debug
+        final transacoesPendentes = await LocalDatabase.instance.database
+            ?.query(
+              'transacoes',
+              where: 'cartao_id = ? AND efetivado = 0',
+              whereArgs: [widget.cartao.id],
+            );
+
         if (transacoesPendentes != null && transacoesPendentes.isNotEmpty) {
-          debugPrint('📋 Encontradas ${transacoesPendentes.length} transações pendentes no cartão');
+          debugPrint(
+            '📋 Encontradas ${transacoesPendentes.length} transações pendentes no cartão',
+          );
           for (final t in transacoesPendentes.take(3)) {
-            debugPrint('  - ${t['descricao']}: R\$ ${t['valor']} (Fatura: ${t['fatura_vencimento']})');
+            debugPrint(
+              '  - ${t['descricao']}: R\$ ${t['valor']} (Fatura: ${t['fatura_vencimento']})',
+            );
           }
         } else {
           debugPrint('📋 Nenhuma transação pendente encontrada no cartão');
         }
       }
-      
     } catch (e) {
       debugPrint('❌ Erro ao detectar fatura atual: $e');
       _faturaAtual = null;
     }
   }
-
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -403,20 +446,24 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
       body: _carregando
           ? const Center(child: CircularProgressIndicator())
           : _erro != null
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(_erro!),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: _carregarDados,
-                        child: const Text('Tentar novamente'),
-                      ),
-                    ],
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(_erro!),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: _carregarDados,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.roxoHeader,
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text('Tentar novamente'),
                   ),
-                )
-              : _buildBody(),
+                ],
+              ),
+            )
+          : _buildBody(),
       bottomNavigationBar: AppBottomNavigation(
         currentIndex: 1, // Cartões é o índice 1
         onTap: _onBottomNavigationTap,
@@ -436,13 +483,13 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
             child: Container(
               padding: const EdgeInsets.all(8),
               child: const Icon(
-                Icons.arrow_back, 
-                color: Colors.white, 
-                size: 24
+                Icons.arrow_back,
+                color: Colors.white,
+                size: 24,
               ),
             ),
           ),
-          
+
           const Text(
             'Gestão Geral',
             style: TextStyle(
@@ -451,9 +498,9 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
               fontWeight: FontWeight.w600,
             ),
           ),
-          
+
           const Spacer(),
-          
+
           Row(
             children: [
               GestureDetector(
@@ -461,13 +508,13 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
                 child: Container(
                   padding: const EdgeInsets.all(8),
                   child: const Icon(
-                    Icons.chevron_left, 
-                    color: Colors.white, 
-                    size: 24
+                    Icons.chevron_left,
+                    color: Colors.white,
+                    size: 24,
                   ),
                 ),
               ),
-              
+
               Text(
                 _formatarMesAno(_mesAtual),
                 style: const TextStyle(
@@ -476,15 +523,15 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              
+
               GestureDetector(
                 onTap: _proximoMes,
                 child: Container(
                   padding: const EdgeInsets.all(8),
                   child: const Icon(
-                    Icons.chevron_right, 
-                    color: Colors.white, 
-                    size: 24
+                    Icons.chevron_right,
+                    color: Colors.white,
+                    size: 24,
                   ),
                 ),
               ),
@@ -500,6 +547,9 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
               case 'adicionar_cartao':
                 _abrirModalAdicionarCartao();
                 break;
+              case 'arquivar_cartao':
+                _arquivarCartao();
+                break;
             }
           },
           itemBuilder: (context) => [
@@ -510,6 +560,16 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
                   Icon(Icons.add_card, color: Colors.black54),
                   SizedBox(width: 8),
                   Text('Adicionar Cartão'),
+                ],
+              ),
+            ),
+            const PopupMenuItem<String>(
+              value: 'arquivar_cartao',
+              child: Row(
+                children: [
+                  Icon(Icons.archive, color: Colors.black54),
+                  SizedBox(width: 8),
+                  Text('Arquivar Cartão'),
                 ],
               ),
             ),
@@ -594,12 +654,11 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
               }
             },
           ),
-          
+
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             child: _buildChipsElegantes(),
           ),
-          
         ],
       ),
     );
@@ -613,34 +672,42 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
             // Lógica híbrida inteligente
             if (_faturaAtual != null && _faturaAtual!.paga)
               // Se fatura do mês atual está paga, mostrar opção para reabrir
-              Expanded(child: _buildChipElegante(
-                icone: Icons.refresh,
-                titulo: 'REABRIR FATURA',
-                cor: Colors.orange,
-                onTap: _reabrirFatura,
-              ))
+              Expanded(
+                child: _buildChipElegante(
+                  icone: Icons.refresh,
+                  titulo: 'REABRIR FATURA',
+                  cor: Colors.orange,
+                  onTap: _reabrirFatura,
+                ),
+              )
             else
               // Sempre mostrar "PAGAR FATURA" buscando globalmente
-              Expanded(child: _buildChipElegante(
-                icone: Icons.payment,
-                titulo: 'PAGAR FATURA',
-                cor: _devePagarFatura() ? Colors.red : Colors.blue,
-                onTap: _abrirPagamentoFatura,
-              )),
+              Expanded(
+                child: _buildChipElegante(
+                  icone: Icons.payment,
+                  titulo: 'PAGAR FATURA',
+                  cor: _devePagarFatura() ? Colors.red : Colors.blue,
+                  onTap: _abrirPagamentoFatura,
+                ),
+              ),
             const SizedBox(width: 12),
-            Expanded(child: _buildChipElegante(
-              icone: Icons.edit,
-              titulo: 'EDITAR',
-              cor: Colors.blue,
-              onTap: _editarCartao,
-            )),
+            Expanded(
+              child: _buildChipElegante(
+                icone: Icons.edit,
+                titulo: 'EDITAR',
+                cor: Colors.blue,
+                onTap: _editarCartao,
+              ),
+            ),
             const SizedBox(width: 12),
-            Expanded(child: _buildChipElegante(
-              icone: Icons.receipt_long,
-              titulo: 'FATURAS',
-              cor: Colors.purple,
-              onTap: _verFaturas,
-            )),
+            Expanded(
+              child: _buildChipElegante(
+                icone: Icons.receipt_long,
+                titulo: 'FATURAS',
+                cor: Colors.purple,
+                onTap: _verFaturas,
+              ),
+            ),
           ],
         ),
 
@@ -648,26 +715,32 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
         const SizedBox(height: 12),
         Row(
           children: [
-            Expanded(child: _buildChipElegante(
-              icone: Icons.list_alt,
-              titulo: 'TRANSAÇÕES',
-              cor: Colors.teal,
-              onTap: _navegarParaTransacoes,
-            )),
+            Expanded(
+              child: _buildChipElegante(
+                icone: Icons.list_alt,
+                titulo: 'TRANSAÇÕES',
+                cor: Colors.teal,
+                onTap: _navegarParaTransacoes,
+              ),
+            ),
             const SizedBox(width: 12),
-            Expanded(child: _buildChipElegante(
-              icone: Icons.add_card,
-              titulo: 'NOVO CARTÃO',
-              cor: Colors.green,
-              onTap: _novoCartao,
-            )),
+            Expanded(
+              child: _buildChipElegante(
+                icone: Icons.archive,
+                titulo: 'ARQUIVAR',
+                cor: Colors.orange,
+                onTap: _arquivarCartao,
+              ),
+            ),
             const SizedBox(width: 12),
-            Expanded(child: _buildChipElegante(
-              icone: Icons.add_shopping_cart,
-              titulo: 'NOVA DESPESA',
-              cor: Colors.orange,
-              onTap: _novaDespesa,
-            )),
+            Expanded(
+              child: _buildChipElegante(
+                icone: Icons.add_shopping_cart,
+                titulo: 'NOVA DESPESA',
+                cor: Colors.orange,
+                onTap: _novaDespesa,
+              ),
+            ),
           ],
         ),
       ],
@@ -690,10 +763,7 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: Colors.grey[300]!,
-              width: 1,
-            ),
+            border: Border.all(color: Colors.grey[300]!, width: 1),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withAlpha(21),
@@ -712,15 +782,11 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(
-                  icone,
-                  color: cor,
-                  size: 20,
-                ),
+                child: Icon(icone, color: cor, size: 20),
               ),
-              
+
               const SizedBox(height: 12),
-              
+
               Text(
                 titulo,
                 style: const TextStyle(
@@ -740,31 +806,31 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
 
   FaturaModel? _obterFaturaExibicao() {
     if (_faturaAtual == null) return null;
-    
+
     final hoje = DateTime.now();
     final vencimento = _faturaAtual!.dataVencimento;
     final diasParaVencimento = vencimento.difference(hoje).inDays;
-    
+
     if (diasParaVencimento > 60) {
       return null;
     }
-    
+
     return _faturaAtual;
   }
 
   bool _devePagarFatura() {
     if (_faturaAtual == null) return false;
-    
+
     // Não deve pagar se já está paga
     if (_faturaAtual!.paga) return false;
-    
+
     // Deve pagar se há valor em aberto
     if (_faturaAtual!.valorRestante <= 0.01) return false;
-    
+
     final hoje = DateTime.now();
     final vencimento = _faturaAtual!.dataVencimento;
     final diasRestantes = vencimento.difference(hoje).inDays;
-    
+
     // Vermelho (urgente) se vencida ou vence nos próximos 7 dias
     return diasRestantes <= 7;
   }
@@ -772,27 +838,31 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
   /// ✅ VERIFICAR SE HÁ FATURA PARA MOSTRAR O BOTÃO (MESMO SEM URGÊNCIA)
   bool _temFaturaParaPagar() {
     debugPrint('🔍 _temFaturaParaPagar() - Verificando condições:');
-    
+
     if (_faturaAtual == null) {
       debugPrint('   ❌ _faturaAtual é null');
       return false;
     }
-    
-    debugPrint('   📊 Fatura: ${_faturaAtual!.valorTotalFormatado} - Paga: ${_faturaAtual!.paga}');
+
+    debugPrint(
+      '   📊 Fatura: ${_faturaAtual!.valorTotalFormatado} - Paga: ${_faturaAtual!.paga}',
+    );
     debugPrint('   💰 Valor restante: R\$ ${_faturaAtual!.valorRestante}');
-    
+
     // Não mostrar se já está paga
     if (_faturaAtual!.paga) {
       debugPrint('   ❌ Fatura já está paga');
       return false;
     }
-    
+
     // Mostrar se há valor em aberto
     if (_faturaAtual!.valorRestante <= 0.01) {
-      debugPrint('   ❌ Valor restante muito baixo: ${_faturaAtual!.valorRestante}');
+      debugPrint(
+        '   ❌ Valor restante muito baixo: ${_faturaAtual!.valorRestante}',
+      );
       return false;
     }
-    
+
     // Não mostrar faturas muito futuras (mais de 60 dias)
     final diasRestantes = _faturaAtual!.diasAteVencimento;
     debugPrint('   📅 Dias até vencimento: $diasRestantes');
@@ -800,7 +870,7 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
       debugPrint('   ❌ Fatura muito futura (>60 dias)');
       return false;
     }
-    
+
     debugPrint('   ✅ Fatura pode ser paga - mostrando botão PAGAR');
     return true;
   }
@@ -808,27 +878,29 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
   /// ✅ VERIFICAR SE HÁ FATURA PAGA PARA REABRIR
   bool _temFaturaParaReabrir() {
     debugPrint('🔍 _temFaturaParaReabrir() - Verificando condições:');
-    
+
     if (_faturaAtual == null) {
       debugPrint('   ❌ _faturaAtual é null');
       return false;
     }
-    
-    debugPrint('   📊 Fatura: ${_faturaAtual!.valorTotalFormatado} - Paga: ${_faturaAtual!.paga}');
+
+    debugPrint(
+      '   📊 Fatura: ${_faturaAtual!.valorTotalFormatado} - Paga: ${_faturaAtual!.paga}',
+    );
     debugPrint('   💰 Valor total: R\$ ${_faturaAtual!.valorTotal}');
-    
+
     // Mostrar apenas se está paga
     if (!_faturaAtual!.paga) {
       debugPrint('   ❌ Fatura não está paga');
       return false;
     }
-    
+
     // Verificar se há transações efetivadas na fatura
     if (_faturaAtual!.valorTotal <= 0.01) {
       debugPrint('   ❌ Valor total muito baixo: ${_faturaAtual!.valorTotal}');
       return false;
     }
-    
+
     debugPrint('   ✅ Fatura pode ser reaberta - mostrando botão REABRIR');
     return true;
   }
@@ -876,8 +948,20 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
   }
 
   String _formatarMesAno(DateTime data) {
-    final meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 
-                  'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    final meses = [
+      'Jan',
+      'Fev',
+      'Mar',
+      'Abr',
+      'Mai',
+      'Jun',
+      'Jul',
+      'Ago',
+      'Set',
+      'Out',
+      'Nov',
+      'Dez',
+    ];
     final ano = data.year.toString().substring(2);
     return '${meses[data.month - 1]}/$ano';
   }
@@ -885,8 +969,10 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
   Widget _buildResumoMetricas() {
     final limite = widget.cartao.limite ?? 0;
     final disponivel = limite - _valorUtilizado;
-    final percentualUtilizacao = limite > 0 ? (_valorUtilizado / limite) * 100 : 0;
-    
+    final percentualUtilizacao = limite > 0
+        ? (_valorUtilizado / limite) * 100
+        : 0;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
@@ -911,7 +997,11 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
             child: _buildMetricaCard(
               titulo: 'Utilização',
               valor: '${percentualUtilizacao.toStringAsFixed(1)}%',
-              cor: percentualUtilizacao > 80 ? Colors.red : percentualUtilizacao > 60 ? Colors.orange : Colors.green,
+              cor: percentualUtilizacao > 80
+                  ? Colors.red
+                  : percentualUtilizacao > 60
+                  ? Colors.orange
+                  : Colors.green,
             ),
           ),
         ],
@@ -1016,7 +1106,7 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
               ],
             ),
             const SizedBox(height: 12),
-            
+
             ..._buildInsightsReais(),
           ],
         ),
@@ -1027,105 +1117,111 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
   List<Widget> _buildInsightsReais() {
     List<Widget> insights = [];
     final limite = widget.cartao.limite ?? 0;
-    final percentualUtilizacao = limite > 0 ? (_valorUtilizado / limite) * 100 : 0;
+    final percentualUtilizacao = limite > 0
+        ? (_valorUtilizado / limite) * 100
+        : 0;
     final valorDisponivel = limite - _valorUtilizado;
-    
+
     // Insight sobre economia/excesso
     if (_economia > 0) {
-      insights.add(Text(
-        '• 🎉 Parabéns! Você economizou ${CurrencyFormatter.format(_economia)} este mês comparado à sua média.',
-        style: const TextStyle(
-          fontSize: 14,
-          color: Colors.black87,
-          height: 1.4,
+      insights.add(
+        Text(
+          '• 🎉 Parabéns! Você economizou ${CurrencyFormatter.format(_economia)} este mês comparado à sua média.',
+          style: const TextStyle(
+            fontSize: 14,
+            color: Colors.black87,
+            height: 1.4,
+          ),
         ),
-      ));
+      );
     } else {
-      insights.add(Text(
-        '• ⚠️ Você gastou ${CurrencyFormatter.format(_economia.abs())} a mais que sua média este mês.',
-        style: const TextStyle(
-          fontSize: 14,
-          color: Colors.black87,
-          height: 1.4,
+      insights.add(
+        Text(
+          '• ⚠️ Você gastou ${CurrencyFormatter.format(_economia.abs())} a mais que sua média este mês.',
+          style: const TextStyle(
+            fontSize: 14,
+            color: Colors.black87,
+            height: 1.4,
+          ),
         ),
-      ));
+      );
     }
-    
+
     insights.add(const SizedBox(height: 8));
-    
+
     // Insight sobre categoria com maior gasto
     if (_gastosPorCategoria.isNotEmpty) {
       final maiorCategoria = _gastosPorCategoria.first;
-      insights.add(Text(
-        '• 📊 Sua categoria com maior gasto é "${maiorCategoria['categoria']}" com ${maiorCategoria['valor']}.',
-        style: const TextStyle(
-          fontSize: 14,
-          color: Colors.black87,
-          height: 1.4,
+      insights.add(
+        Text(
+          '• 📊 Sua categoria com maior gasto é "${maiorCategoria['categoria']}" com ${maiorCategoria['valor']}.',
+          style: const TextStyle(
+            fontSize: 14,
+            color: Colors.black87,
+            height: 1.4,
+          ),
         ),
-      ));
+      );
     }
-    
+
     insights.add(const SizedBox(height: 16));
-    
+
     // Seção de alertas
-    insights.add(const Text(
-      '⚠️ Dicas e Alertas:',
-      style: TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
-        color: Colors.black87,
+    insights.add(
+      const Text(
+        '⚠️ Dicas e Alertas:',
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: Colors.black87,
+        ),
       ),
-    ));
-    
+    );
+
     insights.add(const SizedBox(height: 8));
-    
+
     // Alert sobre utilização do limite
     if (percentualUtilizacao > 80) {
-      insights.add(const Text(
-        '• 🚨 Atenção! Você está usando mais de 80% do seu limite.',
-        style: TextStyle(
-          fontSize: 13,
-          color: Colors.black87,
-          height: 1.3,
+      insights.add(
+        const Text(
+          '• 🚨 Atenção! Você está usando mais de 80% do seu limite.',
+          style: TextStyle(fontSize: 13, color: Colors.black87, height: 1.3),
         ),
-      ));
+      );
     } else if (percentualUtilizacao > 60) {
-      insights.add(const Text(
-        '• 💡 Você está usando mais de 60% do seu limite. Considere moderar os gastos.',
-        style: TextStyle(
-          fontSize: 13,
-          color: Colors.black87,
-          height: 1.3,
+      insights.add(
+        const Text(
+          '• 💡 Você está usando mais de 60% do seu limite. Considere moderar os gastos.',
+          style: TextStyle(fontSize: 13, color: Colors.black87, height: 1.3),
         ),
-      ));
+      );
     } else {
-      insights.add(Text(
-        '• ✅ Boa! Você tem ${CurrencyFormatter.format(valorDisponivel)} ainda disponíveis no seu limite.',
-        style: const TextStyle(
-          fontSize: 13,
-          color: Colors.black87,
-          height: 1.3,
+      insights.add(
+        Text(
+          '• ✅ Boa! Você tem ${CurrencyFormatter.format(valorDisponivel)} ainda disponíveis no seu limite.',
+          style: const TextStyle(
+            fontSize: 13,
+            color: Colors.black87,
+            height: 1.3,
+          ),
         ),
-      ));
+      );
     }
-    
+
     // Insight sobre vencimento da fatura
     if (_faturaAtual != null) {
       final diasVencimento = _faturaAtual!.diasAteVencimento;
       if (diasVencimento <= 3 && diasVencimento >= 0) {
         insights.add(const SizedBox(height: 6));
-        insights.add(const Text(
-          '• ⏰ Sua fatura vence nos próximos 3 dias!',
-          style: TextStyle(
-            fontSize: 13,
-            color: Colors.black87,
-            height: 1.3,
+        insights.add(
+          const Text(
+            '• ⏰ Sua fatura vence nos próximos 3 dias!',
+            style: TextStyle(fontSize: 13, color: Colors.black87, height: 1.3),
           ),
-        ));
+        );
       }
     }
-    
+
     return insights;
   }
 
@@ -1186,7 +1282,10 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.blue.withAlpha(26),
                     borderRadius: BorderRadius.circular(20),
@@ -1202,9 +1301,9 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             SizedBox(
               height: 200,
               child: LineChart(
@@ -1213,9 +1312,9 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
                 curve: Curves.easeInOutCubic,
               ),
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -1233,13 +1332,15 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      _economia > 0 
-                        ? 'Tendência de economia de ${CurrencyFormatter.format(_economia)} comparado à média'
-                        : 'Gasto acima da média em ${CurrencyFormatter.format(_economia.abs())}',
+                      _economia > 0
+                          ? 'Tendência de economia de ${CurrencyFormatter.format(_economia)} comparado à média'
+                          : 'Gasto acima da média em ${CurrencyFormatter.format(_economia.abs())}',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: _economia > 0 ? Colors.green[700] : Colors.red[700],
+                        color: _economia > 0
+                            ? Colors.green[700]
+                            : Colors.red[700],
                       ),
                     ),
                   ),
@@ -1259,10 +1360,10 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
       final valor = _evolucaoGastos[i]['valor'] as double;
       if (valor > maxY) maxY = valor;
     }
-    
+
     // Adicionar 20% de margem
     maxY = maxY * 1.2;
-    
+
     return LineChartData(
       minY: 0,
       maxY: maxY,
@@ -1311,10 +1412,7 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
                     mes,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey,
-                    ),
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                 );
               }
@@ -1331,17 +1429,16 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
                 padding: const EdgeInsets.only(right: 8),
                 child: Text(
                   'R\$${(value / 1000).toStringAsFixed(0)}k',
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: Colors.grey,
-                  ),
+                  style: const TextStyle(fontSize: 11, color: Colors.grey),
                 ),
               );
             },
           ),
         ),
         topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        rightTitles: const AxisTitles(
+          sideTitles: SideTitles(showTitles: false),
+        ),
       ),
       lineTouchData: LineTouchData(
         touchTooltipData: LineTouchTooltipData(
@@ -1425,9 +1522,9 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             Row(
               children: [
                 // Gráfico de pizza
@@ -1442,9 +1539,9 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(width: 20),
-                
+
                 // Legenda
                 Expanded(
                   flex: 1,
@@ -1452,10 +1549,17 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       ..._gastosPorCategoria.map((categoria) {
-                        final cores = [Colors.blue, Colors.green, Colors.orange, Colors.red, Colors.purple, Colors.teal];
+                        final cores = [
+                          Colors.blue,
+                          Colors.green,
+                          Colors.orange,
+                          Colors.red,
+                          Colors.purple,
+                          Colors.teal,
+                        ];
                         final index = _gastosPorCategoria.indexOf(categoria);
                         final cor = cores[index % cores.length];
-                        
+
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 8),
                           child: Row(
@@ -1507,9 +1611,19 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
   }
 
   PieChartData _buildPieChartData() {
-    final cores = [Colors.blue, Colors.green, Colors.orange, Colors.red, Colors.purple, Colors.teal];
-    final total = _gastosPorCategoria.fold(0.0, (sum, cat) => sum + CurrencyFormatter.parseFromString(cat['valor']!));
-    
+    final cores = [
+      Colors.blue,
+      Colors.green,
+      Colors.orange,
+      Colors.red,
+      Colors.purple,
+      Colors.teal,
+    ];
+    final total = _gastosPorCategoria.fold(
+      0.0,
+      (sum, cat) => sum + CurrencyFormatter.parseFromString(cat['valor']!),
+    );
+
     return PieChartData(
       sectionsSpace: 2,
       centerSpaceRadius: 50,
@@ -1518,7 +1632,7 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
         final cor = cores[index % cores.length];
         final valor = CurrencyFormatter.parseFromString(categoria['valor']!);
         final percentual = (valor / total) * 100;
-        
+
         return PieChartSectionData(
           color: cor,
           value: valor,
@@ -1578,9 +1692,9 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             SizedBox(
               height: 200,
               child: BarChart(
@@ -1589,9 +1703,9 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
                 swapAnimationCurve: Curves.easeInOutCubic,
               ),
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -1600,17 +1714,13 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
               ),
               child: Row(
                 children: [
-                  const Icon(
-                    Icons.info_outline,
-                    color: Colors.blue,
-                    size: 20,
-                  ),
+                  const Icon(Icons.info_outline, color: Colors.blue, size: 20),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      _gastosPorDiaReais.isNotEmpty 
-                        ? 'Maior gasto: ${_gastosPorDiaReais.reduce((a, b) => a['valor'] > b['valor'] ? a : b)['dia']}'
-                        : 'Dados não disponíveis',
+                      _gastosPorDiaReais.isNotEmpty
+                          ? 'Maior gasto: ${_gastosPorDiaReais.reduce((a, b) => a['valor'] > b['valor'] ? a : b)['dia']}'
+                          : 'Dados não disponíveis',
                       style: const TextStyle(
                         fontSize: 12,
                         color: Colors.blue,
@@ -1629,19 +1739,27 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
 
   BarChartData _buildBarChartData() {
     final ranking = _gastosPorDiaReais.asMap().entries.toList()
-      ..sort((a, b) => (b.value['valor'] as double).compareTo(a.value['valor'] as double));
+      ..sort(
+        (a, b) =>
+            (b.value['valor'] as double).compareTo(a.value['valor'] as double),
+      );
 
     return BarChartData(
-      maxY: _gastosPorDiaReais.isEmpty ? 100 : _gastosPorDiaReais.map((e) => e['valor'] as double).reduce((a, b) => a > b ? a : b) * 1.2,
+      maxY: _gastosPorDiaReais.isEmpty
+          ? 100
+          : _gastosPorDiaReais
+                    .map((e) => e['valor'] as double)
+                    .reduce((a, b) => a > b ? a : b) *
+                1.2,
       barGroups: _gastosPorDiaReais.asMap().entries.map((entry) {
         final index = entry.key;
         final data = entry.value;
         final valor = data['valor'] as double;
-        
+
         // Determinar a cor baseada no ranking
         final isTop1 = ranking[0].value == data;
         final isTop3 = ranking.take(3).any((r) => r.value == data);
-        
+
         Color cor = Colors.grey;
         if (isTop1) {
           cor = Colors.red;
@@ -1650,7 +1768,7 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
         } else {
           cor = Colors.green;
         }
-        
+
         return BarChartGroupData(
           x: index,
           barRods: [
@@ -1676,10 +1794,7 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
                 padding: const EdgeInsets.only(right: 8),
                 child: Text(
                   'R\$${value.toInt()}',
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: Colors.grey,
-                  ),
+                  style: const TextStyle(fontSize: 11, color: Colors.grey),
                 ),
               );
             },
@@ -1708,13 +1823,20 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
           ),
         ),
         topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        rightTitles: const AxisTitles(
+          sideTitles: SideTitles(showTitles: false),
+        ),
       ),
       borderData: FlBorderData(show: false),
       gridData: FlGridData(
         show: true,
         drawVerticalLine: false,
-        horizontalInterval: _gastosPorDiaReais.isEmpty ? 20 : _gastosPorDiaReais.map((e) => e['valor'] as double).reduce((a, b) => a > b ? a : b) / 5,
+        horizontalInterval: _gastosPorDiaReais.isEmpty
+            ? 20
+            : _gastosPorDiaReais
+                      .map((e) => e['valor'] as double)
+                      .reduce((a, b) => a > b ? a : b) /
+                  5,
         getDrawingHorizontalLine: (value) {
           return FlLine(
             color: Colors.grey[300],
@@ -1731,12 +1853,16 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
               final data = _gastosPorDiaReais[groupIndex];
               final dia = data['dia'] as String;
               final valor = data['valor'] as double;
-              
+
               // Determinar o ranking
               final ranking = _gastosPorDiaReais.asMap().entries.toList()
-                ..sort((a, b) => (b.value['valor'] as double).compareTo(a.value['valor'] as double));
+                ..sort(
+                  (a, b) => (b.value['valor'] as double).compareTo(
+                    a.value['valor'] as double,
+                  ),
+                );
               final posicao = ranking.indexWhere((r) => r.value == data) + 1;
-              
+
               return BarTooltipItem(
                 '$dia\n${CurrencyFormatter.format(valor)}\n${posicao}º lugar',
                 const TextStyle(
@@ -1760,7 +1886,7 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
         child: ElevatedButton(
           onPressed: () => Navigator.pop(context),
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.grey[800],
+            backgroundColor: AppColors.roxoHeader,
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(vertical: 16),
             shape: RoundedRectangleBorder(
@@ -1793,84 +1919,88 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
   /// - Prioridade 3: Demais faturas em aberto
   Future<FaturaModel?> _buscarFaturaMaisPrioritaria() async {
     try {
-      debugPrint('🔍 Buscando fatura mais prioritária para cartão: ${widget.cartao.id}');
-      
+      debugPrint(
+        '🔍 Buscando fatura mais prioritária para cartão: ${widget.cartao.id}',
+      );
+
       // Buscar faturas dos últimos 6 meses + próximos 3 meses
       final hoje = DateTime.now();
       final inicioRange = DateTime(hoje.year, hoje.month - 6, 1);
       final fimRange = DateTime(hoje.year, hoje.month + 3, 30);
-      
+
       final faturas = <FaturaModel>[];
-      
+
       // Buscar faturas do período
       var mesAtual = inicioRange;
       while (mesAtual.isBefore(fimRange)) {
         try {
           final faturasMes = await _cartaoDataService.buscarFaturasCartao(
-            widget.cartao.id, 
-            mesReferencia: mesAtual
+            widget.cartao.id,
+            mesReferencia: mesAtual,
           );
-          
+
           if (faturasMes.isNotEmpty) {
             faturas.addAll(faturasMes);
           }
         } catch (e) {
-          debugPrint('⚠️ Erro ao buscar faturas do mês ${mesAtual.month}/${mesAtual.year}: $e');
+          debugPrint(
+            '⚠️ Erro ao buscar faturas do mês ${mesAtual.month}/${mesAtual.year}: $e',
+          );
         }
-        
+
         mesAtual = DateTime(mesAtual.year, mesAtual.month + 1, 1);
       }
-      
+
       debugPrint('📋 Total de faturas encontradas: ${faturas.length}');
-      
+
       // Filtrar apenas faturas não pagas com saldo > R$ 0,01
       final faturasEmAberto = faturas.where((fatura) {
         final temSaldo = fatura.valorRestante > 0.01;
         final naoPaga = !fatura.paga;
         return temSaldo && naoPaga;
       }).toList();
-      
+
       debugPrint('💰 Faturas em aberto: ${faturasEmAberto.length}');
-      
+
       if (faturasEmAberto.isEmpty) {
         debugPrint('✅ Nenhuma fatura em aberto encontrada');
         return null;
       }
-      
+
       // Classificar faturas por prioridade
       faturasEmAberto.sort((a, b) {
         final diasA = a.diasAteVencimento;
         final diasB = b.diasAteVencimento;
-        
+
         // Prioridade 1: Faturas vencidas (dias negativos) - mais antiga primeiro
         final aVencida = diasA < 0;
         final bVencida = diasB < 0;
-        
+
         if (aVencida && bVencida) {
           return diasA.compareTo(diasB); // Mais antiga (menor valor) primeiro
         }
-        
+
         if (aVencida && !bVencida) return -1; // A vencida tem prioridade
-        if (!aVencida && bVencida) return 1;  // B vencida tem prioridade
-        
+        if (!aVencida && bVencida) return 1; // B vencida tem prioridade
+
         // Prioridade 2: Faturas que vencem em até 7 dias
         final aUrgente = diasA >= 0 && diasA <= 7;
         final bUrgente = diasB >= 0 && diasB <= 7;
-        
+
         if (aUrgente && bUrgente) {
           return diasA.compareTo(diasB); // Que vence antes tem prioridade
         }
-        
+
         if (aUrgente && !bUrgente) return -1; // A urgente tem prioridade
-        if (!aUrgente && bUrgente) return 1;  // B urgente tem prioridade
-        
+        if (!aUrgente && bUrgente) return 1; // B urgente tem prioridade
+
         // Prioridade 3: Demais faturas por data de vencimento
         return diasA.compareTo(diasB);
       });
-      
+
       final faturaPrioritaria = faturasEmAberto.first;
       final diasVencimento = faturaPrioritaria.diasAteVencimento;
-      
+
       String prioridade;
       if (diasVencimento < 0) {
         prioridade = "VENCIDA (${diasVencimento.abs()} dias atrás)";
@@ -1879,14 +2009,13 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
       } else {
         prioridade = "NORMAL (vence em $diasVencimento dias)";
       }
-      
+
       debugPrint('🎯 Fatura mais prioritária: ${faturaPrioritaria.id}');
       debugPrint('📅 Vencimento: ${faturaPrioritaria.dataVencimentoFormatada}');
       debugPrint('⚡ Prioridade: $prioridade');
       debugPrint('💰 Valor: ${faturaPrioritaria.valorTotalFormatado}');
-      
+
       return faturaPrioritaria;
-      
     } catch (e) {
       debugPrint('❌ Erro ao buscar fatura prioritária: $e');
       return null;
@@ -1908,14 +2037,14 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
 
   void _abrirPagamentoFatura() async {
     debugPrint('🚀 [DEBUG] _abrirPagamentoFatura chamado');
-    
+
     // 🔥 NOVA LÓGICA: Buscar fatura mais prioritária para pagamento
     try {
       final faturaPrioritaria = await _buscarFaturaMaisPrioritaria();
-      
+
       if (faturaPrioritaria == null) {
         debugPrint('✅ [DEBUG] Nenhuma fatura para pagamento encontrada');
-        
+
         // Mensagem sutil na base da tela
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -1934,17 +2063,25 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
             backgroundColor: Colors.green[600],
             behavior: SnackBarBehavior.floating,
             margin: const EdgeInsets.all(16),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
             duration: const Duration(seconds: 2),
           ),
         );
         return;
       }
 
-      debugPrint('✅ [DEBUG] Fatura prioritária encontrada: ${faturaPrioritaria.id}');
-      debugPrint('💰 [DEBUG] Valor da fatura: ${faturaPrioritaria.valorTotalFormatado}');
-      debugPrint('📅 [DEBUG] Vencimento: ${faturaPrioritaria.dataVencimentoFormatada}');
-      
+      debugPrint(
+        '✅ [DEBUG] Fatura prioritária encontrada: ${faturaPrioritaria.id}',
+      );
+      debugPrint(
+        '💰 [DEBUG] Valor da fatura: ${faturaPrioritaria.valorTotalFormatado}',
+      );
+      debugPrint(
+        '📅 [DEBUG] Vencimento: ${faturaPrioritaria.dataVencimentoFormatada}',
+      );
+
       // ✅ NAVEGAÇÃO PARA PÁGINA COMPLETA DE PAGAMENTO
       final resultado = await Navigator.push(
         context,
@@ -1959,7 +2096,7 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
       // Se retornou sucesso, recarregar dados com feedback positivo
       if (resultado == true) {
         debugPrint('✅ Pagamento processado com sucesso - recarregando dados');
-        
+
         // Feedback positivo após pagamento
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -1978,14 +2115,15 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
             backgroundColor: Colors.green[600],
             behavior: SnackBarBehavior.floating,
             margin: const EdgeInsets.all(16),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
             duration: const Duration(seconds: 2),
           ),
         );
-        
+
         await _carregarDados();
       }
-      
     } catch (e) {
       debugPrint('❌ Erro ao buscar fatura prioritária: $e');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -2016,7 +2154,7 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
   void _reabrirFatura() async {
     debugPrint('🎯 UI: _reabrirFatura INICIADA');
     debugPrint('🎯 UI: _faturaAtual = ${_faturaAtual?.id}');
-    
+
     if (_faturaAtual == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -2100,9 +2238,7 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (context) => const Center(
-          child: CircularProgressIndicator(),
-        ),
+        builder: (context) => const Center(child: CircularProgressIndicator()),
       );
 
       debugPrint('🔄 Reabrindo fatura: ${_faturaAtual!.id}');
@@ -2110,7 +2246,9 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
       // Chamar serviço para reabrir fatura
       final resultado = await FaturaOperationsService.instance.reabrirFatura(
         cartaoId: widget.cartao.id,
-        faturaVencimento: _faturaAtual!.dataVencimento.toIso8601String().split('T')[0],
+        faturaVencimento: _faturaAtual!.dataVencimento.toIso8601String().split(
+          'T',
+        )[0],
       );
 
       // Fechar loading
@@ -2135,17 +2273,19 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
             backgroundColor: Colors.green[600],
             behavior: SnackBarBehavior.floating,
             margin: const EdgeInsets.all(16),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
             duration: const Duration(seconds: 3),
           ),
         );
 
         // Pequeno delay para o usuário ver a mensagem antes da sincronização
         await Future.delayed(const Duration(milliseconds: 500));
-        
+
         // Recarregar dados silenciosamente
         await _carregarDados();
-        
+
         // Confirmação final sutil depois que os dados carregaram
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -2160,7 +2300,9 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
               backgroundColor: Colors.blue[600],
               behavior: SnackBarBehavior.floating,
               margin: EdgeInsets.only(left: 16, right: 16, bottom: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
               duration: const Duration(seconds: 2),
             ),
           );
@@ -2175,11 +2317,12 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
       }
 
       debugPrint('❌ Erro ao reabrir fatura: $e');
-      
+
       // Verificar se o erro é realmente crítico ou apenas warning
       final errorMsg = e.toString().toLowerCase();
-      final isCriticalError = !errorMsg.contains('success') && !errorMsg.contains('completed');
-      
+      final isCriticalError =
+          !errorMsg.contains('success') && !errorMsg.contains('completed');
+
       if (isCriticalError) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -2198,7 +2341,9 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
             backgroundColor: Colors.orange[700],
             behavior: SnackBarBehavior.floating,
             margin: const EdgeInsets.all(16),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
             duration: const Duration(seconds: 3),
             action: SnackBarAction(
               label: 'Tentar Novamente',
@@ -2218,7 +2363,8 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => CartaoFormPage(modo: 'editar', cartao: widget.cartao),
+        builder: (context) =>
+            CartaoFormPage(modo: 'editar', cartao: widget.cartao),
       ),
     ).then((result) {
       if (result != null) {
@@ -2241,7 +2387,9 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
   void _navegarParaTransacoes() {
     navigationContext.setCartaoSelecionado(widget.cartao.id);
     navigationContext.setMesSelecionado(_mesAtual);
-    debugPrint('🧭 Navegando para transações do cartão: ${widget.cartao.nome} (${widget.cartao.id})');
+    debugPrint(
+      '🧭 Navegando para transações do cartão: ${widget.cartao.nome} (${widget.cartao.id})',
+    );
 
     Navigator.push(
       context,
@@ -2278,9 +2426,7 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => DespesaCartaoPage(
-          cartaoInicial: widget.cartao,
-        ),
+        builder: (context) => DespesaCartaoPage(cartaoInicial: widget.cartao),
       ),
     ).then((result) {
       if (result != null) {
@@ -2309,14 +2455,66 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
     );
   }
 
-  void _arquivarCartao() {
-    // TODO: Implementar arquivamento do cartão
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Arquivar cartão em desenvolvimento'),
-        backgroundColor: Colors.blue,
+  void _arquivarCartao() async {
+    final confirmado = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('${widget.cartao.ativo ? 'Arquivar' : 'Reativar'} Cartão'),
+        content: Text(
+          widget.cartao.ativo
+              ? 'Deseja arquivar o cartão "${widget.cartao.nome}"?'
+              : 'Deseja reativar o cartão "${widget.cartao.nome}"?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(widget.cartao.ativo ? 'Arquivar' : 'Reativar'),
+          ),
+        ],
       ),
     );
+
+    if (confirmado == true) {
+      try {
+        if (widget.cartao.ativo) {
+          await _cartaoService.arquivarCartao(widget.cartao.id);
+        } else {
+          await _cartaoService.reativarCartao(widget.cartao.id);
+        }
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                widget.cartao.ativo
+                    ? 'Cartão arquivado com sucesso!'
+                    : 'Cartão reativado com sucesso!',
+              ),
+              backgroundColor: Colors.green,
+            ),
+          );
+
+          // Navegar para a tela de cartões arquivados
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const CartoesArquivadosPage()),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Erro: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
   }
 
   void _mostrarEmDesenvolvimento() {
@@ -2336,6 +2534,4 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
       (route) => false,
     );
   }
-
-
 }

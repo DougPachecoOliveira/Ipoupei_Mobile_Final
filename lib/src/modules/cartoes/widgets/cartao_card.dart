@@ -3,6 +3,7 @@ import '../models/cartao_model.dart';
 import '../models/fatura_model.dart';
 import '../../shared/theme/app_colors.dart';
 import '../../shared/utils/currency_formatter.dart';
+import '../../../shared/services/user_preferences_service.dart';
 
 class CartaoCard extends StatelessWidget {
   final CartaoModel cartao;
@@ -224,10 +225,12 @@ class CartaoCard extends StatelessWidget {
     );
   }
 
-  /// Ícone da bandeira do cartão
+  /// Ícone da bandeira do cartão com estrela dourada se favorito
   Widget _buildIconeBandeira() {
     final bandeira = cartao.bandeira?.toUpperCase();
-    
+    final preferencesService = UserPreferencesService.instance;
+    final isCartaoFavorito = preferencesService.isCartaoFavorito(cartao.id);
+
     Widget icone;
     switch (bandeira) {
       case 'VISA':
@@ -252,7 +255,31 @@ class CartaoCard extends StatelessWidget {
         color: Colors.white.withAlpha(52),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: icone,
+      child: Stack(
+        children: [
+          // Ícone principal do cartão
+          icone,
+
+          // ⭐ Estrela dourada se for favorito
+          if (isCartaoFavorito)
+            Positioned(
+              top: -2,
+              right: -2,
+              child: Container(
+                padding: const EdgeInsets.all(1),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.star,
+                  color: Colors.amber,
+                  size: 12,
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 
@@ -457,9 +484,21 @@ class CartaoCard extends StatelessWidget {
               alignment: Alignment.center,
               child: PopupMenuButton<String>(
                 icon: const Icon(Icons.more_horiz, color: Colors.white, size: 18),
-                onSelected: (action) {
+                onSelected: (action) async {
                   if (action == 'pagar') {
                     onPagarFatura?.call();
+                  } else if (action == 'toggle_favorito') {
+                    // ⭐ Gerenciar cartão favorito localmente
+                    try {
+                      final preferencesService = UserPreferencesService.instance;
+                      await preferencesService.toggleCartaoFavorito(cartao.id);
+
+                      // Feedback visual opcional via callback
+                      onMenuAction?.call('favorito_${preferencesService.isCartaoFavorito(cartao.id) ? "marcado" : "removido"}');
+                    } catch (e) {
+                      // Feedback de erro via callback
+                      onMenuAction?.call('favorito_erro');
+                    }
                   } else {
                     // Repassar para o handler principal via onMenuAction
                     onMenuAction?.call(action);
@@ -611,6 +650,35 @@ class CartaoCard extends StatelessWidget {
   /// 🆕 MENU DINÂMICO POR STATUS
   List<PopupMenuItem<String>> _buildMenuItems(String status) {
     final items = <PopupMenuItem<String>>[];
+    final preferencesService = UserPreferencesService.instance;
+    final isFavorito = preferencesService.isCartaoFavorito(cartao.id);
+
+    // ⭐ Cartão Favorito - PRIMEIRA OPÇÃO
+    items.add(
+      PopupMenuItem(
+        value: 'toggle_favorito',
+        child: Row(
+          children: [
+            Icon(
+              isFavorito ? Icons.star : Icons.star_border,
+              size: 20,
+              color: isFavorito ? Colors.amber : null,
+            ),
+            const SizedBox(width: 8),
+            Text(isFavorito ? 'Remover Favorito' : 'Marcar como Favorito'),
+          ],
+        ),
+      ),
+    );
+
+    // Separador visual
+    items.add(
+      const PopupMenuItem(
+        enabled: false,
+        value: 'separator',
+        child: Divider(height: 1),
+      ),
+    );
 
     // Pagar Fatura (se aplicável)
     if (status == 'vencida' || status == 'vencendo' || status == 'aberta') {

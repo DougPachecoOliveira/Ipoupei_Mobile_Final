@@ -28,6 +28,7 @@ import '../../../shared/components/ui/app_button.dart';
 import '../../shared/theme/app_colors.dart';
 import '../../categorias/data/categoria_icons.dart';
 import '../../contas/data/contas_sugeridas.dart';
+import '../../../shared/services/user_preferences_service.dart';
 
 class TransacaoFormPage extends StatefulWidget {
   final String modo; // 'criar' ou 'editar'
@@ -204,6 +205,15 @@ class _TransacaoFormPageState extends State<TransacaoFormPage> {
       _dataSelecionada = DateTime.now(); // Data atual apenas para criação
       // ✅ Aplicar auto-status baseado na data inicial
       _atualizarStatusPorData(_dataSelecionada!);
+
+      // ⭐ PREENCHER CARTÃO FAVORITO SE FOR DESPESA DE CARTÃO
+      if (_tipoSelecionado == 'despesa') {
+        final preferencesService = UserPreferencesService.instance;
+        if (preferencesService.hasCartaoFavorito) {
+          _cartaoSelecionado = preferencesService.cartaoFavoritoId;
+          log('⭐ Cartão favorito pré-selecionado: $_cartaoSelecionado');
+        }
+      }
     } else if (widget.modo == 'editar' && widget.transacao != null) {
       final transacao = widget.transacao!;
       _descricaoController.text = transacao.descricao;

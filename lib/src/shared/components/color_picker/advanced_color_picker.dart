@@ -1,10 +1,12 @@
 // lib/src/shared/components/color_picker/advanced_color_picker.dart
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'models/color_picker_config.dart';
 import 'models/app_color_item.dart';
-import 'widgets/color_gradient_picker.dart';
+import 'widgets/color_2d_matrix.dart';
 import 'widgets/color_search_field.dart';
 import 'widgets/color_preview_card.dart';
+import 'models/color_matrix_data.dart';
 
 /// Seletor de cores universal e reutilizável
 class AdvancedColorPicker extends StatefulWidget {
@@ -88,11 +90,66 @@ class _AdvancedColorPickerState extends State<AdvancedColorPicker> {
   }
 
   void _initializeColors() {
-    // Usar sempre as cores do config, que já carregam todas as cores da paleta
-    _allColors = widget.config.availableColors;
+    // Converter cores da matriz para AppColorItem
+    _allColors = _convertMatrixToAppColorItems();
     _filteredColors = _allColors;
   }
 
+  List<AppColorItem> _convertMatrixToAppColorItems() {
+    final List<AppColorItem> colors = [];
+
+    for (int row = 0; row < ColorMatrixData.rowCount; row++) {
+      for (int column = 0; column < ColorMatrixData.columnCount; column++) {
+        final colorData = ColorMatrixData.getColor(row, column);
+        if (colorData != null) {
+          colors.add(AppColorItem(
+            name: colorData['nome']!,
+            hexValue: colorData['hex']!,
+            category: ColorMatrixData.hueLabels[column],
+            isLightColor: _isLightColor(colorData['hex']!),
+            contrastRatio: _calculateContrastRatio(colorData['hex']!),
+          ));
+        }
+      }
+    }
+
+    return colors;
+  }
+
+  bool _isLightColor(String hexColor) {
+    final color = Color(int.parse(hexColor.replaceAll('#', '0xFF')));
+    final brightness = ((color.r * 255.0).round() * 299 +
+                       (color.g * 255.0).round() * 587 +
+                       (color.b * 255.0).round() * 114) / 1000;
+    return brightness > 186;
+  }
+
+  double _calculateContrastRatio(String hexColor) {
+    final color = Color(int.parse(hexColor.replaceAll('#', '0xFF')));
+    final colorLum = _calculateRelativeLuminance(color);
+    const whiteLum = 1.0;
+
+    final lighterLum = colorLum > whiteLum ? colorLum : whiteLum;
+    final darkerLum = colorLum > whiteLum ? whiteLum : colorLum;
+
+    return (lighterLum + 0.05) / (darkerLum + 0.05);
+  }
+
+  double _calculateRelativeLuminance(Color color) {
+    final r = _linearizeColorChannel(color.r);
+    final g = _linearizeColorChannel(color.g);
+    final b = _linearizeColorChannel(color.b);
+
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  }
+
+  double _linearizeColorChannel(double channel) {
+    if (channel <= 0.04045) {
+      return channel / 12.92;
+    } else {
+      return math.pow((channel + 0.055) / 1.055, 2.4).toDouble();
+    }
+  }
 
   void _selectInitialColor() {
     if (widget.currentColor != null) {
@@ -118,6 +175,17 @@ class _AdvancedColorPickerState extends State<AdvancedColorPicker> {
     setState(() {
       _searchQuery = query;
       _filterColors();
+    });
+  }
+
+  void _onMatrixColorSelected(int row, int column, Map<String, String> colorData) {
+    // Encontrar o AppColorItem correspondente
+    final selectedAppColor = _allColors.firstWhere(
+      (color) => color.hexValue.toLowerCase() == colorData['hex']!.toLowerCase(),
+    );
+
+    setState(() {
+      _selectedColor = selectedAppColor;
     });
   }
 
@@ -201,14 +269,7 @@ class _AdvancedColorPickerState extends State<AdvancedColorPicker> {
             ),
           ),
 
-        // Campo de busca
-        if (widget.config.showSearch)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-            child: ColorSearchField(
-              onSearchChanged: _onSearchChanged,
-            ),
-          ),
+
 
         // Seletor de cores contínuo
         Expanded(
@@ -216,28 +277,10 @@ class _AdvancedColorPickerState extends State<AdvancedColorPicker> {
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             child: Column(
               children: [
-                // Gradiente principal
+                // Matriz 2D principal
                 Expanded(
-                  flex: 3,
-                  child: ColorGradientPicker(
-                    selectedColor: _selectedColor,
-                    onColorSelected: _onColorTap,
-                    height: double.infinity,
-                  ),
+                  child: _buildColorMatrix(),
                 ),
-
-                const SizedBox(height: 16),
-
-                // Lista horizontal de cores filtradas (se há busca)
-                if (_searchQuery.isNotEmpty && _filteredColors.isNotEmpty)
-                  Expanded(
-                    flex: 1,
-                    child: ColorStripPicker(
-                      colors: _filteredColors,
-                      selectedColor: _selectedColor,
-                      onColorSelected: _onColorTap,
-                    ),
-                  ),
               ],
             ),
           ),
@@ -282,6 +325,76 @@ class _AdvancedColorPickerState extends State<AdvancedColorPicker> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildColorMatrix() {
+    // Converter a cor selecionada de volta para coordenadas da matriz para a seleção visual
+    int? selectedRow;
+    int? selectedColumn;
+
+    if (_selectedColor != null) {
+      // Procurar as coordenadas da cor selecionada na matriz
+      for (int row = 0; row < ColorMatrixData.rowCount; row++) {
+        for (int column = 0; column < ColorMatrixData.columnCount; column++) {
+          final colorData = ColorMatrixData.getColor(row, column);
+          if (colorData != null &&
+              colorData['hex']!.toLowerCase() == _selectedColor!.hexValue.toLowerCase()) {
+            selectedRow = row;
+            selectedColumn = column;
+            break;
+          }
+        }
+        if (selectedRow != null) break;
+      }
+    }
+
+    return Color2DMatrix(
+      onColorSelected: _onMatrixColorSelected,
+      selectedRow: selectedRow,
+      selectedColumn: selectedColumn,
+      cellSize: 35,
+      spacing: 4,
+    );
+  }
+
+  Widget _buildSearchResults() {
+    return SizedBox(
+      height: 60,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: _filteredColors.length,
+        itemBuilder: (context, index) {
+          final color = _filteredColors[index];
+          final isSelected = _selectedColor?.hexValue == color.hexValue;
+
+          return GestureDetector(
+            onTap: () => _onColorTap(color),
+            child: Container(
+              width: 60,
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              decoration: BoxDecoration(
+                color: color.color,
+                borderRadius: BorderRadius.circular(12),
+                border: isSelected
+                    ? Border.all(color: Colors.white, width: 3)
+                    : Border.all(color: Colors.black.withValues(alpha: 0.1)),
+                boxShadow: [
+                  if (isSelected)
+                    BoxShadow(
+                      color: color.color.withValues(alpha: 0.4),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                ],
+              ),
+              child: isSelected
+                  ? const Icon(Icons.check, color: Colors.white, size: 20)
+                  : null,
+            ),
+          );
+        },
+      ),
     );
   }
 }

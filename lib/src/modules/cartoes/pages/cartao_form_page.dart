@@ -26,6 +26,7 @@ import '../../../shared/widgets/modal_selecao_conta.dart';
 import '../../../shared/components/loading/ipoupei_loading_system.dart';
 import '../../../shared/components/color_picker/advanced_color_picker.dart';
 import '../../../shared/components/color_picker/models/color_picker_config.dart';
+import '../../../shared/components/ui/app_button.dart';
 
 /// MoneyInputFormatter para formatação de moeda
 class MoneyInputFormatter extends TextInputFormatter {
@@ -44,16 +45,31 @@ class MoneyInputFormatter extends TextInputFormatter {
 
     try {
       final numbersOnly = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
-      
+
       if (numbersOnly.isEmpty) {
         return const TextEditingValue(text: '', selection: TextSelection.collapsed(offset: 0));
       }
 
       final value = int.parse(numbersOnly);
-      final formatted = (value / 100).toStringAsFixed(2).replaceAll('.', ',');
-      
+      final realValue = (value / 100).toStringAsFixed(2);
+
+      // Separar parte inteira e decimal
+      final parts = realValue.split('.');
+      final integerPart = parts[0];
+      final decimalPart = parts[1];
+
+      // Adicionar separadores de milhares na parte inteira
+      String formattedInteger = '';
+      for (int i = 0; i < integerPart.length; i++) {
+        if (i > 0 && (integerPart.length - i) % 3 == 0) {
+          formattedInteger += '.';
+        }
+        formattedInteger += integerPart[i];
+      }
+
+      final formatted = '$formattedInteger,$decimalPart';
       final newText = 'R\$ $formatted';
-      
+
       return TextEditingValue(
         text: newText,
         selection: TextSelection.collapsed(offset: newText.length),
@@ -517,31 +533,47 @@ class _CartaoFormPageState extends State<CartaoFormPage> {
         ),
       ),
       centerTitle: true,
+      actions: [
+        TextButton(
+          onPressed: _temAlteracoes ? _salvarCartao : null,
+          child: Text(
+            'Salvar',
+            style: TextStyle(
+              color: _temAlteracoes ? Colors.white : Colors.white54,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
   Widget _buildBody() {
     return Form(
       key: _formKey,
-      child: Column(
-        children: [
-          // Card Preview Dinâmico
-          _buildCardPreview(),
-          
-          // Formulário
-          Expanded(
-            child: ListView(
+      child: SingleChildScrollView(
+        child: Column(
+          children: [
+            // Card Preview Dinâmico
+            _buildCardPreview(),
+
+            // Formulário
+            Padding(
               padding: const EdgeInsets.all(16),
-              children: [
-                _buildFormulario(),
-                const SizedBox(height: 20),
-              ],
+              child: _buildFormulario(),
             ),
-          ),
-          
-          // Botões de ação
-          _buildBotoesAcao(),
-        ],
+
+            // Botões no final do scroll (após observações)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: _buildBotoesAcao(),
+            ),
+
+            // Espaço extra no final para scroll confortável
+            const SizedBox(height: 40),
+          ],
+        ),
       ),
     );
   }
@@ -1021,12 +1053,16 @@ class _CartaoFormPageState extends State<CartaoFormPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      nome,
-                      style: const TextStyle(
-                        fontSize: 16,
+                    Flexible(
+                      child: Text(
+                        nome,
+                        style: const TextStyle(
+                          fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: Colors.black87,
+                      ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     Container(
@@ -1067,7 +1103,7 @@ class _CartaoFormPageState extends State<CartaoFormPage> {
                           ),
                         ),
                         Text(
-                          'R\$ ${limite.toStringAsFixed(2).replaceAll('.', ',')}',
+                          _formatarValorMoeda(limite),
                           style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
@@ -1110,12 +1146,31 @@ class _CartaoFormPageState extends State<CartaoFormPage> {
   double _extrairLimiteFormatado() {
     final limiteText = _limiteController.text;
     if (limiteText.isEmpty) return 0.0;
-    
+
     final numbersOnly = limiteText.replaceAll(RegExp(r'[^0-9,]'), '');
     if (numbersOnly.isEmpty) return 0.0;
-    
+
     final cleanNumber = numbersOnly.replaceAll(',', '.');
     return double.tryParse(cleanNumber) ?? 0.0;
+  }
+
+  /// Formatar valor para exibição com separadores de milhares
+  String _formatarValorMoeda(double valor) {
+    final valorFormatado = valor.toStringAsFixed(2);
+    final parts = valorFormatado.split('.');
+    final integerPart = parts[0];
+    final decimalPart = parts[1];
+
+    // Adicionar separadores de milhares na parte inteira
+    String formattedInteger = '';
+    for (int i = 0; i < integerPart.length; i++) {
+      if (i > 0 && (integerPart.length - i) % 3 == 0) {
+        formattedInteger += '.';
+      }
+      formattedInteger += integerPart[i];
+    }
+
+    return 'R\$ $formattedInteger,$decimalPart';
   }
 
   /// Campo minimalista igual à imagem
@@ -1460,71 +1515,34 @@ class _CartaoFormPageState extends State<CartaoFormPage> {
     }
   }
 
+  /// Botões de ação no final do scroll
   Widget _buildBotoesAcao() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.12),
-            blurRadius: 16,
-            offset: const Offset(0, -4),
+    return Row(
+      children: [
+        // Botão Cancelar
+        Expanded(
+          child: AppButton.outline(
+            text: 'CANCELAR',
+            onPressed: () => Navigator.of(context).pop(),
+            customColor: AppColors.roxoHeader,
+            icon: Icons.arrow_back,
           ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // Botão Cancelar
-          Expanded(
-            child: OutlinedButton(
-              onPressed: () => Navigator.of(context).pop(),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                side: BorderSide(color: Colors.grey[400]!),
-              ),
-              child: const Text(
-                'Cancelar',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87,
-                ),
-              ),
-            ),
+        ),
+
+        const SizedBox(width: 16),
+
+        // Botão Salvar
+        Expanded(
+          child: AppButton(
+            text: widget.modo == 'criar' ? 'CRIAR' : 'SALVAR',
+            onPressed: _temAlteracoes && !_isLoading ? _salvarCartao : null,
+            customColor: AppColors.roxoHeader,
+            icon: widget.modo == 'criar' ? Icons.add : Icons.save,
+            isLoading: _isLoading,
           ),
-          
-          const SizedBox(width: 12),
-          
-          // Botão Salvar
-          Expanded(
-            flex: 2,
-            child: ElevatedButton(
-              onPressed: _temAlteracoes ? _salvarCartao : null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.roxoHeader,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: _temAlteracoes ? 4 : 0,
-                shadowColor: AppColors.roxoHeader.withValues(alpha: 0.3),
-              ),
-              child: Text(
-                widget.modo == 'criar' ? 'Criar Cartão' : 'Salvar Alterações',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
+
 }

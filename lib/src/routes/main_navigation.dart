@@ -43,8 +43,13 @@ class _MainNavigationState extends State<MainNavigation> {
 
   void _onContextChanged() {
     if (mounted) {
-      setState(() {
-        // Força rebuild para aplicar novos filtros
+      // ✅ Usar addPostFrameCallback para evitar setState durante build
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            // Força rebuild para aplicar novos filtros
+          });
+        }
       });
     }
   }

@@ -121,7 +121,9 @@ class ImportarDadosWidget extends StatelessWidget {
   /// Manipula o clique na importação
   Future<void> _handleImportacao(BuildContext context) async {
     try {
+      print('🚀 [IMPORT_DEBUG] Iniciando fluxo de importação...');
       final resultado = await ImportacaoModal.show(context);
+      print('📋 [IMPORT_DEBUG] Resultado do modal: $resultado');
 
       if (resultado != null && resultado['sucesso'] == true) {
         final transacoesSalvas = resultado['transacoesSalvas'] ?? 0;

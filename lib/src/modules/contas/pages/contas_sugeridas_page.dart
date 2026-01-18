@@ -165,6 +165,7 @@ class _ContasSugeridasPageState extends State<ContasSugeridasPage> {
       {'key': 'digitais', 'label': 'Digitais', 'emoji': '🚀'},
       {'key': 'tradicionais', 'label': 'Tradicionais', 'emoji': '🏛️'},
       {'key': 'cooperativas', 'label': 'Cooperativas', 'emoji': '🤝'},
+      {'key': 'beneficios', 'label': 'Benefícios', 'emoji': '💳'},
       {'key': 'investimentos', 'label': 'Investimentos', 'emoji': '💰'},
     ];
 

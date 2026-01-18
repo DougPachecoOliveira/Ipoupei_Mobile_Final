@@ -8,6 +8,8 @@
 import 'dart:convert';
 import 'dart:developer';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../modules/cartoes/models/cartao_model.dart';
+import '../modules/cartoes/services/cartao_service.dart';
 
 enum OperationType {
   insert,
@@ -129,7 +131,7 @@ class OfflineQueue {
         } else {
           if (operation.retryCount < _maxRetries) {
             failedOperations.add(operation.copyWithRetry());
-            log('🔄 Operação falhou, tentativa ${operation.retryCount + 1}/${_maxRetries}: ${operation.id}');
+            log('🔄 Operação falhou, tentativa ${operation.retryCount + 1}/$_maxRetries: ${operation.id}');
           } else {
             log('❌ Operação falhou definitivamente após $_maxRetries tentativas: ${operation.id}');
           }
@@ -163,6 +165,8 @@ class OfflineQueue {
       switch (operation.table) {
         case 'contas':
           return await _processContaOperation(operation);
+        case 'cartoes':
+          return await _processCartaoOperation(operation);
         case 'categorias':
           return await _processCategoriaOperation(operation);
         case 'subcategorias':
@@ -211,6 +215,58 @@ class OfflineQueue {
       return true;
     } catch (e) {
       log('❌ Erro ao processar operação de conta: $e');
+      return false;
+    }
+  }
+
+  /// 💳 PROCESSAR OPERAÇÃO DE CARTÃO
+  Future<bool> _processCartaoOperation(QueuedOperation operation) async {
+    try {
+      // Usar serviço diretamente
+      final cartaoService = CartaoService.instance;
+
+      switch (operation.operation) {
+        case OperationType.insert:
+          await cartaoService.criarCartao(
+            nome: operation.data['nome'],
+            limite: operation.data['limite'],
+            diaFechamento: operation.data['dia_fechamento'],
+            diaVencimento: operation.data['dia_vencimento'],
+            bandeira: operation.data['bandeira'],
+            banco: operation.data['banco'],
+            contaDebitoId: operation.data['conta_debito_id'],
+            cor: operation.data['cor'],
+            observacoes: operation.data['observacoes'],
+          );
+          break;
+        case OperationType.update:
+          // Para update, precisamos reconstruir o CartaoModel
+          final cartaoData = operation.data;
+          final cartaoModel = CartaoModel(
+            id: cartaoData['id'],
+            usuarioId: cartaoData['usuario_id'],
+            nome: cartaoData['nome'],
+            limite: cartaoData['limite'],
+            diaFechamento: cartaoData['dia_fechamento'],
+            diaVencimento: cartaoData['dia_vencimento'],
+            bandeira: cartaoData['bandeira'],
+            banco: cartaoData['banco'],
+            contaDebitoId: cartaoData['conta_debito_id'],
+            cor: cartaoData['cor'],
+            observacoes: cartaoData['observacoes'],
+            ativo: cartaoData['ativo'] == 1,
+            createdAt: DateTime.parse(cartaoData['created_at']),
+            updatedAt: DateTime.parse(cartaoData['updated_at']),
+          );
+          await cartaoService.atualizarCartao(cartaoModel);
+          break;
+        case OperationType.delete:
+          await cartaoService.arquivarCartao(operation.data['id']);
+          break;
+      }
+      return true;
+    } catch (e) {
+      log('❌ Erro ao processar operação de cartão: $e');
       return false;
     }
   }

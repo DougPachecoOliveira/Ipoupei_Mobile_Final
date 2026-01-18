@@ -13,6 +13,7 @@ import 'supabase_auth_service.dart';
 import 'database/local_database.dart';
 import 'sync/sync_manager.dart';
 import 'services/app_lifecycle_manager.dart';
+import 'shared/services/user_preferences_service.dart';
 
 /// Configuração para inicialização do Supabase
 class SupabaseConfig {
@@ -74,14 +75,23 @@ class AuthIntegration {
       
       // 3. Inicializa Auth Service
       await _authService.initialize();
-      
-      // 4. Inicializa SyncManager
+
+      // 4. Inicializa UserPreferencesService
+      try {
+        debugPrint('🔧 Inicializando UserPreferencesService...');
+        await UserPreferencesService.instance.initialize();
+        debugPrint('✅ UserPreferencesService inicializado');
+      } catch (e) {
+        debugPrint('❌ Erro ao inicializar UserPreferencesService: $e (continuando...)');
+      }
+
+      // 5. Inicializa SyncManager
       await SyncManager.instance.initialize();
-      
-      // 5. Inicializa AppLifecycleManager
+
+      // 6. Inicializa AppLifecycleManager
       AppLifecycleManager.instance.initialize();
-      
-      // 6. Configura listeners integrados
+
+      // 7. Configura listeners integrados
       _setupIntegrationListeners();
       
       _initialized = true;
@@ -168,15 +178,24 @@ class AuthIntegration {
   void _handleUserLogin(AuthUser user) async {
     try {
       debugPrint('🔄 Configurando dados locais para usuário: ${user.id}');
-      
+
       // Configura database local para o usuário
       await _localDB.setCurrentUser(user.id);
-      
+
+      // Inicializa preferências do usuário específico
+      try {
+        debugPrint('👤 Reinicializando UserPreferencesService para usuário: ${user.id}');
+        await UserPreferencesService.instance.initialize();
+        debugPrint('✅ Preferências do usuário ${user.id} carregadas');
+      } catch (e) {
+        debugPrint('❌ Erro ao reinicializar UserPreferencesService: $e (continuando...)');
+      }
+
       // Inicia sincronização inicial
       await SyncManager.instance.syncInitial();
-      
+
       debugPrint('✅ Dados do usuário configurados');
-      
+
     } catch (e) {
       debugPrint('❌ Erro ao configurar dados do usuário: $e');
     }
@@ -186,12 +205,21 @@ class AuthIntegration {
   void _handleUserLogout() async {
     try {
       debugPrint('🧹 Limpando dados locais...');
-      
+
+      // Limpa preferências do usuário
+      try {
+        debugPrint('🧹 Limpando UserPreferencesService...');
+        await UserPreferencesService.instance.clearPreferences();
+        debugPrint('✅ Preferências do usuário limpas');
+      } catch (e) {
+        debugPrint('❌ Erro ao limpar UserPreferencesService: $e (continuando...)');
+      }
+
       // Limpa dados do usuário no database local
       await _localDB.clearCurrentUser();
-      
+
       debugPrint('✅ Dados locais limpos');
-      
+
     } catch (e) {
       debugPrint('❌ Erro ao limpar dados locais: $e');
     }

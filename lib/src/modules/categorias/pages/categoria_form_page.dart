@@ -8,6 +8,8 @@
 import 'package:flutter/material.dart';
 import '../models/categoria_model.dart';
 import '../services/categoria_service.dart';
+import '../../../shared/components/color_picker/advanced_color_picker.dart';
+import '../../../shared/components/color_picker/models/color_picker_config.dart';
 
 class CategoriaFormPage extends StatefulWidget {
   final String modo; // 'criar' ou 'editar'
@@ -105,6 +107,21 @@ class _CategoriaFormPageState extends State<CategoriaFormPage> {
       }
     } finally {
       setState(() => _loading = false);
+    }
+  }
+
+  /// 🎨 Modal com todas as cores estendidas usando o novo seletor
+  Future<void> _mostrarModalCoresExtendidas() async {
+    final selectedColor = await AdvancedColorPicker.show(
+      context: context,
+      type: ColorPickerType.category,
+      currentColor: _corSelecionada,
+      categoryType: _tipoSelecionado, // Sugerir cores baseadas no tipo
+    );
+    if (selectedColor != null) {
+      setState(() {
+        _corSelecionada = selectedColor;
+      });
     }
   }
 
@@ -265,31 +282,80 @@ class _CategoriaFormPageState extends State<CategoriaFormPage> {
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                children: [
-                  '#008080', // Default React
-                  '#FF6B6B', // Vermelho
-                  '#4ECDC4', // Turquesa  
-                  '#45B7D1', // Azul
-                  '#96CEB4', // Verde
-                  '#FECA57', // Amarelo
-                  '#FF9FF3', // Rosa
-                  '#54A0FF', // Azul claro
-                ].map((cor) => GestureDetector(
-                  onTap: () => setState(() => _corSelecionada = cor),
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: Color(int.parse(cor.replaceFirst('#', '0xFF'))),
-                      shape: BoxShape.circle,
-                      border: _corSelecionada == cor
-                          ? Border.all(color: Colors.black, width: 2)
-                          : null,
+              SizedBox(
+                height: 44,
+                child: Row(
+                  children: [
+                    // Lista de cores principais (mesmas de contas/cartões)
+                    Expanded(
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: 8,
+                        itemBuilder: (context, index) {
+                          final coresDisponiveis = [
+                            '#8A05BE', // Roxo Nubank
+                            '#FF6500', // Laranja Inter
+                            '#FFD700', // Amarelo C6
+                            '#21C25E', // Verde PicPay
+                            '#DC143C', // Vermelho Santander
+                            '#1E3A8A', // Azul BTG
+                            '#000000', // Preto XP
+                            '#6B7280', // Cinza Padrão
+                          ];
+
+                          final cor = coresDisponiveis[index];
+                          final corAtual = Color(int.parse(cor.replaceFirst('#', '0xFF')));
+                          final selecionada = cor == _corSelecionada;
+
+                          return Container(
+                            margin: EdgeInsets.only(right: 16),
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _corSelecionada = cor;
+                                });
+                              },
+                              child: Container(
+                                width: 44,
+                                height: 44,
+                                decoration: BoxDecoration(
+                                  color: corAtual,
+                                  shape: BoxShape.circle,
+                                  border: selecionada
+                                      ? Border.all(color: Colors.grey[400]!, width: 3)
+                                      : Border.all(color: Colors.grey[300]!, width: 1),
+                                ),
+                                child: selecionada
+                                    ? const Icon(
+                                        Icons.check,
+                                        color: Colors.white,
+                                        size: 20,
+                                      )
+                                    : null,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
                     ),
-                  ),
-                )).toList(),
+
+                    // Botão "Mais Cores"
+                    GestureDetector(
+                      onTap: _mostrarModalCoresExtendidas,
+                      child: Container(
+                        width: 44,
+                        height: 44,
+                        margin: const EdgeInsets.only(left: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.grey[300]!),
+                        ),
+                        child: const Icon(Icons.add, color: Colors.grey, size: 20),
+                      ),
+                    ),
+                  ],
+                ),
               ),
               
               const SizedBox(height: 32),
