@@ -390,6 +390,175 @@ class BusinessValidators {
     }
   }
 
+  /// 🔍 VALIDAR DUPLICATA DE TRANSAÇÃO DE CARTÃO
+  static Future<Map<String, dynamic>> validarDuplicataTransacaoCartao({
+    required String descricao,
+    required double valor,
+    required DateTime data,
+    required String cartaoId,
+    DateTime? faturaVencimento,
+    String? transacaoExcluirId,
+  }) async {
+    try {
+      // Buscar transações similares (mesmo cartão, valor e data próxima)
+      final inicioDia = DateTime(data.year, data.month, data.day);
+      final fimDia = DateTime(data.year, data.month, data.day, 23, 59, 59);
+
+      String where = 'cartao_id = ? AND valor = ? AND data BETWEEN ? AND ?';
+      List<dynamic> whereArgs = [
+        cartaoId,
+        valor,
+        inicioDia.toIso8601String(),
+        fimDia.toIso8601String(),
+      ];
+
+      // Se há fatura específica, incluir no filtro
+      if (faturaVencimento != null) {
+        where += ' AND fatura_vencimento = ?';
+        whereArgs.add(faturaVencimento.toIso8601String().split('T')[0]);
+      }
+
+      // Excluir transação atual se estiver editando
+      if (transacaoExcluirId != null) {
+        where += ' AND id != ?';
+        whereArgs.add(transacaoExcluirId);
+      }
+
+      final transacoesSimilares = await _localDB.select(
+        'transacoes',
+        where: where,
+        whereArgs: whereArgs,
+        limit: 5,
+      );
+
+      if (transacoesSimilares.isNotEmpty) {
+        return {
+          'hasDuplicates': true,
+          'warning': true,
+          'reason': 'POSSIVEL_DUPLICATA_CARTAO',
+          'message': 'Encontradas ${transacoesSimilares.length} transação(ões) similar(es) no cartão na mesma data.',
+          'suggestions': transacoesSimilares.map((t) => {
+            'descricao': t['descricao'],
+            'valor': t['valor'],
+            'data': t['data'],
+            'fatura_vencimento': t['fatura_vencimento'],
+          }).toList(),
+        };
+      }
+
+      return {
+        'hasDuplicates': false,
+        'message': 'Nenhuma transação similar encontrada no cartão.',
+      };
+
+    } catch (e) {
+      log('❌ Erro ao validar duplicatas de cartão: $e');
+      return {
+        'hasDuplicates': false,
+        'error': true,
+        'message': 'Erro ao verificar duplicatas de cartão.',
+      };
+    }
+  }
+
+  /// 🔒 CRIAR FINGERPRINT DE TRANSAÇÃO PARA IMPORTAÇÃO
+  static String criarFingerprintTransacao({
+    required DateTime data,
+    required double valor,
+    required String descricao,
+    required String origemArquivo,
+  }) {
+    // Normalizar descrição: lowercase, trim, colapsar espaços
+    final descricaoNormalizada = descricao
+        .toLowerCase()
+        .trim()
+        .replaceAll(RegExp(r'\s+'), ' ');
+
+    // Formato da data: YYYYMMDD
+    final dataFormatada = '${data.year.toString().padLeft(4, '0')}'
+        '${data.month.toString().padLeft(2, '0')}'
+        '${data.day.toString().padLeft(2, '0')}';
+
+    // Valor normalizado (sempre 2 casas decimais)
+    final valorFormatado = valor.toStringAsFixed(2);
+
+    // Arquivo de origem normalizado
+    final arquivoNormalizado = origemArquivo.toLowerCase().trim();
+
+    return '$dataFormatada|$valorFormatado|$descricaoNormalizada|$arquivoNormalizado';
+  }
+
+  /// 🔍 VALIDAR SE FINGERPRINT JÁ EXISTE
+  static Future<Map<String, dynamic>> validarFingerprintExistente({
+    required String fingerprint,
+    String? transacaoExcluirId,
+  }) async {
+    try {
+      log('🔍 [FINGERPRINT] === INICIANDO VALIDAÇÃO ===');
+      log('🔍 [FINGERPRINT] Database instance: ${_localDB.database != null ? 'OK' : 'NULL'}');
+      log('🔍 [FINGERPRINT] CurrentUserId: ${_localDB.currentUserId}');
+
+      // Buscar em observações onde o fingerprint pode estar salvo
+      String where = 'observacoes LIKE ?';
+      List<dynamic> whereArgs = ['%fingerprint:$fingerprint%'];
+
+      log('🔍 [FINGERPRINT] Buscando fingerprint: $fingerprint');
+      log('🔍 [FINGERPRINT] Query: $where com args: $whereArgs');
+
+      // Excluir transação atual se estiver editando
+      if (transacaoExcluirId != null) {
+        where += ' AND id != ?';
+        whereArgs.add(transacaoExcluirId);
+      }
+
+      log('🔍 [FINGERPRINT] Executando query SELECT...');
+      final transacoesComFingerprint = await _localDB.select(
+        'transacoes',
+        where: where,
+        whereArgs: whereArgs,
+        limit: 3,
+      );
+
+      log('🔍 [FINGERPRINT] Query executada com sucesso');
+      log('🔍 [FINGERPRINT] Encontradas ${transacoesComFingerprint.length} transações com este fingerprint');
+
+      if (transacoesComFingerprint.isNotEmpty) {
+        log('🔍 [FINGERPRINT] Transações encontradas:');
+        for (final t in transacoesComFingerprint) {
+          log('🔍 [FINGERPRINT] - ${t['id']}: ${t['descricao']} (${t['data']})');
+        }
+
+        return {
+          'exists': true,
+          'warning': true,
+          'reason': 'FINGERPRINT_DUPLICADO',
+          'message': 'Encontrada(s) ${transacoesComFingerprint.length} transação(ões) com o mesmo fingerprint (possível reimportação).',
+          'matches': transacoesComFingerprint.map((t) => {
+            'id': t['id'],
+            'descricao': t['descricao'],
+            'valor': t['valor'],
+            'data': t['data'],
+          }).toList(),
+        };
+      }
+
+      log('🔍 [FINGERPRINT] Nenhuma transação encontrada - fingerprint único');
+      return {
+        'exists': false,
+        'message': 'Fingerprint único - transação não foi importada anteriormente.',
+      };
+
+    } catch (e, stackTrace) {
+      log('❌ [FINGERPRINT] Erro ao validar fingerprint: $e');
+      log('❌ [FINGERPRINT] Stack trace: $stackTrace');
+      return {
+        'exists': false,
+        'error': true,
+        'message': 'Erro ao verificar fingerprint.',
+      };
+    }
+  }
+
   /// 📊 VALIDAR LIMITES DE CATEGORIAS POR USUÁRIO
   static Future<Map<String, dynamic>> validarLimiteCategoria(String tipo) async {
     try {

@@ -56,6 +56,9 @@ class _ContasPageState extends State<ContasPage> {
   // === CONTROLE DO FAB ===
   bool _fabExpanded = false;
 
+  // === CONTROLE DA ORDENAÇÃO ===
+  String _ordenacao = 'padrao'; // 'padrao', 'nome_az', 'nome_za', 'valor_maior', 'valor_menor'
+
   @override
   void initState() {
     super.initState();
@@ -102,7 +105,7 @@ class _ContasPageState extends State<ContasPage> {
       final saldoTotal = await _contaService.getSaldoTotal();
 
       setState(() {
-        _contas = contasAtivas;
+        _contas = _aplicarOrdenacao(contasAtivas);
         _saldoTotal = saldoTotal;
         _loading = false;
       });
@@ -138,7 +141,7 @@ class _ContasPageState extends State<ContasPage> {
       debugPrint('🔄 Pull-to-refresh: ${contasAtivas.length} contas carregadas, saldo: R\$ ${saldoTotal.toStringAsFixed(2)}');
 
       setState(() {
-        _contas = contasAtivas;
+        _contas = _aplicarOrdenacao(contasAtivas);
         _saldoTotal = saldoTotal;
         _erro = null;
       });
@@ -580,6 +583,33 @@ class _ContasPageState extends State<ContasPage> {
   }
 
 
+  /// 📊 APLICAR ORDENAÇÃO NAS CONTAS
+  List<ContaModel> _aplicarOrdenacao(List<ContaModel> contas) {
+    final contasOrdenadas = List<ContaModel>.from(contas);
+
+    switch (_ordenacao) {
+      case 'nome_az':
+        contasOrdenadas.sort((a, b) => a.nome.toLowerCase().compareTo(b.nome.toLowerCase()));
+        break;
+      case 'nome_za':
+        contasOrdenadas.sort((a, b) => b.nome.toLowerCase().compareTo(a.nome.toLowerCase()));
+        break;
+      case 'valor_maior':
+        contasOrdenadas.sort((a, b) => b.saldo.compareTo(a.saldo));
+        break;
+      case 'valor_menor':
+        contasOrdenadas.sort((a, b) => a.saldo.compareTo(b.saldo));
+        break;
+      case 'padrao':
+      default:
+        // Mantém ordem padrão (por ID ou ordem de inserção)
+        break;
+    }
+
+    return contasOrdenadas;
+  }
+
+
   /// Parse de cor da string (visual do teste1)
   Color _parseColor(String hex) {
     try {
@@ -805,14 +835,215 @@ class _ContasPageState extends State<ContasPage> {
             tooltip: 'Nova conta',
           ),
 
-          // 4. Arquivadas
-          IconButton(
+          // 4. Menu de Opções (3 pontinhos)
+          PopupMenuButton<String>(
             icon: const Icon(
-              Icons.archive,
+              Icons.more_vert,
               color: Colors.white,
             ),
-            onPressed: _navegarParaContasArquivadas,
-            tooltip: 'Ver arquivadas',
+            onSelected: (value) {
+              switch (value) {
+                case 'padrao':
+                case 'nome_az':
+                case 'nome_za':
+                case 'valor_maior':
+                case 'valor_menor':
+                  setState(() {
+                    _ordenacao = value;
+                    _contas = _aplicarOrdenacao(_contas);
+                  });
+                  break;
+                case 'arquivadas':
+                  _navegarParaContasArquivadas();
+                  break;
+              }
+            },
+            itemBuilder: (BuildContext context) => [
+              // Seção de Ordenação
+              const PopupMenuItem<String>(
+                enabled: false,
+                child: Text(
+                  'ORDENAR CONTAS',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.cinzaTexto,
+                  ),
+                ),
+              ),
+              PopupMenuItem<String>(
+                value: 'padrao',
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.format_list_bulleted,
+                      color: _ordenacao == 'padrao' ? AppColors.tealPrimary : AppColors.cinzaTexto,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Padrão',
+                      style: TextStyle(
+                        color: _ordenacao == 'padrao' ? AppColors.tealPrimary : AppColors.cinzaEscuro,
+                        fontWeight: _ordenacao == 'padrao' ? FontWeight.bold : FontWeight.normal,
+                      ),
+                    ),
+                    if (_ordenacao == 'padrao') ...[
+                      const Spacer(),
+                      const Icon(
+                        Icons.check,
+                        color: AppColors.tealPrimary,
+                        size: 16,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              PopupMenuItem<String>(
+                value: 'nome_az',
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.sort_by_alpha,
+                      color: _ordenacao == 'nome_az' ? AppColors.tealPrimary : AppColors.cinzaTexto,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Nome A-Z',
+                      style: TextStyle(
+                        color: _ordenacao == 'nome_az' ? AppColors.tealPrimary : AppColors.cinzaEscuro,
+                        fontWeight: _ordenacao == 'nome_az' ? FontWeight.bold : FontWeight.normal,
+                      ),
+                    ),
+                    if (_ordenacao == 'nome_az') ...[
+                      const Spacer(),
+                      const Icon(
+                        Icons.check,
+                        color: AppColors.tealPrimary,
+                        size: 16,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              PopupMenuItem<String>(
+                value: 'nome_za',
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.sort_by_alpha,
+                      color: _ordenacao == 'nome_za' ? AppColors.tealPrimary : AppColors.cinzaTexto,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Nome Z-A',
+                      style: TextStyle(
+                        color: _ordenacao == 'nome_za' ? AppColors.tealPrimary : AppColors.cinzaEscuro,
+                        fontWeight: _ordenacao == 'nome_za' ? FontWeight.bold : FontWeight.normal,
+                      ),
+                    ),
+                    if (_ordenacao == 'nome_za') ...[
+                      const Spacer(),
+                      const Icon(
+                        Icons.check,
+                        color: AppColors.tealPrimary,
+                        size: 16,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              PopupMenuItem<String>(
+                value: 'valor_maior',
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.trending_up,
+                      color: _ordenacao == 'valor_maior' ? AppColors.tealPrimary : AppColors.cinzaTexto,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Maior Saldo',
+                      style: TextStyle(
+                        color: _ordenacao == 'valor_maior' ? AppColors.tealPrimary : AppColors.cinzaEscuro,
+                        fontWeight: _ordenacao == 'valor_maior' ? FontWeight.bold : FontWeight.normal,
+                      ),
+                    ),
+                    if (_ordenacao == 'valor_maior') ...[
+                      const Spacer(),
+                      const Icon(
+                        Icons.check,
+                        color: AppColors.tealPrimary,
+                        size: 16,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              PopupMenuItem<String>(
+                value: 'valor_menor',
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.trending_down,
+                      color: _ordenacao == 'valor_menor' ? AppColors.tealPrimary : AppColors.cinzaTexto,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Menor Saldo',
+                      style: TextStyle(
+                        color: _ordenacao == 'valor_menor' ? AppColors.tealPrimary : AppColors.cinzaEscuro,
+                        fontWeight: _ordenacao == 'valor_menor' ? FontWeight.bold : FontWeight.normal,
+                      ),
+                    ),
+                    if (_ordenacao == 'valor_menor') ...[
+                      const Spacer(),
+                      const Icon(
+                        Icons.check,
+                        color: AppColors.tealPrimary,
+                        size: 16,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const PopupMenuDivider(),
+              // Seção de Outras Opções
+              const PopupMenuItem<String>(
+                enabled: false,
+                child: Text(
+                  'OUTRAS OPÇÕES',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.cinzaTexto,
+                  ),
+                ),
+              ),
+              const PopupMenuItem<String>(
+                value: 'arquivadas',
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.archive,
+                      color: AppColors.cinzaTexto,
+                      size: 20,
+                    ),
+                    SizedBox(width: 12),
+                    Text(
+                      'Contas Arquivadas',
+                      style: TextStyle(
+                        color: AppColors.cinzaEscuro,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),

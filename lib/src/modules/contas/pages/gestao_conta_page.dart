@@ -881,7 +881,7 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
         shadowColor: Colors.black.withValues(alpha: 0.1),
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
-          onTap: () => _navegarParaRelatoriosComFiltro(),
+          onTap: () => _navegarParaTransacoesDaConta(),
           child: Container(
             height: 71,
             decoration: BoxDecoration(
@@ -2315,11 +2315,21 @@ class _GestaoContaPageState extends State<GestaoContaPage> {
     }
   }
 
-  /// Navega para relatórios com filtro da conta atual
-  void _navegarParaRelatoriosComFiltro() {
+  /// Navega para transações com filtro da conta atual (chamado pelo card)
+  void _navegarParaTransacoesDaConta() {
+    debugPrint('🧭 Navegando para transações da conta ${_contaAtual.nome}');
+
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const RelatoriosPage()),
+      MaterialPageRoute(
+        builder: (context) => TransacoesPage(
+          filtrosIniciais: {
+            'contas': [_contaAtual.id],
+            'mes': _mesAtual,
+          },
+          showNavigationBar: true,
+        ),
+      ),
     );
   }
 

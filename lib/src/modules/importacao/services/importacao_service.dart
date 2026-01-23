@@ -18,11 +18,13 @@ import '../../transacoes/services/transacao_service.dart';
 import 'conectcar_extractor.dart';
 // import 'enhanced_excel_extractor.dart'; // Temporariamente desabilitado devido a problema com tipo Cell
 import '../../../auth_integration.dart';
+import '../../../database/local_database.dart';
 import 'extractors/factory/extractor_factory.dart';
 import 'extractors/base/bank_extractor.dart';
 import '../../cartoes/services/cartao_data_service.dart';
 import '../../cartoes/services/fatura_service.dart';
 import '../../../sync/sync_manager.dart';
+import '../../shared/validators/business_validators.dart';
 
 /// Service completo para importação de transações de extratos bancários
 class ImportacaoService {
@@ -1170,57 +1172,284 @@ class ImportacaoService {
     }
   }
 
-  /// Salva transações importadas usando o TransacaoService existente
-  /// Valida se transação pode ser importada (especialmente para cartões)
-  /// Retorna Map com {'valido': bool, 'erro': String?}
-  Future<Map<String, dynamic>> validarImportacaoTransacao(TransacaoImportada transacao) async {
+  /// Validação completa de transação importada com detecção de duplicidade e fingerprint
+  /// Retorna estrutura detalhada: {'status': 'ok'|'warning'|'blocked', 'motivos': [], 'matches': [], 'canOverride': bool}
+  Future<Map<String, dynamic>> validarImportacaoTransacao(
+    TransacaoImportada transacao,
+    String nomeArquivo,
+  ) async {
+    final motivos = <String>[];
+    final matches = <Map<String, dynamic>>[];
+    var status = 'ok';
+    var canOverride = true;
+
     try {
-      // ✅ VALIDAÇÃO APENAS PARA CARTÃO
+      log('🔍 Validando importação: ${transacao.descricao} - R\$ ${transacao.valor}');
+
+      // 1. VALIDAÇÃO DE FATURA FECHADA (BLOQUEIO TOTAL)
       if (transacao.cartaoId != null && transacao.cartaoId!.isNotEmpty) {
         final faturaCalculada = transacao.faturaVencimento ??
             await _calcularProximaFaturaValida(transacao.cartaoId!, transacao.data);
 
-        // Buscar fatura do período
         final fatura = await FaturaService().buscarFaturaPorPeriodo(
           transacao.cartaoId!,
           faturaCalculada.year,
           faturaCalculada.month,
         );
 
-        if (fatura != null) {
-          // ❌ BLOQUEIO: Fatura FECHADA não permite importação
-          if (fatura.status == 'fechada' || fatura.status == 'paga') {
-            return {
-              'valido': false,
-              'erro': 'Fatura do período ${faturaCalculada.month.toString().padLeft(2, '0')}/${faturaCalculada.year} está ${fatura.status}. Não é possível importar transações.',
-            };
-          }
+        if (fatura != null && (fatura.status == 'fechada' || fatura.status == 'paga')) {
+          return {
+            'status': 'blocked',
+            'motivos': ['fatura_fechada'],
+            'message': 'Fatura do período ${faturaCalculada.month.toString().padLeft(2, '0')}/${faturaCalculada.year} está ${fatura.status}.',
+            'matches': [],
+            'canOverride': false,
+          };
         }
-        // Se fatura não existe OU está aberta → permite importação (cria pendente)
       }
 
-      return {'valido': true, 'erro': null};
+      // 2. VALIDAÇÃO DE FINGERPRINT (WARNING)
+      final fingerprint = transacao.gerarFingerprint(nomeArquivo);
+      log('🔑 [VALIDACAO] Fingerprint gerado: $fingerprint');
+      log('🔍 [VALIDACAO] Chamando BusinessValidators.validarFingerprintExistente...');
+
+      final fingerprintValidacao = await BusinessValidators.validarFingerprintExistente(
+        fingerprint: fingerprint,
+      );
+
+      log('🔍 [VALIDACAO] Resultado da validação de fingerprint: $fingerprintValidacao');
+
+      if (fingerprintValidacao['exists'] == true) {
+        status = 'warning';
+        motivos.add('fingerprint_duplicado');
+        matches.addAll(List<Map<String, dynamic>>.from(fingerprintValidacao['matches'] ?? []));
+        log('⚠️ [VALIDACAO] Fingerprint duplicado detectado - status: $status');
+      } else {
+        log('✅ [VALIDACAO] Fingerprint único - sem duplicatas');
+      }
+
+      // 3. VALIDAÇÃO DE DUPLICIDADE POR CONTA (WARNING)
+      log('🔍 [VALIDACAO] Transação contaId: "${transacao.contaId}", cartaoId: "${transacao.cartaoId}"');
+      if (transacao.contaId != null && transacao.contaId!.isNotEmpty) {
+        log('🔍 [VALIDACAO] Verificando duplicidade por conta para: ${transacao.contaId}');
+        final duplicataValidacao = await BusinessValidators.validarDuplicataTransacao(
+          descricao: transacao.descricao,
+          valor: transacao.valor,
+          data: transacao.data,
+          contaId: transacao.contaId!,
+        );
+
+        log('🔍 [VALIDACAO] Resultado duplicidade conta: $duplicataValidacao');
+
+        if (duplicataValidacao['hasDuplicates'] == true) {
+          status = 'warning';
+          motivos.add('duplicidade_conta');
+          matches.addAll(List<Map<String, dynamic>>.from(duplicataValidacao['suggestions'] ?? []));
+          log('⚠️ [VALIDACAO] Duplicidade por conta detectada');
+        }
+      } else {
+        log('🔍 [VALIDACAO] Transação não tem contaId válido - pulando validação de duplicidade por conta');
+      }
+
+      // 4. VALIDAÇÃO DE DUPLICIDADE POR CARTÃO (WARNING)
+      if (transacao.cartaoId != null && transacao.cartaoId!.isNotEmpty) {
+        log('🔍 [VALIDACAO] Verificando duplicidade por cartão para: ${transacao.cartaoId}');
+        final duplicataValidacao = await BusinessValidators.validarDuplicataTransacaoCartao(
+          descricao: transacao.descricao,
+          valor: transacao.valor,
+          data: transacao.data,
+          cartaoId: transacao.cartaoId!,
+          faturaVencimento: transacao.faturaVencimento,
+        );
+
+        log('🔍 [VALIDACAO] Resultado duplicidade cartão: $duplicataValidacao');
+
+        if (duplicataValidacao['hasDuplicates'] == true) {
+          status = 'warning';
+          motivos.add('duplicidade_cartao');
+          matches.addAll(List<Map<String, dynamic>>.from(duplicataValidacao['suggestions'] ?? []));
+          log('⚠️ [VALIDACAO] Duplicidade por cartão detectada');
+        }
+      } else {
+        log('🔍 [VALIDACAO] Transação não tem cartaoId válido - pulando validação de duplicidade por cartão');
+      }
+
+      // 5. VALIDAÇÃO GERAL DE DUPLICIDADE (SE NÃO TEM CONTA/CARTÃO DEFINIDO)
+      if ((transacao.contaId == null || transacao.contaId!.isEmpty) &&
+          (transacao.cartaoId == null || transacao.cartaoId!.isEmpty)) {
+        log('🔍 [VALIDACAO] Executando validação geral de duplicidade (sem conta/cartão específico)');
+        final duplicataGeral = await _validarDuplicidadeGeral(transacao);
+        log('🔍 [VALIDACAO] Resultado duplicidade geral: $duplicataGeral');
+
+        if (duplicataGeral['hasDuplicates'] == true) {
+          status = 'warning';
+          motivos.add('duplicidade_geral');
+          matches.addAll(List<Map<String, dynamic>>.from(duplicataGeral['suggestions'] ?? []));
+          log('⚠️ [VALIDACAO] Duplicidade geral detectada');
+        }
+      }
+
+      final result = {
+        'status': status,
+        'motivos': motivos,
+        'matches': matches,
+        'canOverride': canOverride,
+        'fingerprint': fingerprint,
+      };
+
+      if (status == 'warning') {
+        result['message'] = 'Encontradas ${matches.length} transação(ões) similar(es) ou duplicata de importação.';
+      } else {
+        result['message'] = 'Transação válida para importação.';
+      }
+
+      log('✅ Validação concluída: $status (${motivos.length} motivos)');
+      return result;
+
     } catch (e) {
-      log('⚠️ Erro na validação: $e');
-      return {'valido': true, 'erro': null}; // Em caso de erro, permitir importação
+      log('❌ Erro na validação: $e');
+      return {
+        'status': 'ok',
+        'motivos': [],
+        'matches': [],
+        'canOverride': true,
+        'message': 'Erro na validação, permitindo importação.',
+        'error': e.toString(),
+      };
     }
   }
 
+  /// 🔍 VALIDAÇÃO GERAL DE DUPLICIDADE (SEM CONTA/CARTÃO ESPECÍFICO)
+  Future<Map<String, dynamic>> _validarDuplicidadeGeral(TransacaoImportada transacao) async {
+    try {
+      log('🔍 [DUPLICIDADE_GERAL] Validando transação: ${transacao.descricao} - R\$ ${transacao.valor}');
+
+      // Buscar transações na mesma data (±1 dia) com valor idêntico
+      final dataInicio = transacao.data.subtract(Duration(days: 1));
+      final dataFim = transacao.data.add(Duration(days: 1));
+
+      // Fazer busca ampla (em todas as contas/cartões do usuário)
+      final query = '''
+        SELECT id, descricao, valor, data, conta_id, cartao_id
+        FROM transacoes
+        WHERE data >= ? AND data <= ?
+        AND ABS(valor - ?) < 0.01
+        AND (transferencia IS NULL OR transferencia = 0)
+        ORDER BY data DESC
+        LIMIT 10
+      ''';
+
+      final args = [
+        dataInicio.toIso8601String(),
+        dataFim.toIso8601String(),
+        transacao.valor,
+      ];
+
+      log('🔍 [DUPLICIDADE_GERAL] Query: $query');
+      log('🔍 [DUPLICIDADE_GERAL] Args: $args');
+
+      final transacoesSimilares = await LocalDatabase.instance.database!.rawQuery(query, args);
+
+      log('🔍 [DUPLICIDADE_GERAL] Encontradas ${transacoesSimilares.length} transações similares');
+
+      if (transacoesSimilares.isNotEmpty) {
+        // Verificar similaridade de descrição
+        final matches = <Map<String, dynamic>>[];
+
+        for (final similar in transacoesSimilares) {
+          final descricaoSimilar = similar['descricao'] as String;
+          final similarity = _calcularSimilaridadeDescricao(
+            transacao.descricao.toLowerCase(),
+            descricaoSimilar.toLowerCase()
+          );
+
+          log('🔍 [DUPLICIDADE_GERAL] Comparando "${transacao.descricao}" vs "$descricaoSimilar" = ${(similarity * 100).toInt()}%');
+
+          // Se a similaridade for >= 70%, considerar possível duplicata
+          if (similarity >= 0.7) {
+            matches.add({
+              'id': similar['id'],
+              'descricao': descricaoSimilar,
+              'valor': similar['valor'],
+              'data': similar['data'],
+              'similaridade': (similarity * 100).toInt(),
+            });
+          }
+        }
+
+        if (matches.isNotEmpty) {
+          return {
+            'hasDuplicates': true,
+            'warning': true,
+            'reason': 'DUPLICIDADE_GERAL',
+            'message': 'Encontradas ${matches.length} transação(ões) similar(es) com mesmo valor e data próxima.',
+            'suggestions': matches,
+          };
+        }
+      }
+
+      return {
+        'hasDuplicates': false,
+        'message': 'Nenhuma transação similar encontrada.',
+      };
+
+    } catch (e) {
+      log('❌ [DUPLICIDADE_GERAL] Erro: $e');
+      return {
+        'hasDuplicates': false,
+        'error': true,
+        'message': 'Erro ao verificar duplicidade geral.',
+      };
+    }
+  }
+
+  /// 📊 CALCULAR SIMILARIDADE ENTRE DESCRIÇÕES
+  double _calcularSimilaridadeDescricao(String desc1, String desc2) {
+    // Normalizar strings
+    final normalized1 = desc1.replaceAll(RegExp(r'[^\w\s]'), '').replaceAll(RegExp(r'\s+'), ' ').trim();
+    final normalized2 = desc2.replaceAll(RegExp(r'[^\w\s]'), '').replaceAll(RegExp(r'\s+'), ' ').trim();
+
+    // Se são iguais após normalização, 100% similar
+    if (normalized1 == normalized2) return 1.0;
+
+    // Calcular similaridade por palavras
+    final palavras1 = normalized1.split(' ').where((w) => w.length > 2).toSet();
+    final palavras2 = normalized2.split(' ').where((w) => w.length > 2).toSet();
+
+    if (palavras1.isEmpty && palavras2.isEmpty) return 1.0;
+    if (palavras1.isEmpty || palavras2.isEmpty) return 0.0;
+
+    final intersection = palavras1.intersection(palavras2).length;
+    final union = palavras1.union(palavras2).length;
+
+    return intersection / union;
+  }
+
   Future<List<String>> salvarTransacoesImportadas(
-    List<TransacaoImportada> transacoes
-  ) async {
+    List<TransacaoImportada> transacoes, {
+    Set<int>? indicesParaPular,
+    String nomeArquivo = '',
+  }) async {
     final transacoesSalvas = <String>[];
     final transacoesBloqueadas = <String>[];
 
     try {
       log('💾 Salvando ${transacoes.length} transações importadas...');
 
-      for (final transacao in transacoes) {
+      for (int i = 0; i < transacoes.length; i++) {
+        final transacao = transacoes[i];
+
+        // Pular transações selecionadas pelo usuário
+        if (indicesParaPular?.contains(i) == true) {
+          log('⏭️ Pulando transação por seleção do usuário: ${transacao.descricao}');
+          continue;
+        }
+
         try {
           // ✅ VALIDAR ANTES DE SALVAR
-          final validacao = await validarImportacaoTransacao(transacao);
-          if (validacao['valido'] == false) {
-            log('🚫 Transação bloqueada: ${transacao.descricao} - ${validacao['erro']}');
+          final validacao = await validarImportacaoTransacao(transacao, nomeArquivo);
+          if (validacao['status'] == 'blocked') {
+            log('🚫 Transação bloqueada: ${transacao.descricao} - ${validacao['message']}');
             transacoesBloqueadas.add(transacao.descricao);
             continue; // Pula essa transação
           }
@@ -1235,6 +1464,12 @@ class ImportacaoService {
           // Data passada ou hoje = pago: true, Data futura = pago: false
           final pagoAutomatico = !dataTransacaoSemHora.isAfter(dataAtualSemHora);
 
+          // ✅ PREPARAR OBSERVAÇÕES COM FINGERPRINT
+          final fingerprint = validacao['fingerprint'] as String? ?? transacao.gerarFingerprint(nomeArquivo);
+          final observacoesComFingerprint = transacao.observacoes.isNotEmpty
+              ? '${transacao.observacoes}\n\nfingerprint:$fingerprint'
+              : 'Importado de ${transacao.origem}\n\nfingerprint:$fingerprint';
+
           if (transacao.tipo == 'receita') {
             // ✅ RECEITA DE CONTA: data passada = pago: true
             ids = await _transacaoService.criarReceita(
@@ -1246,9 +1481,7 @@ class ImportacaoService {
               subcategoriaId: transacao.subcategoriaId,
               tipoReceita: 'extra',
               efetivado: pagoAutomatico, // ⭐ AUTOMÁTICO baseado na data
-              observacoes: transacao.observacoes.isNotEmpty
-                  ? transacao.observacoes
-                  : 'Importado de ${transacao.origem}',
+              observacoes: observacoesComFingerprint,
               numeroParcelas: null,
               frequenciaParcelada: null,
               frequenciaPrevisivel: null,
@@ -1272,9 +1505,7 @@ class ImportacaoService {
                 valorTotal: transacao.valor,
                 dataCompra: transacao.data.toIso8601String().split('T')[0],
                 faturaVencimento: faturaCalculada.toIso8601String().split('T')[0],
-                observacoes: transacao.observacoes.isNotEmpty
-                    ? transacao.observacoes
-                    : 'Importado de ${transacao.origem}',
+                observacoes: observacoesComFingerprint,
               );
 
               ids = [resultado['transacaoId'] as String];
@@ -1290,9 +1521,7 @@ class ImportacaoService {
                 subcategoriaId: transacao.subcategoriaId,
                 tipoDespesa: 'extra',
                 efetivado: pagoAutomatico, // ⭐ AUTOMÁTICO baseado na data
-                observacoes: transacao.observacoes.isNotEmpty
-                    ? transacao.observacoes
-                    : 'Importado de ${transacao.origem}',
+                observacoes: observacoesComFingerprint,
                 numeroParcelas: null,
                 frequenciaParcelada: null,
                 frequenciaPrevisivel: null,

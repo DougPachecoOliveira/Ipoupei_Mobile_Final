@@ -6,6 +6,7 @@
 // Baseado em: Flutter Material App + Provider
 
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:app_links/app_links.dart';
@@ -181,6 +182,15 @@ class _IPoupeiAppState extends State<IPoupeiApp> {
         title: 'iPoupei Mobile',
         debugShowCheckedModeBanner: false,
         navigatorKey: navigatorKey, // Para poder navegar de fora do contexto
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [
+          Locale('pt', 'BR'),
+          Locale('en', 'US'),
+        ],
 
         // 🎯 CONTROLE GLOBAL DE FONTES, ÍCONES E ALTURAS
         builder: (context, child) {

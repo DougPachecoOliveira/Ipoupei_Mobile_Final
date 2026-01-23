@@ -22,6 +22,8 @@ class ImportacaoFinalPage extends StatefulWidget {
   final ContaModel? conta;
   final CartaoModel? cartao;
   final String tipoImportacao;
+  final Map<String, Map<String, dynamic>>? validacoesDuplicidade;
+  final List<bool>? selecoesPrevias;
 
   const ImportacaoFinalPage({
     super.key,
@@ -29,6 +31,8 @@ class ImportacaoFinalPage extends StatefulWidget {
     this.conta,
     this.cartao,
     required this.tipoImportacao,
+    this.validacoesDuplicidade,
+    this.selecoesPrevias,
   });
 
   @override
@@ -51,8 +55,14 @@ class _ImportacaoFinalPageState extends State<ImportacaoFinalPage> {
   @override
   void initState() {
     super.initState();
-    // Todas selecionadas por padrão
-    _selecionadas = List.filled(widget.transacoes.length, true);
+
+    // Usar seleções da tela anterior ou marcar todas por padrão
+    if (widget.selecoesPrevias != null && widget.selecoesPrevias!.length == widget.transacoes.length) {
+      _selecionadas = List.from(widget.selecoesPrevias!);
+    } else {
+      _selecionadas = List.filled(widget.transacoes.length, true);
+    }
+
     _carregarDados();
   }
 
@@ -62,7 +72,6 @@ class _ImportacaoFinalPageState extends State<ImportacaoFinalPage> {
     try {
       _categorias = await _categoriaService.fetchCategorias();
       _subcategorias = await _categoriaService.fetchSubcategorias();
-      debugPrint('✅ Carregado ${_categorias.length} categorias e ${_subcategorias.length} subcategorias');
     } catch (e) {
       debugPrint('❌ Erro ao carregar dados: $e');
     } finally {
@@ -350,14 +359,20 @@ class _ImportacaoFinalPageState extends State<ImportacaoFinalPage> {
     final completa = _transacaoCompleta(transacao);
     final categoriaNome = _getCategoriaCompleta(transacao);
 
+    // Verificar se é duplicata
+    final validacaoDuplicidade = widget.validacoesDuplicidade?[transacao.id];
+    final isDuplicata = validacaoDuplicidade != null && validacaoDuplicidade['status'] == 'warning';
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: completa ? Colors.green.withAlpha(78) : Colors.orange.withAlpha(78),
-          width: 2,
+          color: isDuplicata
+              ? Colors.orange
+              : (completa ? Colors.green.withAlpha(78) : Colors.orange.withAlpha(78)),
+          width: isDuplicata ? 3 : 2,
         ),
         boxShadow: [
           BoxShadow(
@@ -421,6 +436,35 @@ class _ImportacaoFinalPageState extends State<ImportacaoFinalPage> {
                   ),
                 ),
                 const SizedBox(width: 8),
+                if (isDuplicata) ...[
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.orange,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.warning_amber,
+                          color: Colors.white,
+                          size: 12,
+                        ),
+                        SizedBox(width: 4),
+                        Text(
+                          'DUPLICATA',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                ],
                 if (completa)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

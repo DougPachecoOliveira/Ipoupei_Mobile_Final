@@ -48,6 +48,10 @@ class _ImportacaoReviewPageState extends State<ImportacaoReviewPage>
   Set<int> _transacoesPuladas = {};
   Set<int> _transacoesSalvas = {};
 
+  // Validações de duplicidade/fingerprint
+  Map<int, Map<String, dynamic>> _validacoes = {};
+  bool _validandoTransacoes = false;
+
   // Animações
   late AnimationController _progressController;
   late Animation<double> _progressAnimation;
@@ -72,6 +76,7 @@ class _ImportacaoReviewPageState extends State<ImportacaoReviewPage>
     ));
 
     _atualizarProgresso();
+    _validarTodasTransacoes();
   }
 
   @override
@@ -85,6 +90,29 @@ class _ImportacaoReviewPageState extends State<ImportacaoReviewPage>
   void _atualizarProgresso() {
     final progresso = (_currentIndex + 1) / widget.transacoes.length;
     _progressController.animateTo(progresso);
+  }
+
+  /// Valida todas as transações para detectar duplicidades/fingerprints
+  Future<void> _validarTodasTransacoes() async {
+    setState(() => _validandoTransacoes = true);
+
+    try {
+      for (int i = 0; i < _transacoesEditadas.length; i++) {
+        final transacao = _transacoesEditadas[i];
+        final validacao = await _importacaoService.validarImportacaoTransacao(
+          transacao,
+          'arquivo_importacao', // Nome genérico por enquanto
+        );
+
+        _validacoes[i] = validacao;
+      }
+    } catch (e) {
+      debugPrint('Erro na validação em lote: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _validandoTransacoes = false);
+      }
+    }
   }
 
   /// Vai para próxima transação
@@ -235,7 +263,11 @@ class _ImportacaoReviewPageState extends State<ImportacaoReviewPage>
   /// Executa o salvamento das transações
   Future<void> _executarSalvamento(List<TransacaoImportada> transacoes) async {
     try {
-      final ids = await _importacaoService.salvarTransacoesImportadas(transacoes);
+      final ids = await _importacaoService.salvarTransacoesImportadas(
+        transacoes,
+        indicesParaPular: _transacoesPuladas,
+        nomeArquivo: 'arquivo_importacao',
+      );
 
       if (mounted) {
         // Feedback de sucesso
@@ -573,8 +605,102 @@ class _ImportacaoReviewPageState extends State<ImportacaoReviewPage>
                 },
                 itemCount: widget.transacoes.length,
                 itemBuilder: (context, index) {
+                  final validacao = _validacoes[index];
+                  final hasWarnings = validacao?['status'] == 'warning';
+                  final isBlocked = validacao?['status'] == 'blocked';
+
                   return SingleChildScrollView(
-                    child: TransacaoImportCard(
+                    child: Column(
+                      children: [
+                        // Widget de warning/block
+                        if (_validandoTransacoes)
+                          Container(
+                            margin: const EdgeInsets.all(16),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.orange.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                            ),
+                            child: const Row(
+                              children: [
+                                SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+                                SizedBox(width: 12),
+                                Text('Validando duplicidades...', style: TextStyle(color: Colors.orange)),
+                              ],
+                            ),
+                          )
+                        else if (isBlocked)
+                          Container(
+                            margin: const EdgeInsets.all(16),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.red.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.red.withOpacity(0.3)),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.block, color: Colors.red, size: 20),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    validacao?['message'] ?? 'Transação bloqueada',
+                                    style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w500),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        else if (hasWarnings)
+                          Container(
+                            margin: const EdgeInsets.all(16),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.amber.withOpacity(0.3)),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Icon(Icons.warning_amber, color: Colors.amber, size: 20),
+                                    const SizedBox(width: 12),
+                                    const Expanded(
+                                      child: Text(
+                                        'Possível duplicidade detectada',
+                                        style: TextStyle(color: Colors.amber, fontWeight: FontWeight.w500),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  validacao?['message'] ?? 'Encontradas transações similares',
+                                  style: TextStyle(color: Colors.amber[700], fontSize: 12),
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
+                                    TextButton(
+                                      onPressed: () => _pularTransacao(),
+                                      child: const Text('Pular', style: TextStyle(color: Colors.amber)),
+                                    ),
+                                    TextButton(
+                                      onPressed: () => _salvarEProxima(),
+                                      child: const Text('Importar Mesmo Assim', style: TextStyle(color: Colors.green)),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+
+                        // Card da transação
+                        TransacaoImportCard(
                       transacao: _transacoesEditadas[index],
                       index: index + 1,
                       total: widget.transacoes.length,
@@ -583,6 +709,8 @@ class _ImportacaoReviewPageState extends State<ImportacaoReviewPage>
                       onSave: _salvarEProxima,
                       onSkip: _pularTransacao,
                       onTransacaoChanged: _onTransacaoChanged,
+                    ),
+                      ],
                     ),
                   );
                 },

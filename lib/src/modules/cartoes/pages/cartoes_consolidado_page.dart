@@ -45,6 +45,9 @@ class _CartoesConsolidadoPageState extends State<CartoesConsolidadoPage> with Si
   // === CONTROLE DO FAB ===
   bool _fabExpanded = false;
 
+  // === CONTROLE DA ORDENAÇÃO ===
+  String _ordenacao = 'padrao'; // 'padrao', 'nome_az', 'nome_za', 'gasto_maior', 'gasto_menor'
+
   // Dados consolidados
   double _totalUtilizado = 0.0;
   double _limiteTotal = 0.0;
@@ -197,6 +200,40 @@ class _CartoesConsolidadoPageState extends State<CartoesConsolidadoPage> with Si
   }
 
   /// 📊 Ordenar cartões por maior gasto primeiro, depois alfabético
+  /// 📊 APLICAR ORDENAÇÃO NOS CARTÕES
+  List<CartaoModel> _aplicarOrdenacao(List<CartaoModel> cartoes) {
+    final cartoesOrdenados = List<CartaoModel>.from(cartoes);
+
+    switch (_ordenacao) {
+      case 'nome_az':
+        cartoesOrdenados.sort((a, b) => a.nome.toLowerCase().compareTo(b.nome.toLowerCase()));
+        break;
+      case 'nome_za':
+        cartoesOrdenados.sort((a, b) => b.nome.toLowerCase().compareTo(a.nome.toLowerCase()));
+        break;
+      case 'gasto_maior':
+        cartoesOrdenados.sort((a, b) {
+          final gastoA = _gastosPeriodo[a.id] ?? 0.0;
+          final gastoB = _gastosPeriodo[b.id] ?? 0.0;
+          return gastoB.compareTo(gastoA);
+        });
+        break;
+      case 'gasto_menor':
+        cartoesOrdenados.sort((a, b) {
+          final gastoA = _gastosPeriodo[a.id] ?? 0.0;
+          final gastoB = _gastosPeriodo[b.id] ?? 0.0;
+          return gastoA.compareTo(gastoB);
+        });
+        break;
+      case 'padrao':
+      default:
+        // Mantém ordem padrão (por ID ou ordem de inserção)
+        break;
+    }
+
+    return cartoesOrdenados;
+  }
+
   void _ordenarCartoesPorGasto() {
     _cartoes.sort((a, b) {
       final gastoA = _gastosPeriodo[a.id] ?? 0.0;
@@ -419,28 +456,29 @@ class _CartoesConsolidadoPageState extends State<CartoesConsolidadoPage> with Si
           icon: const Icon(Icons.more_vert, color: Colors.white),
           tooltip: 'Menu',
           itemBuilder: (context) => [
-            // ✅ Busca agora no menu
-            const PopupMenuItem(
-              value: 'buscar',
-              child: Row(
-                children: [
-                  Icon(Icons.search),
-                  SizedBox(width: 8),
-                  Text('Buscar'),
-                ],
-              ),
-            ),
-            // Gestão Geral
-            const PopupMenuItem(
-              value: 'gestao_geral',
-              child: Row(
-                children: [
-                  Icon(Icons.analytics),
-                  SizedBox(width: 8),
-                  Text('Gestão Geral'),
-                ],
-              ),
-            ),
+            // ✅ OPÇÕES FUNCIONAIS
+            // TODO: Implementar busca
+            // const PopupMenuItem(
+            //   value: 'buscar',
+            //   child: Row(
+            //     children: [
+            //       Icon(Icons.search),
+            //       SizedBox(width: 8),
+            //       Text('Buscar'),
+            //     ],
+            //   ),
+            // ),
+            // TODO: Implementar gestão geral
+            // const PopupMenuItem(
+            //   value: 'gestao_geral',
+            //   child: Row(
+            //     children: [
+            //       Icon(Icons.analytics),
+            //       SizedBox(width: 8),
+            //       Text('Gestão Geral'),
+            //     ],
+            //   ),
+            // ),
             // Ver Faturas
             const PopupMenuItem(
               value: 'ver_faturas',
@@ -482,13 +520,155 @@ class _CartoesConsolidadoPageState extends State<CartoesConsolidadoPage> with Si
                 ],
               ),
             ),
-            const PopupMenuItem(
-              value: 'config',
+            // TODO: Implementar configurações
+            // const PopupMenuItem(
+            //   value: 'config',
+            //   child: Row(
+            //     children: [
+            //       Icon(Icons.settings),
+            //       SizedBox(width: 8),
+            //       Text('Configurações'),
+            //     ],
+            //   ),
+            // ),
+
+            // ➖ Divisor para ordenação
+            const PopupMenuDivider(),
+
+            // 📋 Header de ordenação
+            PopupMenuItem(
+              enabled: false,
+              child: Text(
+                'ORDENAÇÃO',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey[600],
+                ),
+              ),
+            ),
+
+            // 🔤 Padrão
+            PopupMenuItem(
+              value: 'ordenar_padrao',
               child: Row(
                 children: [
-                  Icon(Icons.settings),
-                  SizedBox(width: 8),
-                  Text('Configurações'),
+                  Icon(
+                    Icons.list,
+                    color: _ordenacao == 'padrao' ? Colors.blue : null,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Padrão',
+                    style: TextStyle(
+                      color: _ordenacao == 'padrao' ? Colors.blue : null,
+                      fontWeight: _ordenacao == 'padrao' ? FontWeight.bold : null,
+                    ),
+                  ),
+                  if (_ordenacao == 'padrao') ...[
+                    const Spacer(),
+                    const Icon(Icons.check, color: Colors.blue, size: 16),
+                  ],
+                ],
+              ),
+            ),
+
+            // 🔤 A-Z
+            PopupMenuItem(
+              value: 'ordenar_nome_az',
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.sort_by_alpha,
+                    color: _ordenacao == 'nome_az' ? Colors.blue : null,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Nome A-Z',
+                    style: TextStyle(
+                      color: _ordenacao == 'nome_az' ? Colors.blue : null,
+                      fontWeight: _ordenacao == 'nome_az' ? FontWeight.bold : null,
+                    ),
+                  ),
+                  if (_ordenacao == 'nome_az') ...[
+                    const Spacer(),
+                    const Icon(Icons.check, color: Colors.blue, size: 16),
+                  ],
+                ],
+              ),
+            ),
+
+            // 🔤 Z-A
+            PopupMenuItem(
+              value: 'ordenar_nome_za',
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.sort_by_alpha,
+                    color: _ordenacao == 'nome_za' ? Colors.blue : null,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Nome Z-A',
+                    style: TextStyle(
+                      color: _ordenacao == 'nome_za' ? Colors.blue : null,
+                      fontWeight: _ordenacao == 'nome_za' ? FontWeight.bold : null,
+                    ),
+                  ),
+                  if (_ordenacao == 'nome_za') ...[
+                    const Spacer(),
+                    const Icon(Icons.check, color: Colors.blue, size: 16),
+                  ],
+                ],
+              ),
+            ),
+
+            // 💰 Maior gasto
+            PopupMenuItem(
+              value: 'ordenar_gasto_maior',
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.trending_down,
+                    color: _ordenacao == 'gasto_maior' ? Colors.blue : null,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Maior Gasto',
+                    style: TextStyle(
+                      color: _ordenacao == 'gasto_maior' ? Colors.blue : null,
+                      fontWeight: _ordenacao == 'gasto_maior' ? FontWeight.bold : null,
+                    ),
+                  ),
+                  if (_ordenacao == 'gasto_maior') ...[
+                    const Spacer(),
+                    const Icon(Icons.check, color: Colors.blue, size: 16),
+                  ],
+                ],
+              ),
+            ),
+
+            // 💰 Menor gasto
+            PopupMenuItem(
+              value: 'ordenar_gasto_menor',
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.trending_up,
+                    color: _ordenacao == 'gasto_menor' ? Colors.blue : null,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Menor Gasto',
+                    style: TextStyle(
+                      color: _ordenacao == 'gasto_menor' ? Colors.blue : null,
+                      fontWeight: _ordenacao == 'gasto_menor' ? FontWeight.bold : null,
+                    ),
+                  ),
+                  if (_ordenacao == 'gasto_menor') ...[
+                    const Spacer(),
+                    const Icon(Icons.check, color: Colors.blue, size: 16),
+                  ],
                 ],
               ),
             ),
@@ -763,11 +943,12 @@ class _CartoesConsolidadoPageState extends State<CartoesConsolidadoPage> with Si
   }
 
   Widget _buildModoConsolidado() {
+    final cartoesOrdenados = _aplicarOrdenacao(_cartoes);
     return RefreshIndicator(
       onRefresh: _carregarDados,
       child: ListView.builder(
         padding: const EdgeInsets.all(8),
-        itemCount: _cartoes.length + 2, // +2 para header + botões
+        itemCount: cartoesOrdenados.length + 2, // +2 para header + botões
         itemBuilder: (context, index) {
           // Primeiro item é o header
           if (index == 0) {
@@ -775,12 +956,12 @@ class _CartoesConsolidadoPageState extends State<CartoesConsolidadoPage> with Si
           }
 
           // Último item são os botões
-          if (index == _cartoes.length + 1) {
+          if (index == cartoesOrdenados.length + 1) {
             return _buildBotoesInferiores();
           }
 
           // Demais itens são os cartões
-          final cartao = _cartoes[index - 1];
+          final cartao = cartoesOrdenados[index - 1];
           final valorUtilizadoUI = _valoresUtilizados[cartao.id] ?? 0.0;
           final proximaFaturaUI = _proximasFaturas[cartao.id] ?? 0.0;
 
@@ -800,11 +981,12 @@ class _CartoesConsolidadoPageState extends State<CartoesConsolidadoPage> with Si
   }
 
   Widget _buildModoEmpilhado() {
+    final cartoesOrdenados = _aplicarOrdenacao(_cartoes);
     return RefreshIndicator(
       onRefresh: _carregarDados,
       child: ListView.builder(
         padding: const EdgeInsets.all(8),
-        itemCount: _cartoes.length + 2, // +2 para header + botões
+        itemCount: cartoesOrdenados.length + 2, // +2 para header + botões
         itemBuilder: (context, index) {
           // Primeiro item é o header
           if (index == 0) {
@@ -812,12 +994,12 @@ class _CartoesConsolidadoPageState extends State<CartoesConsolidadoPage> with Si
           }
 
           // Último item são os botões
-          if (index == _cartoes.length + 1) {
+          if (index == cartoesOrdenados.length + 1) {
             return _buildBotoesInferiores();
           }
 
           // Demais itens são os mini cards
-          final cartao = _cartoes[index - 1];
+          final cartao = cartoesOrdenados[index - 1];
           return CartaoCard(
             cartao: cartao,
             isCompact: true,
@@ -1595,12 +1777,12 @@ class _CartoesConsolidadoPageState extends State<CartoesConsolidadoPage> with Si
   /// ✅ MENU ACTIONS
   void _handleMenuAction(String value) {
     switch (value) {
-      case 'buscar':
-        _navegarParaBusca();
-        break;
-      case 'gestao_geral':
-        _navegarParaGestaoGeral();
-        break;
+      // case 'buscar':
+      //   _navegarParaBusca();
+      //   break;
+      // case 'gestao_geral':
+      //   _navegarParaGestaoGeral();
+      //   break;
       case 'ver_faturas':
         _navegarParaFaturas();
         break;
@@ -1613,8 +1795,35 @@ class _CartoesConsolidadoPageState extends State<CartoesConsolidadoPage> with Si
       case 'refresh':
         _carregarDados();
         break;
-      case 'config':
-        _navegarParaConfiguracoes();
+      // case 'config':
+      //   _navegarParaConfiguracoes();
+      //   break;
+
+      // 📊 Casos de ordenação
+      case 'ordenar_padrao':
+        setState(() {
+          _ordenacao = 'padrao';
+        });
+        break;
+      case 'ordenar_nome_az':
+        setState(() {
+          _ordenacao = 'nome_az';
+        });
+        break;
+      case 'ordenar_nome_za':
+        setState(() {
+          _ordenacao = 'nome_za';
+        });
+        break;
+      case 'ordenar_gasto_maior':
+        setState(() {
+          _ordenacao = 'gasto_maior';
+        });
+        break;
+      case 'ordenar_gasto_menor':
+        setState(() {
+          _ordenacao = 'gasto_menor';
+        });
         break;
     }
   }

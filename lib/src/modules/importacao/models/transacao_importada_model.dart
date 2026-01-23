@@ -32,6 +32,7 @@ class TransacaoImportada {
   final String linhaBruta;
   final int indiceOriginal;
   final Map<String, dynamic> metadados;
+  final String? fingerprintImportacao;
 
   TransacaoImportada({
     required this.id,
@@ -51,6 +52,7 @@ class TransacaoImportada {
     this.linhaBruta = '',
     this.indiceOriginal = 0,
     this.metadados = const {},
+    this.fingerprintImportacao,
   });
 
   /// Cria cópia com campos modificados
@@ -72,6 +74,7 @@ class TransacaoImportada {
     String? linhaBruta,
     int? indiceOriginal,
     Map<String, dynamic>? metadados,
+    String? fingerprintImportacao,
   }) {
     return TransacaoImportada(
       id: id ?? this.id,
@@ -91,6 +94,7 @@ class TransacaoImportada {
       linhaBruta: linhaBruta ?? this.linhaBruta,
       indiceOriginal: indiceOriginal ?? this.indiceOriginal,
       metadados: metadados ?? this.metadados,
+      fingerprintImportacao: fingerprintImportacao ?? this.fingerprintImportacao,
     );
   }
 
@@ -114,6 +118,7 @@ class TransacaoImportada {
       'linhaBruta': linhaBruta,
       'indiceOriginal': indiceOriginal,
       'metadados': metadados,
+      'fingerprintImportacao': fingerprintImportacao,
     };
   }
 
@@ -139,6 +144,7 @@ class TransacaoImportada {
       linhaBruta: json['linhaBruta'] ?? '',
       indiceOriginal: json['indiceOriginal'] ?? 0,
       metadados: Map<String, dynamic>.from(json['metadados'] ?? {}),
+      fingerprintImportacao: json['fingerprintImportacao'],
     );
   }
 
@@ -182,6 +188,28 @@ class TransacaoImportada {
   /// Resumo para debug
   String get resumo {
     return '$dataFormatada - $descricao - $valorFormatado ($tipo)';
+  }
+
+  /// Gera fingerprint de importação baseado nos dados da transação
+  String gerarFingerprint(String nomeArquivo) {
+    // Normalizar descrição: lowercase, trim, colapsar espaços
+    final descricaoNormalizada = descricao
+        .toLowerCase()
+        .trim()
+        .replaceAll(RegExp(r'\s+'), ' ');
+
+    // Formato da data: YYYYMMDD
+    final dataFormatada = '${data.year.toString().padLeft(4, '0')}'
+        '${data.month.toString().padLeft(2, '0')}'
+        '${data.day.toString().padLeft(2, '0')}';
+
+    // Valor normalizado (sempre 2 casas decimais)
+    final valorFormatado = valor.toStringAsFixed(2);
+
+    // Arquivo de origem normalizado
+    final arquivoNormalizado = nomeArquivo.toLowerCase().trim();
+
+    return '$dataFormatada|$valorFormatado|$descricaoNormalizada|$arquivoNormalizado';
   }
 
   @override

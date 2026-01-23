@@ -28,6 +28,7 @@ import '../../transacoes/pages/transacao_form_page.dart';
 import '../../auth/components/loading_overlay.dart';
 import '../../shared/theme/app_colors.dart';
 import '../../../auth_integration.dart';
+import '../../../database/local_database.dart';
 
 /// Modal para iniciar importação de transações
 class ImportacaoModal extends StatefulWidget {
@@ -80,6 +81,9 @@ class _ImportacaoModalState extends State<ImportacaoModal>
   List<bool> _transacoesSelecionadas = [];
   bool _todasSelecionadas = false;
   bool _autoCategorizando = false;
+
+  // Validação de duplicidade
+  Map<String, Map<String, dynamic>> _validacoesDuplicidade = {}; // ID da transação -> validação
 
   // Controllers para edição de transações
   final Map<int, Map<String, TextEditingController>> _controllers = {};
@@ -203,7 +207,6 @@ class _ImportacaoModalState extends State<ImportacaoModal>
       // File picker simples
       final result = await FilePicker.platform.pickFiles();
 
-      debugPrint('🔍 RESULTADO: ${result != null ? 'SUCESSO' : 'NULL'}');
 
       if (result != null) {
         debugPrint('📂 FILES ENCONTRADOS: ${result.files.length}');
@@ -235,7 +238,6 @@ class _ImportacaoModalState extends State<ImportacaoModal>
           await _processarArquivoSelecionado(File(file.path!));
         }
       } else {
-        debugPrint('❌ RESULTADO NULL - USER CANCELOU OU ERRO');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -339,12 +341,11 @@ class _ImportacaoModalState extends State<ImportacaoModal>
 
     setState(() {
       _transacoesPreview = transacoesFake;
-      _transacoesSelecionadas = List.filled(transacoesFake.length, false);
+      _transacoesSelecionadas = List.filled(transacoesFake.length, true); // Temporário
       _todasSelecionadas = false;
       _mostrandoPreview = true; // Ativar modo preview
     });
 
-    debugPrint('✅ ${transacoesFake.length} transações fake criadas!');
     debugPrint('🎬 Modo preview ativado: $_mostrandoPreview');
 
     // Debug das transações criadas
@@ -419,11 +420,25 @@ class _ImportacaoModalState extends State<ImportacaoModal>
         throw Exception('Formato de arquivo não suportado. Use CSV, OFX, PDF ou Excel (.xlsx).');
       }
 
-      debugPrint('✅ Transações processadas: ${transacoesReais.length}');
+
+      // ✅ Gerar fingerprint consistente para todas as transações
+      final nomeArquivoNormalizado = _nomeArquivo.isNotEmpty ? _nomeArquivo : 'arquivo_importacao';
+      for (int i = 0; i < transacoesReais.length; i++) {
+        final transacao = transacoesReais[i];
+        final fingerprint = transacao.gerarFingerprint(nomeArquivoNormalizado);
+        transacoesReais[i] = transacao.copyWith(fingerprintImportacao: fingerprint);
+      }
+
+      // ✅ Validar duplicidade das transações
+      try {
+        await _validarDuplicidadeTransacoes(transacoesReais, nomeArquivoNormalizado);
+      } catch (e, stackTrace) {
+        debugPrint('Stack trace: $stackTrace');
+      }
 
       setState(() {
         _transacoesPreview = transacoesReais;
-        _transacoesSelecionadas = List.filled(transacoesReais.length, false); // Inicializar lista de seleções
+        _transacoesSelecionadas = List.filled(transacoesReais.length, true); // Temporário - será ajustado pela validação
         _isLoading = false;
         _mostrandoPreview = transacoesReais.isNotEmpty; // Mostrar preview se houver dados
       });
@@ -769,6 +784,8 @@ class _ImportacaoModalState extends State<ImportacaoModal>
             conta: _contaSelecionada,
             cartao: _cartaoSelecionado,
             tipoImportacao: _tipoImportacao,
+            validacoesDuplicidade: _validacoesDuplicidade,
+            selecoesPrevias: _transacoesSelecionadas,
           ),
         ),
       );
@@ -2052,7 +2069,6 @@ class _ImportacaoModalState extends State<ImportacaoModal>
     );
 
     if (result != null) {
-      debugPrint('✅ Transação editada com sucesso');
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -2101,7 +2117,6 @@ class _ImportacaoModalState extends State<ImportacaoModal>
         _transacoesPreview.removeWhere((t) => t.id == transacao.id);
       });
 
-      debugPrint('✅ Transação excluída');
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -2166,7 +2181,6 @@ class _ImportacaoModalState extends State<ImportacaoModal>
           );
         }
 
-        debugPrint('✅ Importação finalizada com sucesso');
 
       } catch (e) {
         debugPrint('❌ Erro na importação: $e');
@@ -2517,6 +2531,55 @@ class _ImportacaoModalState extends State<ImportacaoModal>
           );
         }),
 
+        // Banner de duplicatas
+        () {
+          final duplicatasCount = _contarDuplicatas();
+          if (duplicatasCount > 0) {
+            return Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.orange.withAlpha(26),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.orange.withAlpha(77)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.warning_amber,
+                    color: Colors.orange,
+                    size: 24,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '⚠️ $duplicatasCount possível(is) duplicata(s) detectada(s)',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.orange,
+                            fontSize: 14,
+                          ),
+                        ),
+                        const Text(
+                          'Verifique as transações marcadas antes de importar',
+                          style: TextStyle(
+                            color: Colors.orange,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+          return const SizedBox.shrink();
+        }(),
+
         // Lista de transações editáveis
         Expanded(
           child: ListView.builder(
@@ -2582,6 +2645,8 @@ class _ImportacaoModalState extends State<ImportacaoModal>
                               conta: _contaSelecionada,
                               cartao: _cartaoSelecionado,
                               tipoImportacao: _tipoImportacao,
+                              validacoesDuplicidade: _validacoesDuplicidade,
+                              selecoesPrevias: _transacoesSelecionadas,
                             ),
                           ),
                         );
@@ -2646,14 +2711,23 @@ class _ImportacaoModalState extends State<ImportacaoModal>
     final controllers = _getOrCreateControllersForIndex(index);
     final focusNodes = _getOrCreateFocusNodesForIndex(index);
 
+    // Verificar se é duplicata
+    final validacaoDuplicidade = _getValidacaoDuplicidade(transacao.id);
+    final isDuplicata = validacaoDuplicidade != null && validacaoDuplicidade['status'] == 'warning';
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
+        border: isDuplicata
+            ? Border.all(color: Colors.orange, width: 2)
+            : null,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(12),
+            color: isDuplicata
+                ? Colors.orange.withAlpha(50)
+                : Colors.black.withAlpha(12),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -2676,7 +2750,7 @@ class _ImportacaoModalState extends State<ImportacaoModal>
             child: Row(
               children: [
                 Checkbox(
-                  value: _temCategoriaCompleta(index),
+                  value: index < _transacoesSelecionadas.length ? _transacoesSelecionadas[index] : true,
                   onChanged: (value) {
                     setState(() {
                       _transacoesSelecionadas[index] = value ?? false;
@@ -2693,6 +2767,35 @@ class _ImportacaoModalState extends State<ImportacaoModal>
                     color: isReceita ? AppColors.verdeSucesso : AppColors.vermelhoErro,
                   ),
                 ),
+                if (isDuplicata) ...[
+                  const SizedBox(width: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.orange,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.warning_amber,
+                          color: Colors.white,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 4),
+                        const Text(
+                          'DUPLICATA',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 const Spacer(),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -2817,6 +2920,51 @@ class _ImportacaoModalState extends State<ImportacaoModal>
                     ),
                   ],
                 ),
+
+                // Aviso de duplicata
+                if (isDuplicata) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withAlpha(26),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.orange.withAlpha(77)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.warning_amber,
+                          color: Colors.orange,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Possível duplicata detectada',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.orange,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              Text(
+                                validacaoDuplicidade?['message'] ?? 'Transação similar já existe no banco de dados',
+                                style: TextStyle(
+                                  color: Colors.orange.shade700,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -2883,6 +3031,39 @@ class _ImportacaoModalState extends State<ImportacaoModal>
                 ),
                 Row(
                   children: [
+                    // ⚠️ Indicador de duplicidade
+                    ...() {
+                      final validacao = _getValidacaoDuplicidade(transacao.id);
+                      if (validacao != null && (validacao['status'] == 'warning' || validacao['status'] == 'blocked')) {
+                        final isBlocked = validacao['status'] == 'blocked';
+                        return [
+                          Container(
+                            decoration: BoxDecoration(
+                              color: isBlocked ? Colors.red.withValues(alpha: 0.9) : Colors.orange.withValues(alpha: 0.9),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: IconButton(
+                              onPressed: () {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(validacao['mensagem'] ?? 'Possível duplicidade detectada'),
+                                    backgroundColor: isBlocked ? Colors.red : Colors.orange,
+                                    duration: const Duration(seconds: 4),
+                                  ),
+                                );
+                              },
+                              icon: Icon(
+                                isBlocked ? Icons.block : Icons.warning_amber_rounded,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                        ];
+                      }
+                      return <Widget>[];
+                    }(),
                     Container(
                       decoration: BoxDecoration(
                         color: AppColors.brancoTransparente20,
@@ -3090,7 +3271,6 @@ class _ImportacaoModalState extends State<ImportacaoModal>
       debugPrint('📚 [AUTO-CAT] Total subcategorias carregadas: ${subcategorias.length}');
 
       if (categorias.isEmpty) {
-        debugPrint('⚠️ [AUTO-CAT] PROBLEMA: Nenhuma categoria carregada!');
         throw Exception('Nenhuma categoria encontrada. Verifique a conexão com o banco de dados.');
       }
 
@@ -3120,22 +3300,17 @@ class _ImportacaoModalState extends State<ImportacaoModal>
 
           // Atualizar controller de categoria
           if (transacao.categoriaId != null && transacao.categoriaId!.isNotEmpty) {
-            debugPrint('   🔍 Buscando categoria com ID: ${transacao.categoriaId}');
 
             CategoriaModel? categoria;
             try {
               categoria = categorias.firstWhere((c) => c.id == transacao.categoriaId);
-              debugPrint('   ✅ Categoria encontrada: ${categoria.nome} (${categoria.id})');
             } catch (e) {
-              debugPrint('   ❌ Categoria ID ${transacao.categoriaId} não encontrada na lista!');
               categoria = null;
             }
 
             if (categoria != null) {
               controllers['categoria']?.text = categoria.nome;
-              debugPrint('   ✅ Categoria no card: ${categoria.nome} (${categoria.id})');
             } else {
-              debugPrint('   ❌ Categoria não encontrada - card ficará sem categoria');
             }
           }
 
@@ -3155,9 +3330,7 @@ class _ImportacaoModalState extends State<ImportacaoModal>
             );
             if (subcategoria.id.isNotEmpty) {
               controllers['subcategoria']?.text = subcategoria.nome;
-              debugPrint('   ✅ Subcategoria no card: ${subcategoria.nome} (${subcategoria.id}, categoriaId: ${subcategoria.categoriaId})');
             } else {
-              debugPrint('   ❌ Subcategoria ID ${transacao.subcategoriaId} não encontrada!');
             }
           }
         }
@@ -3323,7 +3496,8 @@ class _ImportacaoModalState extends State<ImportacaoModal>
               child: ListView.builder(
                 itemCount: _categorias.where((c) => c.tipo == transacao.tipo).length,
                 itemBuilder: (context, catIndex) {
-                  final categoriasFiltradas = _categorias.where((c) => c.tipo == transacao.tipo).toList();
+                  final categoriasFiltradas = _categorias.where((c) => c.tipo == transacao.tipo).toList()
+                    ..sort((a, b) => a.nome.toLowerCase().compareTo(b.nome.toLowerCase())); // ✅ Ordenação A-Z
                   final cat = categoriasFiltradas[catIndex];
 
                   return Container(
@@ -3441,7 +3615,9 @@ class _ImportacaoModalState extends State<ImportacaoModal>
               child: ListView.builder(
                 itemCount: _subcategorias.length,
                 itemBuilder: (context, subIndex) {
-                  final sub = _subcategorias[subIndex];
+                  final subcategoriasOrdenadas = List<SubcategoriaModel>.from(_subcategorias)
+                    ..sort((a, b) => a.nome.toLowerCase().compareTo(b.nome.toLowerCase())); // ✅ Ordenação A-Z
+                  final sub = subcategoriasOrdenadas[subIndex];
 
                   // Buscar categoria pai para usar sua cor e ícone
                   CategoriaModel? categoriaPai;
@@ -3451,7 +3627,6 @@ class _ImportacaoModalState extends State<ImportacaoModal>
                     );
                   } catch (e) {
                     // Se não encontrar categoria pai, criar fallback
-                    debugPrint('⚠️ Categoria pai não encontrada para subcategoria ${sub.nome} (categoriaId: ${sub.categoriaId})');
                     categoriaPai = null;
                   }
 
@@ -3554,7 +3729,6 @@ class _ImportacaoModalState extends State<ImportacaoModal>
         categoriaId: categoriaId
       );
 
-      debugPrint('✅ Carregadas ${subcategorias.length} subcategorias para categoria $categoriaId');
 
       setState(() {
         _subcategorias = subcategorias.where((s) => s.ativo).toList();
@@ -3567,6 +3741,166 @@ class _ImportacaoModalState extends State<ImportacaoModal>
         _subcategorias = [];
       });
     }
+  }
+
+  /// Valida duplicidade das transações e armazena resultados
+  Future<void> _validarDuplicidadeTransacoes(List<TransacaoImportada> transacoes, String nomeArquivo) async {
+
+    _validacoesDuplicidade.clear();
+
+    for (int i = 0; i < transacoes.length; i++) {
+      final transacao = transacoes[i];
+
+      try {
+        // 🎯 VALIDAÇÃO DIRETA - BYPASS COMPLETO
+        final resultado = await _validarTransacaoDireta(transacao, nomeArquivo);
+
+
+        // Armazenar resultado
+        _validacoesDuplicidade[transacao.id] = resultado;
+
+
+      } catch (e) {
+        _validacoesDuplicidade[transacao.id] = {
+          'status': 'ok',
+          'message': 'Erro na validação',
+        };
+      }
+    }
+
+    final warnings = _validacoesDuplicidade.values.where((v) => v['status'] == 'warning').length;
+    final blocked = _validacoesDuplicidade.values.where((v) => v['status'] == 'blocked').length;
+
+
+    // Inicializar seleções inteligentemente após validação
+    _inicializarSelecaoInteligente();
+  }
+
+  /// 🎯 VALIDAÇÃO DIRETA - BYPASS COMPLETO
+  Future<Map<String, dynamic>> _validarTransacaoDireta(TransacaoImportada transacao, String nomeArquivo) async {
+    try {
+      // 1. GERAR FINGERPRINT
+      final fingerprint = transacao.gerarFingerprint(nomeArquivo);
+
+      // 2. BUSCAR DUPLICATAS POR FINGERPRINT
+      final fingerprintQuery = '''
+        SELECT id, descricao, valor, data
+        FROM transacoes
+        WHERE observacoes LIKE '%fingerprint:$fingerprint%'
+        LIMIT 3
+      ''';
+
+      final duplicatasFingerprint = await LocalDatabase.instance.database!.rawQuery(fingerprintQuery);
+
+      if (duplicatasFingerprint.isNotEmpty) {
+        return {
+          'status': 'warning',
+          'message': 'Transação já importada anteriormente (fingerprint duplicado)',
+          'matches': duplicatasFingerprint,
+          'motivos': ['fingerprint_duplicado'],
+        };
+      }
+
+      // 3. BUSCAR DUPLICATAS POR VALOR + DATA (MESMO DIA)
+      final dataFormatada = '${transacao.data.year.toString().padLeft(4, '0')}-${transacao.data.month.toString().padLeft(2, '0')}-${transacao.data.day.toString().padLeft(2, '0')}';
+      final valorQuery = '''
+        SELECT id, descricao, valor, data
+        FROM transacoes
+        WHERE ABS(valor - ${transacao.valor}) < 0.01
+        AND date(data) = '$dataFormatada'
+        LIMIT 5
+      ''';
+
+      final duplicatasValor = await LocalDatabase.instance.database!.rawQuery(valorQuery);
+
+      if (duplicatasValor.isNotEmpty) {
+
+        // Verificar similaridade de descrição
+        final matchesSimilares = <Map<String, dynamic>>[];
+        for (final dup in duplicatasValor) {
+          final descricaoSimilar = dup['descricao'] as String;
+          final similarity = _calcularSimilaridadeDescricao(
+            transacao.descricao.toLowerCase(),
+            descricaoSimilar.toLowerCase()
+          );
+
+          if (similarity >= 0.7) { // 70% de similaridade
+            matchesSimilares.add({
+              ...dup,
+              'similaridade': (similarity * 100).toInt(),
+            });
+          }
+        }
+
+        if (matchesSimilares.isNotEmpty) {
+          return {
+            'status': 'warning',
+            'message': 'Encontradas ${matchesSimilares.length} transação(ões) similar(es) no mesmo dia com mesmo valor',
+            'matches': matchesSimilares,
+            'motivos': ['duplicata_similar'],
+          };
+        }
+      }
+
+      return {
+        'status': 'ok',
+        'message': 'Transação válida para importação',
+      };
+
+    } catch (e, stackTrace) {
+      debugPrint('Erro na validação de duplicatas: $e');
+      return {
+        'status': 'ok',
+        'message': 'Erro na validação - permitindo importação',
+        'error': e.toString(),
+      };
+    }
+  }
+
+  /// 📊 CALCULAR SIMILARIDADE ENTRE DESCRIÇÕES
+  double _calcularSimilaridadeDescricao(String desc1, String desc2) {
+    // Normalizar strings
+    final normalized1 = desc1.replaceAll(RegExp(r'[^\w\s]'), '').replaceAll(RegExp(r'\s+'), ' ').trim();
+    final normalized2 = desc2.replaceAll(RegExp(r'[^\w\s]'), '').replaceAll(RegExp(r'\s+'), ' ').trim();
+
+    // Se são iguais após normalização, 100% similar
+    if (normalized1 == normalized2) return 1.0;
+
+    // Calcular similaridade por palavras
+    final palavras1 = normalized1.split(' ').where((w) => w.length > 2).toSet();
+    final palavras2 = normalized2.split(' ').where((w) => w.length > 2).toSet();
+
+    if (palavras1.isEmpty && palavras2.isEmpty) return 1.0;
+    if (palavras1.isEmpty || palavras2.isEmpty) return 0.0;
+
+    final intersection = palavras1.intersection(palavras2).length;
+    final union = palavras1.union(palavras2).length;
+
+    return intersection / union;
+  }
+
+  /// Obtém o status de duplicidade de uma transação
+  Map<String, dynamic>? _getValidacaoDuplicidade(String transacaoId) {
+    return _validacoesDuplicidade[transacaoId];
+  }
+
+  /// Conta quantas transações são duplicatas
+  int _contarDuplicatas() {
+    return _validacoesDuplicidade.values.where((v) => v['status'] == 'warning').length;
+  }
+
+  /// Inicializa seleções: todas marcadas exceto duplicatas
+  void _inicializarSelecaoInteligente() {
+    _transacoesSelecionadas = List.generate(_transacoesPreview.length, (index) {
+      final transacao = _transacoesPreview[index];
+      final validacao = _getValidacaoDuplicidade(transacao.id);
+      final isDuplicata = validacao != null && validacao['status'] == 'warning';
+
+
+      return !isDuplicata; // Marcar TODAS exceto duplicatas
+    });
+
+    _atualizarSelecaoTodas();
   }
 
   /// Helper para renderizar ícones das categorias
