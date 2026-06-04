@@ -597,6 +597,24 @@ class FaturaOperationsService {
 
       if (transacoesEfetivadas > 0) {
         log('✅ Fatura paga: $transacoesEfetivadas transações efetivadas');
+
+        final valorTotalPago = transacoesResult.fold<double>(
+          0.0,
+          (sum, t) => sum + ((t['valor'] as num?)?.toDouble() ?? 0.0),
+        );
+        await _localDb.aplicarDeltaSaldo(contaId, -valorTotalPago);
+        log('🏦 Saldo debitado: -R\$ ${valorTotalPago.toStringAsFixed(2)} na conta $contaId');
+
+        // Sync forçado evita download incremental sobrescrever
+        // efetivado=true local com versão antiga do servidor
+        if (_syncManager.isOnline) {
+          try {
+            await _syncManager.syncAll();
+          } catch (syncErr) {
+            log('⚠️ Erro no sync forçado (pagamento já persistido localmente): $syncErr');
+          }
+        }
+
         return {
           'success': true,
           'message': 'Fatura paga com sucesso',
