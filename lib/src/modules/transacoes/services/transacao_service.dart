@@ -151,9 +151,9 @@ class TransacaoService {
         // Salva no SQLite local
         await LocalDatabase.instance.addTransacaoLocal(receitaSQL);
 
-        // ⚡ Recalcula saldo da conta imediatamente (não-bloqueante se efetivada)
+        // ⚡ Recalcula saldo da conta antes de notificar a UI (determinístico)
         if (efetivado) {
-          unawaited(LocalDatabase.instance.recalcularSaldoConta(contaId));
+          await LocalDatabase.instance.recalcularSaldoConta(contaId);
         }
 
         // Cria modelo para retorno
@@ -323,9 +323,9 @@ class TransacaoService {
         // Salva no SQLite local
         await LocalDatabase.instance.addTransacaoLocal(despesaSQL);
 
-        // ⚡ Recalcula saldo da conta imediatamente (não-bloqueante se efetivada)
+        // ⚡ Recalcula saldo da conta antes de notificar a UI (determinístico)
         if (efetivado) {
-          unawaited(LocalDatabase.instance.recalcularSaldoConta(contaId));
+          await LocalDatabase.instance.recalcularSaldoConta(contaId);
         }
 
         // Cria modelo para retorno
@@ -450,9 +450,11 @@ class TransacaoService {
       await LocalDatabase.instance.addTransacaoLocal(transacaoEntrada);
       log('💾 Entrada salva no SQLite: ${transacaoEntrada['id']}');
 
-      // ⚡ Recalcula saldo das 2 contas imediatamente (não-bloqueante)
-      unawaited(LocalDatabase.instance.recalcularSaldoConta(contaOrigemId));
-      unawaited(LocalDatabase.instance.recalcularSaldoConta(contaDestinoId));
+      // ⚡ Recalcula saldo das 2 contas em paralelo antes de notificar a UI
+      await Future.wait([
+        LocalDatabase.instance.recalcularSaldoConta(contaOrigemId),
+        LocalDatabase.instance.recalcularSaldoConta(contaDestinoId),
+      ]);
 
       final transferenciasModels = [
         TransacaoModel.fromJson(transacaoSaida),
@@ -798,8 +800,8 @@ class TransacaoService {
       final mudouEfetivado = efetivado != null && efetivado != (transacaoAtual['efetivado'] == 1);
       if (mudouEfetivado && transacaoAtual['conta_id'] != null) {
         final contaAfetada = transacaoAtual['conta_id'] as String;
-        unawaited(LocalDatabase.instance.recalcularSaldoConta(contaAfetada));
-        log('⚡ Recalculando saldo da conta $contaAfetada');
+        await LocalDatabase.instance.recalcularSaldoConta(contaAfetada);
+        log('⚡ Saldo recalculado da conta $contaAfetada');
       }
 
       // ✅ SE ONLINE, TENTA SINCRONIZAR COM SUPABASE
@@ -883,8 +885,8 @@ class TransacaoService {
 
       // ⚡ Recalcula saldo da conta afetada (se existir e estava efetivada)
       if (contaAfetada != null && transacaoEfetivada) {
-        unawaited(LocalDatabase.instance.recalcularSaldoConta(contaAfetada));
-        log('⚡ Recalculando saldo da conta $contaAfetada');
+        await LocalDatabase.instance.recalcularSaldoConta(contaAfetada);
+        log('⚡ Saldo recalculado da conta $contaAfetada');
       }
 
       // 🌐 TENTA SINCRONIZAR COM SUPABASE SE ONLINE
