@@ -14,7 +14,6 @@ import '../../../database/local_database.dart';
 import '../../../sync/connectivity_helper.dart';
 import '../../../sync/sync_manager.dart';
 import '../../categorias/services/categoria_service.dart';
-import '../../contas/services/conta_service.dart';
 import '../../../shared/services/contas_refresh_notifier.dart';
 
 class TransacaoService {
@@ -162,29 +161,9 @@ class TransacaoService {
         log('💾 Receita salva no SQLite: ${receita['id']}');
       }
 
-      // ✅ SE ESTIVER ONLINE, TENTA SALVAR NO SUPABASE TAMBÉM
-      if (isOnline) {
-        try {
-          final response = await _supabase
-              .from('transacoes')
-              .insert(receitasCriadas)
-              .select();
-
-          log('☁️ ${response.length} receita(s) sincronizada(s) com Supabase');
-        } catch (onlineError) {
-          log('⚠️ Erro ao sincronizar online (dados salvos offline): $onlineError');
-          
-          // Marca como não sincronizado para tentar depois
-          for (final receita in receitasCriadas) {
-            await LocalDatabase.instance.updateTransacaoLocal(
-              receita['id'],
-              {'sincronizado': 0} // FALSE em SQLite
-            );
-          }
-        }
-      } else {
-        log('📱 Modo OFFLINE: ${receitasCriadas.length} receita(s) salva(s) localmente para sincronizar depois');
-      }
+      // ☁️ Consolida com o servidor pela fila de sync (única fonte de escrita
+      // remota — evita gravação dupla e registro preso em 'pending')
+      SyncManager.instance.requestSync();
 
       log('✅ ${receitasModels.length} receita(s) criada(s): $descricao ${isOnline ? "(online + offline)" : "(somente offline)"}');
 
@@ -334,29 +313,9 @@ class TransacaoService {
         log('💾 Despesa salva no SQLite: ${despesa['id']}');
       }
 
-      // ✅ SE ESTIVER ONLINE, TENTA SALVAR NO SUPABASE TAMBÉM
-      if (isOnline) {
-        try {
-          final response = await _supabase
-              .from('transacoes')
-              .insert(despesasCriadas)
-              .select();
-
-          log('☁️ ${response.length} despesa(s) sincronizada(s) com Supabase');
-        } catch (onlineError) {
-          log('⚠️ Erro ao sincronizar online (dados salvos offline): $onlineError');
-          
-          // Marca como não sincronizado para tentar depois
-          for (final despesa in despesasCriadas) {
-            await LocalDatabase.instance.updateTransacaoLocal(
-              despesa['id'],
-              {'sincronizado': 0} // FALSE em SQLite
-            );
-          }
-        }
-      } else {
-        log('📱 Modo OFFLINE: ${despesasCriadas.length} despesa(s) salva(s) localmente para sincronizar depois');
-      }
+      // ☁️ Consolida com o servidor pela fila de sync (única fonte de escrita
+      // remota — evita gravação dupla e registro preso em 'pending')
+      SyncManager.instance.requestSync();
 
       log('✅ ${despesasModels.length} despesa(s) criada(s): $descricao ${isOnline ? "(online + offline)" : "(somente offline)"}');
 
@@ -461,30 +420,9 @@ class TransacaoService {
         TransacaoModel.fromJson(transacaoEntrada),
       ];
 
-      // ✅ SE ESTIVER ONLINE, TENTA SALVAR NO SUPABASE TAMBÉM
-      if (isOnline) {
-        try {
-          await _supabase
-              .from('transacoes')
-              .insert([transacaoSaida, transacaoEntrada]);
-
-          log('☁️ Transferência sincronizada com Supabase');
-        } catch (onlineError) {
-          log('⚠️ Erro ao sincronizar online (dados salvos offline): $onlineError');
-
-          // Marca como não sincronizado para tentar depois
-          await LocalDatabase.instance.updateTransacaoLocal(
-            transacaoSaida['id'] as String,
-            {'sincronizado': 0}
-          );
-          await LocalDatabase.instance.updateTransacaoLocal(
-            transacaoEntrada['id'] as String,
-            {'sincronizado': 0}
-          );
-        }
-      } else {
-        log('📱 Modo OFFLINE: Transferência salva localmente para sincronizar depois');
-      }
+      // ☁️ Consolida com o servidor pela fila de sync (única fonte de escrita
+      // remota — evita gravação dupla e registro preso em 'pending')
+      SyncManager.instance.requestSync();
 
       log('✅ Transferência criada: $descricao ${isOnline ? "(online + offline)" : "(somente offline)"}');
 
@@ -804,29 +742,10 @@ class TransacaoService {
         log('⚡ Saldo recalculado da conta $contaAfetada');
       }
 
-      // ✅ SE ONLINE, TENTA SINCRONIZAR COM SUPABASE
-      if (isOnline) {
-        try {
-          // Converter boolean para Supabase
-          final updateDataSupabase = Map<String, dynamic>.from(updateData);
-          if (efetivado != null) updateDataSupabase['efetivado'] = efetivado; // Boolean para Supabase
-
-          await _supabase
-              .from('transacoes')
-              .update(updateDataSupabase)
-              .eq('id', transacaoId)
-              .eq('usuario_id', userId);
-
-          log('☁️ Transação sincronizada com Supabase: $transacaoId');
-        } catch (onlineError) {
-          log('⚠️ Erro ao sincronizar com Supabase: $onlineError');
-          // Marca como não sincronizado
-          await LocalDatabase.instance.updateTransacaoLocal(
-            transacaoId,
-            {'sincronizado': 0}
-          );
-        }
-      } else {
+      // ☁️ Consolida com o servidor pela fila de sync (única fonte de escrita
+      // remota — evita gravação dupla e registro preso em 'pending')
+      SyncManager.instance.requestSync();
+      if (!isOnline) {
         log('📱 Offline: Atualização será sincronizada quando voltar online');
       }
 
@@ -889,23 +808,9 @@ class TransacaoService {
         log('⚡ Saldo recalculado da conta $contaAfetada');
       }
 
-      // 🌐 TENTA SINCRONIZAR COM SUPABASE SE ONLINE
-      if (isOnline) {
-        try {
-          await _supabase
-              .from('transacoes')
-              .delete()
-              .eq('id', transacaoId)
-              .eq('usuario_id', userId);
-          log('☁️ Transação excluída do Supabase: $transacaoId');
-        } catch (e) {
-          log('⚠️ Falha na exclusão no Supabase: $e');
-          // Não falha - dados já foram excluídos localmente
-          // Sync automático tentará novamente em background
-        }
-      } else {
-        log('📱 Offline: Exclusão será sincronizada quando voltar online');
-      }
+      // ☁️ Consolida com o servidor pela fila de sync (única fonte de escrita
+      // remota — evita gravação dupla e registro preso em 'pending')
+      SyncManager.instance.requestSync();
 
       // 🔔 NOTIFICA MUDANÇA PARA CACHE DE CATEGORIAS
       CategoriaService.instance.notificarMudancaTransacoes();
