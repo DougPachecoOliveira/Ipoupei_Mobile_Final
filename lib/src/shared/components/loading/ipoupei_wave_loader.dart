@@ -18,7 +18,7 @@ class IPoupeiWaveLoader extends StatefulWidget {
     this.width = 320,
     this.height = 240,
     this.showLabel = true,
-    this.label = 'Feliz 2026',
+    this.label = 'iPoupei',
   });
 
   @override
