@@ -98,6 +98,20 @@ dev_dependencies:
   # Linting - mais recente
   flutter_lints: ^6.0.0
 
+  # Splash nativa (Android/iOS) gerada a partir do logo
+  flutter_native_splash: ^2.4.4
+
+# Splash nativa: rodar `dart run flutter_native_splash:create` após alterar
+flutter_native_splash:
+  color: "#FFFFFF"
+  image: assets/splash/splash_logo.png
+  android_12:
+    color: "#FFFFFF"
+    image: assets/splash/splash_logo_android12.png
+  ios: true
+  android: true
+  fullscreen: false
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
