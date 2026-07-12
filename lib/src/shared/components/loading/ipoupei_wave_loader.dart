@@ -126,31 +126,10 @@ class _IPoupeiWaveLoaderState extends State<IPoupeiWaveLoader>
   }
 
   Widget _buildLogoCard() {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(26),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.tealPrimary.withOpacity(0.20),
-            blurRadius: 24,
-            spreadRadius: 2,
-            offset: const Offset(0, 14),
-          ),
-          BoxShadow(
-            color: Colors.white.withOpacity(0.9),
-            blurRadius: 6,
-            offset: const Offset(-2, -2),
-          ),
-        ],
-      ),
-      child: Image.asset(
-        'assets/images/Logo.png',
-        width: 86,
-        height: 86,
-        fit: BoxFit.contain,
-      ),
+    return Image.asset(
+      'assets/images/logo_transparent.png',
+      width: 120,
+      fit: BoxFit.contain,
     );
   }
 
