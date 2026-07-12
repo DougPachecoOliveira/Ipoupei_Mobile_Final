@@ -101,6 +101,18 @@ dev_dependencies:
   # Splash nativa (Android/iOS) gerada a partir do logo
   flutter_native_splash: ^2.4.4
 
+  # Ícone do app (Android adaptativo + iOS) gerado a partir da marca
+  flutter_launcher_icons: ^0.14.3
+
+# Ícone do app: rodar `dart run flutter_launcher_icons` após alterar
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/icon/app_icon.png
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: assets/icon/app_icon_foreground.png
+  remove_alpha_ios: true
+
 # Splash nativa: rodar `dart run flutter_native_splash:create` após alterar
 flutter_native_splash:
   color: "#FFFFFF"
