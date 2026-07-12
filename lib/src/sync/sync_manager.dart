@@ -67,9 +67,11 @@ class SyncManager {
   final _supabase = Supabase.instance.client;
   SyncStatus _status = SyncStatus.idle;
   Timer? _periodicSync;
+  Timer? _requestedSyncTimer;
   StreamSubscription<bool>? _connectivitySubscription;
   bool _initialized = false;
   bool _isOnline = false;
+  bool _syncRequested = false;
 
   /// 📊 TIMESTAMPS DE SYNC POR TABELA (para sync incremental)
   final Map<String, String> _lastSyncTimestamps = {};
@@ -99,6 +101,33 @@ class SyncManager {
   SyncStatus get status => _status;
   bool get isOnline => _isOnline;
   Stream<SyncStatus> get statusStream => _statusController.stream;
+
+  /// Solicita sincronização sem bloquear a ação do usuário.
+  ///
+  /// Chamadas próximas são agrupadas em uma única execução. Se uma sync já
+  /// estiver em andamento, a solicitação fica registrada e roda logo depois.
+  void requestSync({Duration delay = const Duration(milliseconds: 120)}) {
+    _syncRequested = true;
+    _requestedSyncTimer?.cancel();
+    _requestedSyncTimer = Timer(delay, _runRequestedSync);
+  }
+
+  Future<void> _runRequestedSync() async {
+    if (!_syncRequested || !_isOnline || _localDB.currentUserId == null) {
+      return;
+    }
+
+    // O finally de syncAll reagenda a solicitação quando a execução atual
+    // terminar. Assim nenhuma alteração feita durante uma sync fica para trás.
+    if (_status == SyncStatus.syncing) return;
+
+    _syncRequested = false;
+    try {
+      await syncAll();
+    } catch (e) {
+      debugPrint('⚠️ Sync em background falhou; dados mantidos na fila: $e');
+    }
+  }
 
   /// 🚀 INICIALIZA SYNC MANAGER
   Future<void> initialize() async {
@@ -334,6 +363,15 @@ class SyncManager {
     Map<String, dynamic> record,
   ) async {
     try {
+      final recordId = record['id']?.toString();
+      if (recordId != null &&
+          await _hasPendingLocalChange(tableName, recordId)) {
+        debugPrint(
+          '⏸️ $tableName.$recordId preservado: alteração local pendente',
+        );
+        return;
+      }
+
       // Adicionar campos de controle
       record['sync_status'] = 'synced';
       record['last_sync'] = DateTime.now().toIso8601String();
@@ -364,6 +402,42 @@ class SyncManager {
       }
     } catch (e) {
       debugPrint('❌ Erro ao processar registro $tableName.${record['id']}: $e');
+    }
+  }
+
+  Future<bool> _hasPendingLocalChange(String tableName, String recordId) async {
+    try {
+      final pending = await _localDB.database?.query(
+        'sync_queue',
+        columns: ['id'],
+        where: 'table_name = ? AND record_id = ?',
+        whereArgs: [tableName, recordId],
+        limit: 1,
+      );
+      return pending?.isNotEmpty ?? false;
+    } catch (e) {
+      // Em dúvida, preservar o dado local é mais seguro que sobrescrevê-lo.
+      debugPrint('⚠️ Falha ao verificar alteração local pendente: $e');
+      return true;
+    }
+  }
+
+  Future<bool> _hasPendingTransactionsForAccount(String accountId) async {
+    try {
+      final pending = await _localDB.database?.rawQuery(
+        '''
+        SELECT q.id
+        FROM sync_queue q
+        INNER JOIN transacoes t ON t.id = q.record_id
+        WHERE q.table_name = 'transacoes' AND t.conta_id = ?
+        LIMIT 1
+        ''',
+        [accountId],
+      );
+      return pending?.isNotEmpty ?? false;
+    } catch (e) {
+      debugPrint('⚠️ Falha ao verificar saldo local pendente: $e');
+      return true;
     }
   }
 
@@ -598,6 +672,7 @@ class SyncManager {
 
     debugPrint('🔄 Iniciando sincronização completa...');
     _updateStatus(SyncStatus.syncing);
+    var completed = false;
 
     try {
       // 0. Limpar fila corrompida antes de começar
@@ -610,6 +685,7 @@ class SyncManager {
       await _downloadServerChanges();
 
       debugPrint('✅ Sincronização completa concluída');
+      completed = true;
 
       // 🔔 NOTIFICA PÁGINAS DE CONTAS APÓS SYNC COMPLETO
       // Esta é a única notificação necessária, pois:
@@ -625,22 +701,24 @@ class SyncManager {
       }
     } catch (e) {
       debugPrint('❌ Erro na sincronização completa: $e');
+      _updateStatus(SyncStatus.error);
 
       // Tenta novamente em 1 minuto se estiver online
       Timer(const Duration(minutes: 1), () async {
-        if (_isOnline && _status == SyncStatus.idle) {
+        if (_isOnline && _status != SyncStatus.syncing) {
           await syncAll();
         }
       });
 
       rethrow;
     } finally {
-      // Adicionar delay antes de resetar para evitar condições de corrida
-      await Future.delayed(const Duration(milliseconds: 500));
+      if (completed) {
+        _updateStatus(SyncStatus.idle);
+      }
 
-      // SEMPRE resetar status para idle, independente de sucesso ou erro
-      _updateStatus(SyncStatus.idle);
-      debugPrint('🔄 Status resetado para idle após delay');
+      if (_syncRequested && _isOnline) {
+        requestSync();
+      }
     }
   }
 
@@ -1800,6 +1878,21 @@ class SyncManager {
             '🏦 SyncManager: ${item['conta_nome']} - Saldo: R\$ ${item['saldo_atual']}',
           );
 
+          final accountId = item['conta_id'].toString();
+          final hasPendingAccountChange = await _hasPendingLocalChange(
+            'contas',
+            accountId,
+          );
+          final hasPendingTransaction = await _hasPendingTransactionsForAccount(
+            accountId,
+          );
+          if (hasPendingAccountChange || hasPendingTransaction) {
+            debugPrint(
+              '⏸️ Conta $accountId preservada: saldo local ainda pendente',
+            );
+            continue;
+          }
+
           final existing = await _localDB.select(
             'contas',
             where: 'id = ?',
@@ -1908,26 +2001,7 @@ class SyncManager {
       );
 
       for (final transaction in transactions) {
-        transaction['sync_status'] = 'synced';
-        transaction['last_sync'] = DateTime.now().toIso8601String();
-
-        final existing = await _localDB.select(
-          'transacoes',
-          where: 'id = ?',
-          whereArgs: [transaction['id']],
-        );
-
-        final sqliteData = _prepareSQLiteData(transaction);
-        if (existing.isEmpty) {
-          await _localDB.database!.insert('transacoes', sqliteData);
-        } else {
-          await _localDB.database!.update(
-            'transacoes',
-            sqliteData,
-            where: 'id = ?',
-            whereArgs: [transaction['id']],
-          );
-        }
+        await _processIncrementalRecord('transacoes', transaction);
       }
     } catch (e) {
       debugPrint('⚠️ Erro ao baixar transações: $e');
@@ -2028,27 +2102,7 @@ class SyncManager {
       );
 
       for (final transaction in transactions) {
-        transaction['sync_status'] = 'synced';
-        transaction['last_sync'] = DateTime.now().toIso8601String();
-
-        final existing = await _localDB.select(
-          'transacoes',
-          where: 'id = ?',
-          whereArgs: [transaction['id']],
-        );
-
-        final sqliteData = _prepareSQLiteData(transaction);
-        if (existing.isEmpty) {
-          await _localDB.database!.insert('transacoes', sqliteData);
-          debugPrint('➕ Nova transação inserida: ${transaction['descricao']}');
-        } else {
-          await _localDB.database!.update(
-            'transacoes',
-            sqliteData,
-            where: 'id = ?',
-            whereArgs: [transaction['id']],
-          );
-        }
+        await _processIncrementalRecord('transacoes', transaction);
       }
 
       debugPrint('✅ Sincronização do período concluída');
@@ -2995,6 +3049,7 @@ class SyncManager {
   /// 🧹 DISPOSE
   void dispose() {
     _periodicSync?.cancel();
+    _requestedSyncTimer?.cancel();
     _connectivitySubscription?.cancel();
     _statusController.close();
     debugPrint('🧹 Sync Manager disposed');
