@@ -32,6 +32,9 @@ import '../../relatorios/services/transacoes_pendentes_service.dart';
 import '../../relatorios/models/transacao_pendente_model.dart';
 import '../../../database/local_database.dart';
 import '../../../shared/services/contas_refresh_notifier.dart';
+import '../widgets/conta_card.dart';
+import '../widgets/contas_resumo_card.dart';
+import '../../../shared/components/ui/raptor_ui.dart';
 
 class ContasPage extends StatefulWidget {
   const ContasPage({super.key});
@@ -783,12 +786,12 @@ class _ContasPageState extends State<ContasPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: AppColors.cinzaClaro,
-
       // AppBar com visual simplificado
       appBar: AppBar(
-        backgroundColor: AppColors.tealPrimary,
+        backgroundColor: colors.surface,
+        foregroundColor: colors.onSurface,
         elevation: 0,
         automaticallyImplyLeading: false,
         toolbarHeight: 42,
@@ -797,7 +800,6 @@ class _ContasPageState extends State<ContasPage> {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
           ),
         ),
         actions: [
@@ -805,7 +807,6 @@ class _ContasPageState extends State<ContasPage> {
           IconButton(
             icon: Icon(
               _viewMode == 'consolidado' ? Icons.view_module : Icons.view_list,
-              color: Colors.white,
             ),
             onPressed: () {
               setState(() {
@@ -817,30 +818,21 @@ class _ContasPageState extends State<ContasPage> {
 
           // 2. Importar Contas (ícone de cartão)
           IconButton(
-            icon: const Icon(
-              Icons.credit_card,
-              color: Colors.white,
-            ),
+            icon: const Icon(Icons.account_balance_outlined),
             onPressed: _navegarParaContasPopulares,
             tooltip: 'Importar Contas',
           ),
 
           // 3. Nova Conta
           IconButton(
-            icon: const Icon(
-              Icons.add,
-              color: Colors.white,
-            ),
+            icon: const Icon(Icons.add),
             onPressed: _navegarParaCriarConta,
             tooltip: 'Nova conta',
           ),
 
           // 4. Menu de Opções (3 pontinhos)
           PopupMenuButton<String>(
-            icon: const Icon(
-              Icons.more_vert,
-              color: Colors.white,
-            ),
+            icon: const Icon(Icons.more_vert),
             onSelected: (value) {
               switch (value) {
                 case 'padrao':
@@ -1057,8 +1049,8 @@ class _ContasPageState extends State<ContasPage> {
 
       // FAB principal
       floatingActionButton: FloatingActionButton(
-        backgroundColor: AppColors.tealPrimary,
-        foregroundColor: Colors.white,
+        backgroundColor: colors.primary,
+        foregroundColor: colors.onPrimary,
         elevation: _fabExpanded ? 8 : 6,
         onPressed: () {
           setState(() => _fabExpanded = !_fabExpanded);
@@ -1102,7 +1094,7 @@ class _ContasPageState extends State<ContasPage> {
         child: Column(
           children: [
             // Card de resumo
-            _buildResumoCard(),
+            _buildRaptorResumo(),
 
             const SizedBox(height: 16),
 
@@ -1110,9 +1102,9 @@ class _ContasPageState extends State<ContasPage> {
             if (_contas.isEmpty)
               _buildVazio()
             else if (_viewMode == 'consolidado')
-              ..._contas.map((conta) => _buildContaItem(conta))
+              ..._contas.map((conta) => _buildRaptorConta(conta, compact: false))
             else
-              ..._contas.map((conta) => _buildContaSimples(conta)),
+              ..._contas.map((conta) => _buildRaptorConta(conta, compact: true)),
 
             const SizedBox(height: 32),
 
@@ -1128,90 +1120,22 @@ class _ContasPageState extends State<ContasPage> {
 
   /// Widget estado vazio
   Widget _buildVazio() {
-    // Estado vazio elegante para contas ativas
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Ícone principal
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: AppColors.tealPrimary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Icon(
-                Icons.account_balance_wallet_outlined,
-                size: 64,
-                color: AppColors.tealPrimary,
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // Título
-            const Text(
-              'Nenhuma conta cadastrada',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: AppColors.cinzaEscuro,
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            // Descrição
-            const Text(
-              'Comece organizando suas finanças adicionando suas contas bancárias, carteiras e investimentos',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16,
-                color: AppColors.cinzaTexto,
-                height: 1.4,
-              ),
-            ),
-
-            const SizedBox(height: 32),
-
-            // Botão principal - Contas Básicas
-            AppButton(
-              text: 'Criar Contas Básicas',
-              onPressed: _navegarParaContasPopulares,
-              variant: AppButtonVariant.primary,
-              customColor: AppColors.tealPrimary,
-              icon: Icons.account_balance,
-              fullWidth: true,
-            ),
-
-            const SizedBox(height: 12),
-
-            // Botão secundário - Criar personalizada
-            AppButton(
-              text: 'Criar Conta Personalizada',
-              onPressed: _navegarParaCriarConta,
-              variant: AppButtonVariant.outline,
-              customColor: AppColors.tealPrimary,
-              icon: Icons.add,
-              fullWidth: true,
-            ),
-
-            const SizedBox(height: 12),
-
-            // Botão terciário - Demo
-            AppButton(
-              text: 'Testar com Dados Demo',
-              onPressed: _criarDadosDemo,
-              variant: AppButtonVariant.outline,
-              customColor: AppColors.cinzaTexto,
-              icon: Icons.play_arrow,
-              fullWidth: true,
-            ),
-          ],
+    return Column(
+      children: [
+        RaptorEmptyState(
+          icon: Icons.account_balance_outlined,
+          title: 'Traga suas contas para perto',
+          message: 'Adicione bancos, carteiras e investimentos para ver seu saldo real em um só lugar.',
+          actionLabel: 'Escolher meu banco',
+          onAction: _navegarParaContasPopulares,
         ),
-      ),
+        const SizedBox(height: 12),
+        OutlinedButton.icon(
+          onPressed: _navegarParaCriarConta,
+          icon: const Icon(Icons.add),
+          label: const Text('Criar conta manualmente'),
+        ),
+      ],
     );
   }
 
@@ -1226,7 +1150,7 @@ class _ContasPageState extends State<ContasPage> {
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
           child: Column(
             children: [
-              _buildResumoCard(),
+              _buildRaptorResumo(),
               const SizedBox(height: 24),
               _buildListaEmbebida(contas),
               const SizedBox(height: 32),
@@ -1250,7 +1174,7 @@ class _ContasPageState extends State<ContasPage> {
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
           child: Column(
             children: [
-              _buildResumoCard(),
+              _buildRaptorResumo(),
               const SizedBox(height: 24),
               ...contas.map((conta) => _buildContaSimples(conta)),
               const SizedBox(height: 32),
@@ -1446,7 +1370,26 @@ class _ContasPageState extends State<ContasPage> {
       physics: const NeverScrollableScrollPhysics(),
       padding: const EdgeInsets.only(top: 0),
       itemCount: contas.length,
-      itemBuilder: (context, i) => _buildContaItem(contas[i]),
+      itemBuilder: (context, i) => _buildRaptorConta(contas[i], compact: false),
+    );
+  }
+
+  Widget _buildRaptorConta(ContaModel conta, {required bool compact}) {
+    return ContaCard(
+      conta: conta,
+      isCompact: compact,
+      showMovimentacao: false,
+      showMetricas: false,
+      onTap: () => _navegarParaGestaoCompleta(conta),
+      onMenuTap: () => _mostrarMenuConta(conta),
+    );
+  }
+
+  Widget _buildRaptorResumo() {
+    return ContasResumoCard(
+      saldoTotal: _saldoTotal,
+      contasAtivas: _contas.length,
+      projecao: _calcularProjecao(),
     );
   }
 

@@ -1557,11 +1557,18 @@ class _CartoesConsolidadoPageState extends State<CartoesConsolidadoPage> with Si
         ),
       );
 
-      // Processar pagamento usando FaturaService
-      final sucesso = await _faturaService.pagarFaturaCompleta(
-        fatura.id,
-        DateTime.now(),
-      );
+      // Compatibilidade de uma UI antiga: nunca processa por um segundo
+      // serviço. Encaminha para o mesmo fluxo offline-first da tela principal.
+      final sucesso = await Navigator.push<bool>(
+            context,
+            MaterialPageRoute(
+              builder: (_) => PagamentoFaturaPage(
+                fatura: fatura,
+                cartao: cartao,
+              ),
+            ),
+          ) ==
+          true;
 
       // Fechar loading
       Navigator.pop(context);

@@ -30,9 +30,10 @@ class CategoriaModel {
     this.ordem = 0, // Padrão do banco
     this.classificacaoRegra,
     this.descricao,
-    required this.createdAt,
-    required this.updatedAt,
-  });
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  })  : createdAt = createdAt ?? DateTime.now(),
+        updatedAt = updatedAt ?? DateTime.now();
 
   factory CategoriaModel.fromJson(Map<String, dynamic> json) {
     return CategoriaModel(

@@ -1,451 +1,213 @@
-// 📊 Resumo Orçamento Widget - iPoupei Mobile
-//
-// Widget elegante de resumo do orçamento mensal
-// Header branco com relevo + Cards horizontais simples
-//
-// Funcionalidades: Header elevado + Toggle efetivados + Layout limpo
+import 'dart:async';
 
 import 'package:flutter/material.dart';
-import '../models/planejamento_model.dart';
-import '../services/planejamento_service.dart';
-import '../pages/planejamento_page.dart';
+
+import '../../../shared/components/ui/raptor_ui.dart';
 import '../../../shared/utils/format_currency.dart';
-import '../../shared/theme/app_colors.dart';
+import '../models/planejamento_model.dart';
+import '../pages/planejamento_page.dart';
+import '../services/planejamento_service.dart';
 
 class ResumoOrcamentoWidget extends StatefulWidget {
-  final DateTime dataAtual;
-  final bool modoAnual;
-
   const ResumoOrcamentoWidget({
     super.key,
     required this.dataAtual,
     this.modoAnual = false,
   });
 
+  final DateTime dataAtual;
+  final bool modoAnual;
+
   @override
   State<ResumoOrcamentoWidget> createState() => _ResumoOrcamentoWidgetState();
 }
 
 class _ResumoOrcamentoWidgetState extends State<ResumoOrcamentoWidget> {
-  final PlanejamentoService _service = PlanejamentoService.instance;
-
-  List<PlanejamentoModel> _planejamentos = [];
+  final _service = PlanejamentoService.instance;
+  List<PlanejamentoModel> _plans = [];
+  StreamSubscription<List<PlanejamentoModel>>? _subscription;
   bool _loading = true;
-  bool _incluirPendentes = false; // Igual ao planejamento principal
-
-  // Usa dados passados pelo parâmetro igual ao planejamento page
-  DateTime get _dataAtual => widget.dataAtual;
-  bool get _modoAnual => widget.modoAnual;
+  bool _includePending = false;
 
   @override
   void initState() {
     super.initState();
-    _carregarDados();
-
-    // Escuta mudanças no service
-    _service.planejamentosStream.listen((planejamentos) {
-      if (mounted) {
-        _filtrarPlanejamentos();
-      }
-    });
+    _subscription = _service.planejamentosStream.listen((_) => _filter());
+    _load();
   }
 
   @override
-  void didUpdateWidget(ResumoOrcamentoWidget oldWidget) {
+  void didUpdateWidget(covariant ResumoOrcamentoWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Recarregar se a data mudou
     if (oldWidget.dataAtual != widget.dataAtual || oldWidget.modoAnual != widget.modoAnual) {
-      _carregarDados();
+      _load();
     }
   }
 
-  Future<void> _carregarDados() async {
-    setState(() => _loading = true);
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
 
+  Future<void> _load() async {
+    if (mounted) setState(() => _loading = true);
     try {
-      // Define período no service baseado na data atual
-      _service.definirPeriodo(_dataAtual);
-      await _service.carregarPlanejamentos(modoAnual: _modoAnual);
-      _filtrarPlanejamentos();
-    } catch (e) {
-      if (mounted) {
-        setState(() => _loading = false);
-      }
+      _service.definirPeriodo(widget.dataAtual);
+      await _service.carregarPlanejamentos(modoAnual: widget.modoAnual);
+      _filter();
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
     }
   }
 
-  void _filtrarPlanejamentos() {
-    List<PlanejamentoModel> planejamentosFiltrados;
-
-    if (_modoAnual) {
-      // Modo anual: todos os planejamentos do ano
-      planejamentosFiltrados = _service.planejamentos.where((p) {
-        return p.ano == _dataAtual.year;
-      }).toList();
-    } else {
-      // Modo mensal: apenas do mês atual
-      planejamentosFiltrados = _service.planejamentos.where((p) {
-        return p.ano == _dataAtual.year && p.mes == _dataAtual.month;
-      }).toList();
-    }
-
+  void _filter() {
+    final filtered = _service.planejamentos.where((plan) {
+      if (widget.modoAnual) return plan.ano == widget.dataAtual.year;
+      return plan.ano == widget.dataAtual.year && plan.mes == widget.dataAtual.month;
+    }).toList();
     if (mounted) {
       setState(() {
-        _planejamentos = planejamentosFiltrados;
+        _plans = filtered;
         _loading = false;
       });
     }
   }
 
-  // Calcular totais igual ao planejamento principal
-  double get _totalDespesasPlanejado {
-    return _planejamentos
-        .where((p) => p.temPlanejamentoReal && p.isDespesa)
-        .fold(0.0, (sum, p) => sum + p.valorPlanejado);
-  }
+  double _planned(bool income) => _plans
+      .where((plan) => plan.temPlanejamentoReal && (income ? plan.isReceita : plan.isDespesa))
+      .fold(0, (sum, plan) => sum + plan.valorPlanejado);
 
-  double get _totalDespesasRealizado {
-    return _planejamentos
-        .where((p) => p.temPlanejamentoReal && p.isDespesa)
-        .fold(0.0, (sum, p) => sum + (_incluirPendentes ? p.totalMes : p.valorRealizado));
-  }
-
-  double get _totalReceitasPlanejado {
-    return _planejamentos
-        .where((p) => p.temPlanejamentoReal && p.isReceita)
-        .fold(0.0, (sum, p) => sum + p.valorPlanejado);
-  }
-
-  double get _totalReceitasRealizado {
-    return _planejamentos
-        .where((p) => p.temPlanejamentoReal && p.isReceita)
-        .fold(0.0, (sum, p) => sum + (_incluirPendentes ? p.totalMes : p.valorRealizado));
-  }
+  double _actual(bool income) => _plans
+      .where((plan) => plan.temPlanejamentoReal && (income ? plan.isReceita : plan.isDespesa))
+      .fold(0, (sum, plan) => sum + (_includePending ? plan.totalMes : plan.valorRealizado));
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    return RaptorSurface(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildHeaderVisual(),
-          _buildHeaderComRelevo(),
-          if (_loading)
-            _buildLoadingState()
-          else if (_planejamentos.isEmpty)
-            _buildEmptyState()
-          else
-            _buildCardsSimples(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeaderVisual() {
-    return GestureDetector(
-      onTap: _navegarParaPlanejamento,
-      child: ClipRRect(
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(12),
-          topRight: Radius.circular(12),
-        ),
-        child: Container(
-          height: 70,
-          decoration: BoxDecoration(
-            image: DecorationImage(
-              image: const AssetImage(
-                'assets/images/planejamento_background.jpeg',
-              ),
-              fit: BoxFit.cover,
-              alignment: Alignment.center,
-              onError: (error, stackTrace) {
-                debugPrint(
-                  '🚨 Erro ao carregar imagem planejamento_background.jpeg: $error',
-                );
-              },
+          RaptorSectionTitle(
+            title: 'Planejamento',
+            subtitle: widget.modoAnual ? 'Visão do ano' : 'Metas do mês',
+            trailing: IconButton(
+              tooltip: 'Abrir planejamento',
+              onPressed: _openPlanning,
+              icon: const Icon(Icons.arrow_forward_rounded),
             ),
           ),
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.black.withValues(alpha: 0.1),
-                  Colors.black.withValues(alpha: 0.5),
-                ],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
+          if (_plans.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            FilterChip(
+              selected: _includePending,
+              onSelected: (value) => setState(() => _includePending = value),
+              avatar: Icon(
+                _includePending ? Icons.schedule_rounded : Icons.check_circle_outline,
+                size: 17,
               ),
+              label: Text(_includePending ? 'Incluindo pendentes' : 'Somente efetivados'),
             ),
-            child: Padding(
+          ],
+          const SizedBox(height: 16),
+          if (_loading)
+            const SizedBox(height: 110, child: Center(child: CircularProgressIndicator()))
+          else if (_plans.isEmpty)
+            Container(
               padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: colors.surfaceContainer,
+                borderRadius: BorderRadius.circular(16),
+              ),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Texto elegante
-                  const Text(
-                    'Planejamento Financeiro',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      shadows: [
-                        Shadow(
-                          color: Colors.black26,
-                          offset: Offset(0, 1),
-                          blurRadius: 3,
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: colors.primaryContainer,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Icon(Icons.flag_outlined, color: colors.onPrimaryContainer),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Dê um destino ao seu dinheiro', style: theme.textTheme.titleSmall),
+                        const SizedBox(height: 3),
+                        Text(
+                          'Crie seu primeiro limite ou meta.',
+                          style: theme.textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant),
                         ),
                       ],
                     ),
                   ),
-                  // Ícone elegante
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Icon(
-                      Icons.lightbulb_outline,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                  ),
+                  IconButton(onPressed: _openPlanning, icon: const Icon(Icons.add_rounded)),
                 ],
               ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeaderComRelevo() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Color.fromRGBO(0, 0, 0, 0.08),
-            blurRadius: 6,
-            offset: Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // Título simples
-          const Text(
-            'Planejamento',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
-          ),
-
-          // Toggle efetivados/pendentes (igual ao planejamento principal)
-          if (_planejamentos.isNotEmpty)
-            GestureDetector(
-              onTap: () {
-                setState(() {
-                  _incluirPendentes = !_incluirPendentes;
-                });
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: _incluirPendentes ? AppColors.azul : Colors.grey[200],
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  _incluirPendentes ? 'Efetivado + Pendente' : 'Apenas Efetivado',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w500,
-                    color: _incluirPendentes ? Colors.white : Colors.black54,
-                  ),
-                ),
+            )
+          else ...[
+            if (_planned(false) > 0)
+              _budgetLine(
+                context,
+                label: 'Despesas',
+                actual: _actual(false),
+                planned: _planned(false),
+                income: false,
               ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLoadingState() {
-    return const Padding(
-      padding: EdgeInsets.all(32),
-      child: Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(AppColors.tealPrimary),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: GestureDetector(
-        onTap: _navegarParaPlanejamento,
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.grey[50],
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: Colors.grey.withValues(alpha: 0.2),
-              width: 1,
-            ),
-          ),
-          child: Column(
-            children: [
-              Icon(
-                Icons.trending_up_rounded,
-                size: 32,
-                color: Colors.grey[400],
+            if (_planned(false) > 0 && _planned(true) > 0) const SizedBox(height: 16),
+            if (_planned(true) > 0)
+              _budgetLine(
+                context,
+                label: 'Receitas',
+                actual: _actual(true),
+                planned: _planned(true),
+                income: true,
               ),
-              const SizedBox(height: 8),
-              const Text(
-                'Nenhum planejamento configurado',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black54,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Toque para criar',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCardsSimples() {
-    final temReceitas = _totalReceitasPlanejado > 0;
-    final temDespesas = _totalDespesasPlanejado > 0;
-
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          // Card Receitas (se existir)
-          if (temReceitas) ...[
-            _buildCardHorizontal(
-              titulo: 'Receitas do Mês',
-              valorRealizado: _totalReceitasRealizado,
-              valorPlanejado: _totalReceitasPlanejado,
-              isReceita: true,
-            ),
-            if (temDespesas) const SizedBox(height: 12),
           ],
-
-          // Card Despesas (se existir)
-          if (temDespesas)
-            _buildCardHorizontal(
-              titulo: 'Despesas do Mês',
-              valorRealizado: _totalDespesasRealizado,
-              valorPlanejado: _totalDespesasPlanejado,
-              isReceita: false,
-            ),
         ],
       ),
     );
   }
 
-  Widget _buildCardHorizontal({
-    required String titulo,
-    required double valorRealizado,
-    required double valorPlanejado,
-    required bool isReceita,
+  Widget _budgetLine(
+    BuildContext context, {
+    required String label,
+    required double actual,
+    required double planned,
+    required bool income,
   }) {
-    final percentual = valorPlanejado > 0 ? (valorRealizado / valorPlanejado) * 100 : 0.0;
-    final corProgresso = _getProgressColor(percentual, isReceita: isReceita);
-
-    return GestureDetector(
-      onTap: _navegarParaPlanejamento,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: Colors.grey.withValues(alpha: 0.2),
-            width: 1,
-          ),
-        ),
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final percentage = planned == 0 ? 0.0 : actual / planned;
+    final unhealthy = income ? percentage < .8 : percentage > .8;
+    final color = unhealthy ? (percentage > 1 ? colors.error : colors.tertiary) : colors.primary;
+    return InkWell(
+      onTap: _openPlanning,
+      borderRadius: BorderRadius.circular(14),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Linha principal: Título vs Valores (igual ao planejamento principal)
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Título
-                Expanded(
-                  child: Text(
-                    titulo,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black87,
-                    ),
-                  ),
-                ),
-                // Valores: Realizado vs Planejado
-                Text(
-                  '${formatCurrency(valorRealizado)} vs ${formatCurrency(valorPlanejado)}',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: Colors.black54,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+                Icon(income ? Icons.south_west_rounded : Icons.north_east_rounded, color: color, size: 20),
+                const SizedBox(width: 8),
+                Expanded(child: Text(label, style: theme.textTheme.titleSmall)),
+                Text('${(percentage * 100).toStringAsFixed(0)}%', style: theme.textTheme.labelLarge?.copyWith(color: color)),
               ],
             ),
-
-            const SizedBox(height: 8),
-
-            // Barra de progresso
-            LinearProgressIndicator(
-              value: valorPlanejado > 0 ? (percentual / 100).clamp(0.0, 1.0) : 0.0,
-              backgroundColor: Colors.grey[300],
-              valueColor: AlwaysStoppedAnimation<Color>(corProgresso),
-              minHeight: 4,
-            ),
-
-            const SizedBox(height: 4),
-
-            // Percentual
+            const SizedBox(height: 9),
+            RaptorProgressBar(value: percentage, color: color),
+            const SizedBox(height: 7),
             Text(
-              '${percentual.toStringAsFixed(0)}%',
-              style: const TextStyle(
-                fontSize: 12,
-                color: Colors.grey,
-              ),
+              '${formatCurrency(actual)} de ${formatCurrency(planned)}',
+              style: theme.textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant),
             ),
           ],
         ),
@@ -453,25 +215,7 @@ class _ResumoOrcamentoWidgetState extends State<ResumoOrcamentoWidget> {
     );
   }
 
-  Color _getProgressColor(double percentual, {bool isReceita = false}) {
-    if (isReceita) {
-      // RECEITAS: Bom quando atinge/supera a meta
-      if (percentual >= 100) return AppColors.verdeSucesso;
-      if (percentual >= 80) return AppColors.laranjaAlerta;
-      return AppColors.vermelhoErro;
-    } else {
-      // DESPESAS: Bom quando fica abaixo da meta
-      if (percentual <= 50) return AppColors.verdeSucesso;
-      if (percentual <= 80) return AppColors.laranjaAlerta;
-      return AppColors.vermelhoErro;
-    }
-  }
-
-  void _navegarParaPlanejamento() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => const PlanejamentoPage(),
-      ),
-    );
+  void _openPlanning() {
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PlanejamentoPage()));
   }
 }

@@ -28,6 +28,7 @@ import 'src/test_loading_page.dart';
 import 'src/modules/contas/services/conta_service.dart';
 import 'src/sync/sync_manager.dart';
 import 'src/modules/categorias/data/categoria_icons.dart'; // ✅ Para pré-carregar ícones
+import 'src/shared/theme/app_theme.dart';
 
 void main() async {
   // Garante que os widgets estão inicializados
@@ -192,92 +193,25 @@ class _IPoupeiAppState extends State<IPoupeiApp> {
           Locale('en', 'US'),
         ],
 
-        // 🎯 CONTROLE GLOBAL DE FONTES, ÍCONES E ALTURAS
+        // Respeita acessibilidade sem permitir escalas que quebrem layouts
+        // antigos durante a migração para o novo design system.
         builder: (context, child) {
           final mediaQuery = MediaQuery.of(context);
-
-          // 🎯 CONTROLE DE FONT SIZE (Text scale)
-          double systemTextScale = mediaQuery.textScaler.scale(1.0);
-          // Limita entre 0.8 e 0.9 (de -20% até -10%)
-          double finalTextScale = systemTextScale.clamp(0.8, 0.9);
+          final systemTextScale = mediaQuery.textScaler.scale(1.0);
+          final finalTextScale = systemTextScale.clamp(0.9, 1.3);
 
           return MediaQuery(
             data: mediaQuery.copyWith(
-              // Aplica escala de texto limitada
               textScaler: TextScaler.linear(finalTextScale),
             ),
-            child: Theme(
-              data: Theme.of(context).copyWith(
-                // Densidade visual compacta padrão
-                visualDensity: const VisualDensity(
-                  horizontal: -2.0,
-                  vertical: -2.0,
-                ),
-                // 🎯 ALTURAS DOS BOTÕES
-                elevatedButtonTheme: ElevatedButtonThemeData(
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: const Size(88, 36),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                  ),
-                ),
-                textButtonTheme: TextButtonThemeData(
-                  style: TextButton.styleFrom(
-                    minimumSize: const Size(64, 36),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                  ),
-                ),
-                outlinedButtonTheme: OutlinedButtonThemeData(
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size(88, 36),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                  ),
-                ),
-                // 🎯 ALTURA DA APPBAR
-                appBarTheme: const AppBarTheme(
-                  toolbarHeight: 42,
-                ),
-                // 🎯 ALTURA DOS CARDS
-                cardTheme: const CardThemeData(
-                  margin: EdgeInsets.all(8),
-                  elevation: 2,
-                ),
-                // 🎯 ALTURA DOS LISTTILES
-                listTileTheme: const ListTileThemeData(
-                  contentPadding: EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 4,
-                  ),
-                  minVerticalPadding: 2,
-                ),
-              ),
-              child: IconTheme(
-                data: const IconThemeData(
-                  size: 24,
-                ),
-                child: child!,
-              ),
-            ),
+            child: child!,
           );
         },
 
-        // Tema da aplicação
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: Colors.blue,
-            brightness: Brightness.light,
-          ),
-          useMaterial3: true,
-          fontFamily: 'System',
-        ),
+        theme: AppTheme.light,
+        darkTheme: AppTheme.dark,
+        themeMode: ThemeMode.system,
+        themeAnimationDuration: const Duration(milliseconds: 220),
         
         // Rota inicial
         home: const AuthWrapper(),

@@ -14,6 +14,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:io';
 import '../../../auth_integration.dart';
 import '../../shared/theme/app_colors.dart';
@@ -336,7 +337,6 @@ class _LoginIpoupeiPageState extends State<LoginIpoupeiPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       body: SafeArea(
         child: FadeTransition(
           opacity: _fadeAnimation,
@@ -349,11 +349,14 @@ class _LoginIpoupeiPageState extends State<LoginIpoupeiPage>
 
                   // Logo
                   Center(
-                    child: Image.asset(
-                      'assets/images/Logo.png',
-                      width: 110,
+                    child: SvgPicture.asset(
+                      'assets/images/Ipoupei-Logo_sfundo.svg',
+                      width: 150,
                       height: 110,
-                      fit: BoxFit.contain,
+                      colorFilter: ColorFilter.mode(
+                        Theme.of(context).colorScheme.primary,
+                        BlendMode.srcIn,
+                      ),
                     ),
                   ),
 
@@ -367,10 +370,10 @@ class _LoginIpoupeiPageState extends State<LoginIpoupeiPage>
                             ? 'Criar conta'
                             : 'Recuperar senha',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 30,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.tealEscuro,
+                      color: Theme.of(context).colorScheme.primary,
                     ),
                   ),
 
@@ -384,9 +387,9 @@ class _LoginIpoupeiPageState extends State<LoginIpoupeiPage>
                             ? 'Comece grátis agora'
                             : 'Vamos recuperar seu acesso',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
-                      color: AppColors.cinzaMedio,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
 
@@ -425,9 +428,12 @@ class _LoginIpoupeiPageState extends State<LoginIpoupeiPage>
                   // BOTÃO TESTE LOADING (TEMPORÁRIO)
                   TextButton(
                     onPressed: () => Navigator.pushNamed(context, '/test-loading'),
-                    child: const Text(
+                    child: Text(
                       '🧪 Testar Loading',
-                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ),
                 ],
@@ -510,17 +516,24 @@ class _LoginIpoupeiPageState extends State<LoginIpoupeiPage>
               'assets/images/google-logo.png',
               width: 24,
               height: 24,
-              errorBuilder: (context, error, stackTrace) =>
-                  const Icon(Icons.g_mobiledata, size: 28, color: AppColors.cinzaEscuro),
+              errorBuilder: (context, error, stackTrace) => Icon(
+                Icons.g_mobiledata,
+                size: 28,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ),
             label: Text(
               _isLoading ? 'Redirecionando...' : 'Continuar com Google',
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
             style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.cinzaEscuro,
-              backgroundColor: Colors.white,
-              side: const BorderSide(color: AppColors.cinzaBorda, width: 1.5),
+              foregroundColor: Theme.of(context).colorScheme.onSurface,
+              backgroundColor:
+                  Theme.of(context).colorScheme.surfaceContainerLow,
+              side: BorderSide(
+                color: Theme.of(context).colorScheme.outlineVariant,
+                width: 1.5,
+              ),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
               ),
@@ -539,7 +552,9 @@ class _LoginIpoupeiPageState extends State<LoginIpoupeiPage>
             child: SignInWithAppleButton(
               onPressed: _isLoading ? () {} : () => _handleAppleSignIn(),
               text: 'Continuar com Apple',
-              style: SignInWithAppleButtonStyle.black,
+              style: Theme.of(context).brightness == Brightness.dark
+                  ? SignInWithAppleButtonStyle.white
+                  : SignInWithAppleButtonStyle.black,
               borderRadius: BorderRadius.circular(14),
             ),
           ),
@@ -552,22 +567,18 @@ class _LoginIpoupeiPageState extends State<LoginIpoupeiPage>
   Widget _buildDivider() {
     return Row(
       children: [
-        const Expanded(
-          child: Divider(color: AppColors.cinzaBorda, thickness: 1),
-        ),
+        const Expanded(child: Divider(thickness: 1)),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text(
             'ou',
             style: TextStyle(
-              color: AppColors.cinzaMedio,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontSize: 14,
             ),
           ),
         ),
-        const Expanded(
-          child: Divider(color: AppColors.cinzaBorda, thickness: 1),
-        ),
+        const Expanded(child: Divider(thickness: 1)),
       ],
     );
   }
@@ -630,7 +641,7 @@ class _LoginIpoupeiPageState extends State<LoginIpoupeiPage>
               suffixIcon: IconButton(
                 icon: Icon(
                   _showPassword ? Icons.visibility_off : Icons.visibility,
-                  color: AppColors.cinzaMedio,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
                 onPressed: () => setState(() => _showPassword = !_showPassword),
               ),
@@ -655,7 +666,7 @@ class _LoginIpoupeiPageState extends State<LoginIpoupeiPage>
               suffixIcon: IconButton(
                 icon: Icon(
                   _showConfirmPassword ? Icons.visibility_off : Icons.visibility,
-                  color: AppColors.cinzaMedio,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
                 onPressed: () => setState(() => _showConfirmPassword = !_showConfirmPassword),
               ),
@@ -681,11 +692,11 @@ class _LoginIpoupeiPageState extends State<LoginIpoupeiPage>
                       ),
                     ),
                     const SizedBox(width: 8),
-                    const Text(
+                    Text(
                       'Lembrar',
                       style: TextStyle(
                         fontSize: 13,
-                        color: AppColors.cinzaTexto,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ],
@@ -693,11 +704,11 @@ class _LoginIpoupeiPageState extends State<LoginIpoupeiPage>
                 // Esqueceu senha
                 TextButton(
                   onPressed: () => _changeMode(AuthMode.recovery),
-                  child: const Text(
+                  child: Text(
                     'Esqueceu a senha?',
                     style: TextStyle(
                       fontSize: 13,
-                      color: AppColors.tealPrimary,
+                      color: Theme.of(context).colorScheme.primary,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -726,19 +737,29 @@ class _LoginIpoupeiPageState extends State<LoginIpoupeiPage>
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
-        prefixIcon: Icon(icon, color: AppColors.tealPrimary),
+        prefixIcon: Icon(icon, color: Theme.of(context).colorScheme.primary),
         suffixIcon: suffixIcon,
         filled: true,
-        fillColor: AppColors.tealClaro.withAlpha(12),
-        labelStyle: const TextStyle(color: AppColors.cinzaMedio),
-        hintStyle: TextStyle(color: AppColors.cinzaMedio.withAlpha(130)),
+        fillColor: Theme.of(context).colorScheme.surfaceContainer,
+        labelStyle: TextStyle(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+        hintStyle: TextStyle(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.cinzaBorda, width: 1.5),
+          borderSide: BorderSide(
+            color: Theme.of(context).colorScheme.outlineVariant,
+            width: 1.5,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.tealPrimary, width: 2),
+          borderSide: BorderSide(
+            color: Theme.of(context).colorScheme.primary,
+            width: 2,
+          ),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
@@ -755,7 +776,10 @@ class _LoginIpoupeiPageState extends State<LoginIpoupeiPage>
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
       ),
-      style: const TextStyle(color: AppColors.cinzaEscuro, fontSize: 16),
+      style: TextStyle(
+        color: Theme.of(context).colorScheme.onSurface,
+        fontSize: 16,
+      ),
       obscureText: obscureText,
       keyboardType: keyboardType,
       validator: validator,
@@ -770,22 +794,24 @@ class _LoginIpoupeiPageState extends State<LoginIpoupeiPage>
       child: ElevatedButton(
         onPressed: _isLoading ? null : _handleSubmit,
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.tealPrimary,
-          foregroundColor: Colors.white,
-          disabledBackgroundColor: AppColors.cinzaMedio,
-          elevation: 4,
-          shadowColor: AppColors.tealPrimary.withAlpha(104),
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          foregroundColor: Theme.of(context).colorScheme.onPrimary,
+          disabledBackgroundColor:
+              Theme.of(context).colorScheme.surfaceContainerHigh,
+          disabledForegroundColor:
+              Theme.of(context).colorScheme.onSurfaceVariant,
+          elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
           ),
         ),
         child: _isLoading
-            ? const SizedBox(
+            ? SizedBox(
                 width: 22,
                 height: 22,
                 child: CircularProgressIndicator(
                   strokeWidth: 2.5,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  color: Theme.of(context).colorScheme.onPrimary,
                 ),
               )
             : Text(
@@ -814,9 +840,9 @@ class _LoginIpoupeiPageState extends State<LoginIpoupeiPage>
               : _mode == AuthMode.register
                   ? 'Já tem uma conta? '
                   : 'Lembrou da senha? ',
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
-            color: AppColors.cinzaMedio,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
         TextButton(
@@ -829,9 +855,9 @@ class _LoginIpoupeiPageState extends State<LoginIpoupeiPage>
                 : _mode == AuthMode.register
                     ? 'Fazer login'
                     : 'Voltar',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
-              color: AppColors.tealPrimary,
+              color: Theme.of(context).colorScheme.primary,
               fontWeight: FontWeight.bold,
             ),
           ),

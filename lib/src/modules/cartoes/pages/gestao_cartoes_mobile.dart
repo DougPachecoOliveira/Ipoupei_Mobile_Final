@@ -10,7 +10,6 @@ import '../services/cartao_service.dart';
 import '../services/fatura_service.dart';
 import '../services/cartao_data_service.dart';
 import '../services/fatura_detection_service.dart';
-import '../services/pagamento_fatura_service.dart';
 import '../services/fatura_operations_service.dart';
 import 'faturas_list_page.dart';
 import '../../transacoes/services/transacao_service.dart';
@@ -60,8 +59,6 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
   final CartaoDataService _cartaoDataService = CartaoDataService.instance;
   final FaturaDetectionService _faturaDetectionService =
       FaturaDetectionService.instance;
-  final PagamentoFaturaService _pagamentoService =
-      PagamentoFaturaService.instance;
   final SyncManager _syncManager = SyncManager.instance;
 
   // Cache para evitar reprocessamento
@@ -2264,13 +2261,12 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
                 const SizedBox(width: 12),
                 const Expanded(
                   child: Text(
-                    'Fatura reaberta! Sincronizando dados...',
+                    'Fatura reaberta e salva no aparelho',
                     style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
                   ),
                 ),
               ],
             ),
-            backgroundColor: Colors.green[600],
             behavior: SnackBarBehavior.floating,
             margin: const EdgeInsets.all(16),
             shape: RoundedRectangleBorder(
@@ -2280,33 +2276,8 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
           ),
         );
 
-        // Pequeno delay para o usuário ver a mensagem antes da sincronização
-        await Future.delayed(const Duration(milliseconds: 500));
-
-        // Recarregar dados silenciosamente
+        // O saldo local já foi restaurado dentro da mesma operação.
         await _carregarDados();
-
-        // Confirmação final sutil depois que os dados carregaram
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Row(
-                children: [
-                  Icon(Icons.refresh, color: Colors.white, size: 18),
-                  SizedBox(width: 8),
-                  Text('Dados atualizados', style: TextStyle(fontSize: 13)),
-                ],
-              ),
-              backgroundColor: Colors.blue[600],
-              behavior: SnackBarBehavior.floating,
-              margin: EdgeInsets.only(left: 16, right: 16, bottom: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              duration: const Duration(seconds: 2),
-            ),
-          );
-        }
       } else {
         throw Exception(resultado['error'] ?? 'Erro desconhecido');
       }
@@ -2507,10 +2478,7 @@ class _GestaoCartoesMobilePageState extends State<GestaoCartoesMobilePage> {
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Erro: $e'),
-              backgroundColor: Colors.red,
-            ),
+            SnackBar(content: Text('Erro: $e'), backgroundColor: Colors.red),
           );
         }
       }

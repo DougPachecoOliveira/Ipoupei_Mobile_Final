@@ -21,7 +21,7 @@ await OperationFeedbackHelper.executeWithNavigation(
   },
   popOnSuccess: true, // fecha modal após sucesso
   onRefreshComplete: () {
-    // Executado após 3s para refresh
+    // Executado imediatamente com os dados locais já atualizados
     recarregarDados();
   },
 );
@@ -34,7 +34,6 @@ await OperationFeedbackHelper.executeOperationFeedback(
   context: context,
   operation: OperationType.payment,
   entityName: 'fatura',
-  refreshDelay: Duration(seconds: 5), // delay customizado
   onRefreshComplete: () {
     recarregarSaldos();
     atualizarFaturas();
@@ -90,11 +89,6 @@ await OperationFeedbackHelper.paymentRegistered(context,
 
 ## 🎨 **Customizações Disponíveis**
 
-### **Delay de Refresh**
-```dart
-refreshDelay: Duration(seconds: 5) // padrão é 3s
-```
-
 ### **Mensagens Customizadas**
 As mensagens são automáticas baseadas no tipo de operação, mas podem ser estendidas editando o `OperationFeedbackHelper`.
 
@@ -112,7 +106,7 @@ onRefreshComplete: () {
 
 1. **UX Consistente**: Mesmo feedback em todo app
 2. **Transparência**: Usuário sempre sabe o status
-3. **Dados Atualizados**: Refresh automático garante sincronização
+3. **Dados Atualizados**: a interface relê o estado local sem esperar a nuvem
 4. **Offline-First**: Funciona offline e sincroniza depois
 5. **Fácil Manutenção**: Centralizando feedback em um local
 

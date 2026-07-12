@@ -1076,10 +1076,10 @@ class DiagnosticoService {
       debugPrint('✅ [DIAGNOSTICO_SERVICE] Dados do Supabase: $response');
 
       // Verificar as colunas que realmente existem
-      debugPrint('🔍 [DIAGNOSTICO_SERVICE] Colunas disponíveis: ${response?.keys}');
+      debugPrint('🔍 [DIAGNOSTICO_SERVICE] Colunas disponíveis: ${response.keys}');
 
       // Vamos procurar por colunas relacionadas ao diagnóstico
-      final keys = response?.keys.where((key) => key.contains('diagnostico')).toList() ?? [];
+      final keys = response.keys.where((key) => key.contains('diagnostico')).toList();
       debugPrint('🔍 [DIAGNOSTICO_SERVICE] Colunas do diagnóstico encontradas: $keys');
 
       // Procurar por colunas com nomes similares
@@ -1087,7 +1087,7 @@ class DiagnosticoService {
       String? colunaEtapa;
       String? colunaResultado;
 
-      for (final key in response?.keys ?? []) {
+      for (final key in response.keys) {
         if (key.toLowerCase().contains('completo')) {
           colunaCompleto = key;
         } else if (key.toLowerCase().contains('etapa')) {

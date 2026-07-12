@@ -28,6 +28,7 @@ import '../../transacoes/pages/transacao_form_page.dart';
 import '../../transacoes/pages/transferencia_form_page.dart';
 import '../../cartoes/pages/despesa_cartao_page.dart';
 import '../../../shared/validators/business_validators.dart'; // ✅ Para validações anti-regressão
+import '../../../shared/components/ui/raptor_ui.dart';
 
 
 // ===============================================
@@ -657,28 +658,28 @@ class _CategoriasPageState extends State<CategoriasPage> with TickerProviderStat
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: _headerColor,
+        backgroundColor: colors.surface,
+        foregroundColor: colors.onSurface,
         elevation: 0,
         automaticallyImplyLeading: false,
         title: const Text(
           'Gerenciar Categorias',
           style: TextStyle(
-            color: Colors.white,
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
         ),
         actions: [
           IconButton(
-            icon: Icon(_getOrdenacaoIcon(), color: Colors.white),
+            icon: Icon(_getOrdenacaoIcon()),
             onPressed: _toggleOrdenacao,
             tooltip: _getOrdenacaoTooltip(),
           ),
           IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
+            icon: const Icon(Icons.refresh),
             onPressed: () async {
               debugPrint('🔄 DEBUG: REFRESH MANUAL - Limpando TODOS os caches...');
 
@@ -707,7 +708,7 @@ class _CategoriasPageState extends State<CategoriasPage> with TickerProviderStat
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeInOut,
-            color: _headerColor,
+            color: colors.surface,
             child: Column(
               children: [
                 // Seletor de período
@@ -717,13 +718,13 @@ class _CategoriasPageState extends State<CategoriasPage> with TickerProviderStat
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 300),
                   curve: Curves.easeInOut,
-                  color: _getBackgroundColor(),
+                  color: colors.surface,
                   child: TabBar(
                     controller: _tabController,
-                    indicatorColor: Colors.white,
+                    indicatorColor: colors.primary,
                     indicatorWeight: 3,
-                    labelColor: Colors.white,
-                    unselectedLabelColor: Colors.white70,
+                    labelColor: colors.primary,
+                    unselectedLabelColor: colors.onSurfaceVariant,
                     labelStyle: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -768,8 +769,8 @@ class _CategoriasPageState extends State<CategoriasPage> with TickerProviderStat
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: _headerColor,
-        foregroundColor: Colors.white,
+        backgroundColor: colors.primary,
+        foregroundColor: colors.onPrimary,
         elevation: _fabExpanded ? 8 : 6,
         onPressed: () {
           setState(() => _fabExpanded = !_fabExpanded);
@@ -928,27 +929,29 @@ class _CategoriasPageState extends State<CategoriasPage> with TickerProviderStat
     final bool isEmoji = CategoriaIcons.isEmoji(categoria.icone);
     final Color corCategoria = _parseColor(categoria.cor);
 
-    return Container(
-      color: isZero ? Colors.grey.withOpacity(0.05) : Colors.white, // ✅ Fundo diferente para zeradas
-      child: Column(
-        children: [
-          ListTile(
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final valueColor = categoria.tipo == 'receita' ? colors.tertiary : colors.error;
+
+    return RaptorSurface(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: EdgeInsets.zero,
+      onTap: () => _navegarParaGestaoCategoria(categoria),
+      child: ListTile(
             onTap: () => _navegarParaGestaoCategoria(categoria),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         leading: Container(
-          width: 40,
-          height: 40,
+          width: 46,
+          height: 46,
           decoration: BoxDecoration(
-            color: isZero
-                ? corCategoria.withOpacity(0.4) // ✅ Cor mais sutil para zeradas
-                : corCategoria,
-            borderRadius: BorderRadius.circular(6),
+            color: corCategoria.withValues(alpha: isZero ? 0.08 : 0.14),
+            borderRadius: BorderRadius.circular(15),
           ),
           child: Center(
             child: isZero
                 ? Icon(
                     Icons.remove_circle_outline, // ✅ ÍCONE FIXO para categorias zeradas (tree shake safe)
-                    color: Colors.white,
+                    color: colors.onSurfaceVariant,
                     size: 20,
                   )
                 : (isEmoji
@@ -958,7 +961,7 @@ class _CategoriasPageState extends State<CategoriasPage> with TickerProviderStat
                       )
                     : Icon(
                         CategoriaIcons.getIconFromName(categoria.icone),
-                        color: Colors.white,
+                        color: corCategoria,
                         size: 20,
                       )),
           ),
@@ -971,7 +974,7 @@ class _CategoriasPageState extends State<CategoriasPage> with TickerProviderStat
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
-                  color: isZero ? Colors.black54 : Colors.black87, // ✅ Texto mais sutil para zeradas
+                  color: isZero ? colors.onSurfaceVariant : colors.onSurface,
                 ),
                 overflow: TextOverflow.ellipsis, // ✅ Lidar com texto longo
                 maxLines: 1, // ✅ Manter uma linha como antes
@@ -982,7 +985,7 @@ class _CategoriasPageState extends State<CategoriasPage> with TickerProviderStat
               Icon(
                 Icons.info_outline, // ✅ Indicador visual para categorias zeradas
                 size: 16,
-                color: Colors.grey[600],
+                color: colors.onSurfaceVariant,
               ),
             ],
           ],
@@ -993,7 +996,7 @@ class _CategoriasPageState extends State<CategoriasPage> with TickerProviderStat
               : '${porcentagem.toStringAsFixed(1)}%',
           style: TextStyle(
             fontSize: 13,
-            color: Colors.grey[600],
+            color: colors.onSurfaceVariant,
             fontStyle: isZero ? FontStyle.italic : FontStyle.normal, // ✅ Estilo diferente
           ),
         ),
@@ -1005,11 +1008,7 @@ class _CategoriasPageState extends State<CategoriasPage> with TickerProviderStat
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: isZero
-                    ? Colors.grey[500] // ✅ Cor cinza para valores zerados
-                    : (categoria.tipo == 'receita'
-                        ? const Color(0xFF14B8A6) // Teal para receitas
-                        : const Color(0xFFEF4444)), // Vermelho para despesas
+                color: isZero ? colors.onSurfaceVariant : valueColor,
                 fontStyle: isZero ? FontStyle.italic : FontStyle.normal, // ✅ Estilo diferente
               ),
             ),
@@ -1091,90 +1090,28 @@ class _CategoriasPageState extends State<CategoriasPage> with TickerProviderStat
           ],
         ),
           ),
-          // Linha divisória cinza clara que começa após o ícone (como no arquivo offline)
-          Container(
-            margin: const EdgeInsets.only(left: 72), // 16 (padding) + 40 (ícone) + 16 (gap)
-            height: 0.5,
-            color: Colors.grey[300],
-          ),
-        ],
-      ),
     );
   }
 
   Widget _buildEstadoVazio(String tipo) {
-    final emoji = tipo == 'despesa' ? '💸' : '💰';
     final tipoTexto = tipo == 'despesa' ? 'despesas' : 'receitas';
-    final corBotao = tipo == 'despesa' ? AppColors.vermelhoHeader : AppColors.tealPrimary;
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(emoji, style: const TextStyle(fontSize: 64)),
-            const SizedBox(height: 16),
-            Text(
-              'Nenhuma categoria de $tipoTexto',
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Organize suas finanças criando\ncategorias personalizadas',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.black54,
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Botão principal - Importar Categorias Sugeridas
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _abrirCategoriasSugeridas,
-                icon: const Icon(Icons.download),
-                label: const Text('Importar Categorias Essenciais'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange[600],
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            // Botão secundário - Criar manualmente
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: _novaCategoria,
-                icon: const Icon(Icons.add),
-                label: Text('Criar categoria de $tipoTexto'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: corBotao,
-                  side: BorderSide(color: corBotao),
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-            ),
-          ],
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        RaptorEmptyState(
+          icon: tipo == 'despesa' ? Icons.shopping_bag_outlined : Icons.payments_outlined,
+          title: 'Organize suas $tipoTexto',
+          message: 'Comece com categorias essenciais ou crie uma do seu jeito.',
+          actionLabel: 'Usar categorias essenciais',
+          onAction: _abrirCategoriasSugeridas,
         ),
-      ),
+        const SizedBox(height: 12),
+        OutlinedButton.icon(
+          onPressed: _novaCategoria,
+          icon: const Icon(Icons.add),
+          label: Text('Criar categoria de $tipoTexto'),
+        ),
+      ],
     );
   }
 

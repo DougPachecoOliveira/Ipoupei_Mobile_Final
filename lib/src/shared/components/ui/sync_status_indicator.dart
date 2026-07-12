@@ -1,15 +1,11 @@
-// 🔄 Sync Status Indicator - iPoupei Mobile
-// 
-// Indicador visual do status de sincronização
-// Mostra quando o app está fazendo sync automático
-// 
-// Baseado em: Material Design + App Colors
+import 'dart:async';
 
 import 'package:flutter/material.dart';
-import '../../../services/app_lifecycle_manager.dart';
+
 import '../../../sync/sync_manager.dart';
 
-/// Indicador de status de sincronização
+/// Feedback discreto: salvar nunca espera a nuvem, mas o usuário sempre sabe
+/// se a alteração ainda está viajando ou ficou guardada no aparelho.
 class SyncStatusIndicator extends StatefulWidget {
   const SyncStatusIndicator({super.key});
 
@@ -17,153 +13,86 @@ class SyncStatusIndicator extends StatefulWidget {
   State<SyncStatusIndicator> createState() => _SyncStatusIndicatorState();
 }
 
-class _SyncStatusIndicatorState extends State<SyncStatusIndicator>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _pulseAnimation;
-  
-  SyncStatus _syncStatus = SyncStatus.idle;
-  AppLifecycleStatus _lifecycleStatus = AppLifecycleStatus.active;
-  
+class _SyncStatusIndicatorState extends State<SyncStatusIndicator> {
+  StreamSubscription<SyncStatus>? _subscription;
+  late SyncStatus _status;
+
   @override
   void initState() {
     super.initState();
-    
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 1000),
-      vsync: this,
-    );
-    
-    _pulseAnimation = Tween<double>(
-      begin: 0.7,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    ));
-    
-    _setupListeners();
-  }
-  
-  void _setupListeners() {
-    // Escuta mudanças no status de sync
-    SyncManager.instance.statusStream.listen((status) {
-      if (mounted) {
-        setState(() {
-          _syncStatus = status;
-        });
-        
-        if (status == SyncStatus.syncing) {
-          _animationController.repeat(reverse: true);
-        } else {
-          _animationController.stop();
-          _animationController.value = 1.0;
-        }
-      }
-    });
-    
-    // Escuta mudanças no lifecycle
-    AppLifecycleManager.instance.statusStream.listen((status) {
-      if (mounted) {
-        setState(() {
-          _lifecycleStatus = status;
-        });
-      }
+    _status = SyncManager.instance.status;
+    _subscription = SyncManager.instance.statusStream.listen((status) {
+      if (mounted) setState(() => _status = status);
     });
   }
-  
+
   @override
   void dispose() {
-    _animationController.dispose();
+    _subscription?.cancel();
     super.dispose();
   }
-  
+
   @override
   Widget build(BuildContext context) {
-    // Só mostra o indicador quando está sincronizando
-    if (_syncStatus != SyncStatus.syncing) {
-      return const SizedBox.shrink();
-    }
-    
-    return AnimatedBuilder(
-      animation: _pulseAnimation,
-      builder: (context, child) {
-        return Transform.scale(
-          scale: _pulseAnimation.value,
-          child: Container(
-            margin: const EdgeInsets.all(8),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: _getSyncColor().withOpacity(0.9),
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: _getSyncColor().withOpacity(0.3),
-                  blurRadius: 6,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
+    if (_status == SyncStatus.idle) return const SizedBox.shrink();
+
+    final colors = Theme.of(context).colorScheme;
+    final foreground = _status == SyncStatus.error ? colors.onErrorContainer : colors.onSecondaryContainer;
+    final background = _status == SyncStatus.error ? colors.errorContainer : colors.secondaryContainer;
+
+    return SafeArea(
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 180),
+        child: Material(
+          key: ValueKey(_status),
+          color: background,
+          borderRadius: BorderRadius.circular(99),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      _getIconColor(),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  _getSyncMessage(),
-                  style: TextStyle(
-                    color: _getIconColor(),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+                if (_status == SyncStatus.syncing)
+                  SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: foreground),
+                  )
+                else
+                  Icon(_icon, size: 16, color: foreground),
+                const SizedBox(width: 7),
+                Text(_message, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: foreground)),
               ],
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
-  
-  Color _getSyncColor() {
-    switch (_syncStatus) {
-      case SyncStatus.syncing:
-        return Colors.blue;
+
+  IconData get _icon {
+    switch (_status) {
       case SyncStatus.error:
-        return Colors.red;
+        return Icons.cloud_off_outlined;
       case SyncStatus.offline:
-        return Colors.orange;
+        return Icons.offline_bolt_outlined;
+      case SyncStatus.syncing:
+        return Icons.sync;
       case SyncStatus.idle:
-        return Colors.green;
+        return Icons.cloud_done_outlined;
     }
   }
-  
-  Color _getIconColor() {
-    return Colors.white;
-  }
-  
-  String _getSyncMessage() {
-    switch (_syncStatus) {
+
+  String get _message {
+    switch (_status) {
       case SyncStatus.syncing:
-        if (_lifecycleStatus == AppLifecycleStatus.resumed) {
-          return 'Atualizando dados...';
-        }
-        return 'Sincronizando...';
+        return 'Salvando na nuvem';
       case SyncStatus.error:
-        return 'Erro na sincronização';
+        return 'Salvo no aparelho';
       case SyncStatus.offline:
-        return 'Offline';
+        return 'Modo offline';
       case SyncStatus.idle:
-        return 'Sincronizado';
+        return 'Atualizado';
     }
   }
 }

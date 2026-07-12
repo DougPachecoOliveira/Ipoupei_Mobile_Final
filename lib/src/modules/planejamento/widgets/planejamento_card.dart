@@ -1,20 +1,10 @@
-// 📊 Planejamento Card Widget - iPoupei Mobile
-//
-// Widget de card para planejamento (baseado na imagem fornecida)
-// Estrutura idêntica aos cards de categorias
-//
-// Visual: Ícone + Nome + Valores + Barra de Progresso + Percentual
-
 import 'package:flutter/material.dart';
-import '../models/planejamento_model.dart';
+
+import '../../../shared/components/ui/raptor_ui.dart';
 import '../../../shared/utils/format_currency.dart';
-import '../../shared/theme/app_colors.dart';
+import '../models/planejamento_model.dart';
 
 class PlanejamentoCard extends StatelessWidget {
-  final PlanejamentoModel planejamento;
-  final VoidCallback? onTap;
-  final VoidCallback? onEdit;
-
   const PlanejamentoCard({
     super.key,
     required this.planejamento,
@@ -22,416 +12,160 @@ class PlanejamentoCard extends StatelessWidget {
     this.onEdit,
   });
 
+  final PlanejamentoModel planejamento;
+  final VoidCallback? onTap;
+  final VoidCallback? onEdit;
+
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final progressColor = _progressColor(colors);
+
+    return RaptorSurface(
       margin: const EdgeInsets.only(bottom: 12),
-      child: Material(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        elevation: 2,
-        shadowColor: Colors.grey.withAlpha(26),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                // Ícone circular colorido (IGUAL À IMAGEM)
-                _buildIconeCategoria(),
-
-                const SizedBox(width: 12),
-
-                // Conteúdo principal
-                Expanded(
-                  child: _buildConteudo(),
-                ),
-
-                // Menu de ações
-                if (onEdit != null)
-                  _buildMenuAcoes(context),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildIconeCategoria() {
-    return Container(
-      width: 48,
-      height: 48,
-      decoration: BoxDecoration(
-        color: _getCorCategoria(),
-        shape: BoxShape.circle,
-      ),
-      child: Center(
-        child: Text(
-          planejamento.categoriaIcone ?? '📊',
-          style: const TextStyle(fontSize: 20),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildConteudo() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Nome da categoria (fonte 16, peso 600 - IGUAL CATEGORIAS)
-        Text(
-          _getNomeExibicao(),
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: Colors.black87,
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-
-        const SizedBox(height: 4),
-
-        // Valor atual vs planejado (fonte 13 - BASEADO NA IMAGEM)
-        Text(
-          _getTextoValores(),
-          style: const TextStyle(
-            fontSize: 13,
-            color: Colors.black54,
-          ),
-        ),
-
-        const SizedBox(height: 6),
-
-        // Barra de progresso linda (IGUAL À IMAGEM)
-        _buildBarraProgresso(),
-
-        const SizedBox(height: 4),
-
-        // Percentual (fonte 12 - IGUAL À IMAGEM)
-        Text(
-          '${planejamento.percentualCumprimento.toStringAsFixed(0)}%',
-          style: const TextStyle(
-            fontSize: 12,
-            color: Colors.grey,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildBarraProgresso() {
-    return LinearProgressIndicator(
-      value: _getValorProgresso(),
-      backgroundColor: Colors.grey[300],
-      valueColor: AlwaysStoppedAnimation<Color>(_getCorProgresso()),
-      minHeight: 6,
-    );
-  }
-
-  Widget _buildMenuAcoes(BuildContext context) {
-    return PopupMenuButton<String>(
-      icon: const Icon(Icons.more_vert, color: Colors.grey, size: 20),
-      onSelected: (value) {
-        switch (value) {
-          case 'editar':
-            onEdit?.call();
-            break;
-          case 'historico':
-            _mostrarHistorico(context);
-            break;
-        }
-      },
-      itemBuilder: (context) => [
-        const PopupMenuItem(
-          value: 'editar',
-          child: Row(
+      onTap: onTap,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              Icon(Icons.edit, size: 18),
-              SizedBox(width: 8),
-              Text('Editar Meta'),
-            ],
-          ),
-        ),
-        const PopupMenuItem(
-          value: 'historico',
-          child: Row(
-            children: [
-              Icon(Icons.history, size: 18),
-              SizedBox(width: 8),
-              Text('Ver Histórico'),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ===========================
-  // MÉTODOS AUXILIARES
-  // ===========================
-
-  String _getNomeExibicao() {
-    if (planejamento.subcategoriaNome != null) {
-      return '${planejamento.categoriaNome} • ${planejamento.subcategoriaNome}';
-    }
-    return planejamento.categoriaNome ?? 'Sem nome';
-  }
-
-  String _getTextoValores() {
-    // Formato igual à imagem: "R$ 216,90 de R$ 1.440,53"
-    return '${formatCurrency(planejamento.totalMes)} de ${formatCurrency(planejamento.valorPlanejado)}';
-  }
-
-  Color _getCorCategoria() {
-    try {
-      final cor = planejamento.categoriaCor;
-      if (cor != null && cor.isNotEmpty) {
-        return Color(int.parse(cor.replaceAll('#', '0xFF')));
-      }
-    } catch (e) {
-      // Cor padrão se não conseguir parsear
-    }
-
-    // Cores padrão baseadas no tipo
-    return planejamento.isReceita ? AppColors.verdeSucesso : AppColors.cinzaEscuro;
-  }
-
-  double _getValorProgresso() {
-    if (planejamento.valorPlanejado <= 0) return 0.0;
-    return (planejamento.percentualCumprimento / 100).clamp(0.0, 1.0);
-  }
-
-  Color _getCorProgresso() {
-    // Cores baseadas no percentual (IGUAL CATEGORIAS)
-    final pct = planejamento.percentualCumprimento;
-
-    if (pct >= 100) {
-      // Ultrapassou - vermelho/laranja dependendo do tipo
-      return planejamento.isDespesa ? AppColors.vermelhoErro : AppColors.laranjaAlerta;
-    }
-
-    if (pct >= 80) {
-      return AppColors.verdeSucesso; // Verde - boa meta
-    }
-
-    if (pct >= 50) {
-      return AppColors.laranjaAlerta; // Laranja - em andamento
-    }
-
-    return AppColors.cinzaMedio; // Cinza - baixo
-  }
-
-  void _mostrarHistorico(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Row(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: _getCorCategoria(),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Center(
-                      child: Text(
-                        planejamento.categoriaIcone ?? '📊',
-                        style: const TextStyle(fontSize: 16),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Histórico de Planejamento',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.cinzaEscuro,
-                          ),
-                        ),
-                        Text(
-                          _getNomeExibicao(),
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: AppColors.cinzaMedio,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close, color: AppColors.cinzaMedio),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 24),
-
-              // Informações históricas
               Container(
-                padding: const EdgeInsets.all(16),
+                width: 46,
+                height: 46,
                 decoration: BoxDecoration(
-                  color: AppColors.cinzaClaro,
-                  borderRadius: BorderRadius.circular(8),
+                  color: _categoryColor(colors.primary).withValues(alpha: 0.13),
+                  borderRadius: BorderRadius.circular(15),
                 ),
+                child: Center(
+                  child: Text(
+                    planejamento.categoriaIcone ?? '📊',
+                    style: const TextStyle(fontSize: 21),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Dados Históricos (Últimos 3 meses)',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.cinzaMedio,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-
-                    _buildInfoRow('Média mensal', formatCurrency(planejamento.mediaHistorica)),
-                    const SizedBox(height: 8),
-                    _buildInfoRow('Meta atual', formatCurrency(planejamento.valorPlanejado)),
-                    const SizedBox(height: 8),
-                    _buildInfoRow('Realizado este mês', formatCurrency(planejamento.valorRealizado)),
-                    const SizedBox(height: 8),
-                    _buildInfoRow('Previsto este mês', formatCurrency(planejamento.valorPrevisto)),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Status e estatísticas
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: _getCorProgresso().withAlpha(20),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: _getCorProgresso().withAlpha(100),
-                    width: 1,
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          planejamento.iconeStatus,
-                          style: const TextStyle(fontSize: 16),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Status: ${_getStatusTexto()}',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: _getCorProgresso(),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
                     Text(
-                      'Progresso: ${planejamento.percentualCumprimento.toStringAsFixed(1)}%',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.cinzaMedio,
-                      ),
+                      _displayName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleMedium,
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 3),
                     Text(
-                      'Transações: ${planejamento.totalTransacoesRealizadas} realizadas, ${planejamento.totalTransacoesPrevistas} previstas',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.cinzaMedio,
+                      planejamento.isDespesa ? 'Limite de gasto' : 'Meta de receita',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colors.onSurfaceVariant,
                       ),
                     ),
                   ],
                 ),
               ),
-
-              const SizedBox(height: 24),
-
-              // Botão de ação
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.roxoHeader,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+              if (onEdit != null)
+                IconButton(
+                  tooltip: 'Editar planejamento',
+                  onPressed: onEdit,
+                  icon: const Icon(Icons.edit_outlined),
+                ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Usado no período',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: colors.onSurfaceVariant,
+                      ),
                     ),
-                  ),
-                  child: const Text(
-                    'Fechar',
-                    style: TextStyle(color: Colors.white),
-                  ),
+                    const SizedBox(height: 3),
+                    Text(
+                      formatCurrency(planejamento.totalMes),
+                      style: theme.textTheme.titleLarge,
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                'de ${formatCurrency(planejamento.valorPlanejado)}',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colors.onSurfaceVariant,
                 ),
               ),
             ],
           ),
-        ),
+          const SizedBox(height: 13),
+          RaptorProgressBar(value: _progress, color: progressColor),
+          const SizedBox(height: 9),
+          Row(
+            children: [
+              Icon(_statusIcon, size: 16, color: progressColor),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  _statusText,
+                  style: theme.textTheme.bodySmall?.copyWith(color: progressColor),
+                ),
+              ),
+              Text(
+                '${planejamento.percentualCumprimento.toStringAsFixed(0)}%',
+                style: theme.textTheme.labelLarge?.copyWith(color: progressColor),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 12,
-            color: AppColors.cinzaMedio,
-          ),
-        ),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: AppColors.cinzaEscuro,
-          ),
-        ),
-      ],
-    );
+  double get _progress {
+    if (planejamento.valorPlanejado <= 0) return 0;
+    return (planejamento.percentualCumprimento / 100).clamp(0, 1);
   }
 
-  String _getStatusTexto() {
-    switch (planejamento.statusMeta) {
-      case StatusMeta.ultrapassou:
-        return 'Meta Ultrapassada';
-      case StatusMeta.boaCaminho:
-        return 'Boa Caminho';
-      case StatusMeta.emAndamento:
-        return 'Em Andamento';
-      case StatusMeta.baixo:
-        return 'Baixo';
-      case StatusMeta.semDados:
-        return 'Sem Dados';
+  String get _displayName {
+    final category = planejamento.categoriaNome ?? 'Sem categoria';
+    final subcategory = planejamento.subcategoriaNome;
+    return subcategory == null ? category : '$category • $subcategory';
+  }
+
+  String get _statusText {
+    final percentage = planejamento.percentualCumprimento;
+    if (percentage >= 100) {
+      return planejamento.isDespesa ? 'Limite ultrapassado' : 'Meta alcançada';
     }
+    if (percentage >= 80) return 'Perto do limite';
+    if (percentage >= 50) return 'Em andamento';
+    return 'Dentro do planejado';
+  }
+
+  IconData get _statusIcon {
+    if (planejamento.percentualCumprimento >= 100 && planejamento.isDespesa) {
+      return Icons.warning_amber_rounded;
+    }
+    if (planejamento.percentualCumprimento >= 100) return Icons.check_circle_outline;
+    return Icons.insights_outlined;
+  }
+
+  Color _progressColor(ColorScheme colors) {
+    final percentage = planejamento.percentualCumprimento;
+    if (percentage >= 100 && planejamento.isDespesa) return colors.error;
+    if (percentage >= 80) return colors.tertiary;
+    return colors.primary;
+  }
+
+  Color _categoryColor(Color fallback) {
+    final value = planejamento.categoriaCor?.replaceAll('#', '');
+    if (value == null || value.isEmpty) return fallback;
+    return Color(int.tryParse('FF$value', radix: 16) ?? fallback.toARGB32());
   }
 }

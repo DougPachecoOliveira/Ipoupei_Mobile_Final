@@ -118,8 +118,8 @@ class _MainNavigationState extends State<MainNavigation> {
             ),
             // Indicador de sync no topo direito
             const Positioned(
-              top: 40,
-              right: 10,
+              top: 4,
+              right: 8,
               child: SyncStatusIndicator(),
             ),
           ],
@@ -132,8 +132,9 @@ class _MainNavigationState extends State<MainNavigation> {
             _currentIndex = index;
           });
         },
-        selectedItemColor: Colors.blue[600],
-        unselectedItemColor: Colors.grey[600],
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        selectedItemColor: Theme.of(context).colorScheme.primary,
+        unselectedItemColor: Theme.of(context).colorScheme.onSurfaceVariant,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.account_balance),

@@ -249,7 +249,7 @@ void main() {
 
     test('❌ ÍCONES DINÂMICOS: Devem ser detectados como perigosos', () {
       // Simular ícones dinâmicos que causam tree shaking
-      final iconeDinamico = 'Icons.${true ? "warning" : "error"}'; // Perigoso!
+      final iconeDinamico = 'condicao ? Icons.warning : Icons.error'; // Perigoso!
 
       expect(() => BusinessValidators.validateIconTreeShakeSafety(
         iconeDinamico, 'TEST_ICON_DINAMICO'

@@ -316,7 +316,7 @@ class EnhancedExcelExtractor {
   }
 
   /// Detecta se a primeira linha é um cabeçalho
-  bool _detectarHeader(List<Cell?> primeiraLinha) {
+  bool _detectarHeader(List<Data?> primeiraLinha) {
     int contadorTexto = 0;
     int contadorData = 0;
     int contadorValor = 0;
@@ -339,7 +339,7 @@ class EnhancedExcelExtractor {
   }
 
   /// Mapeia colunas baseado nos nomes dos headers
-  Map<String, int> _mapearPorNomesColunas(List<Cell?> headerRow) {
+  Map<String, int> _mapearPorNomesColunas(List<Data?> headerRow) {
     int dataCol = -1, valorCol = -1, descricaoCol = -1;
 
     for (int i = 0; i < headerRow.length; i++) {
@@ -376,7 +376,7 @@ class EnhancedExcelExtractor {
 
   /// Extrai uma transação de uma linha específica
   TransacaoImportada? _extrairTransacaoDaLinha(
-    List<Cell?> linha,
+    List<Data?> linha,
     int indice,
     Map<String, dynamic> mapeamento,
     String fileName,
@@ -477,7 +477,7 @@ class EnhancedExcelExtractor {
   }
 
   /// Obtém valor da célula como string
-  String _obterValorCelula(Cell? celula) {
+  String _obterValorCelula(Data? celula) {
     if (celula == null) return '';
 
     final valor = celula.value;

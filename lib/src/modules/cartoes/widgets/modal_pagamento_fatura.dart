@@ -57,10 +57,12 @@ class _ModalPagamentoFaturaState extends State<ModalPagamentoFatura> {
       setState(() {
         _contas = contas;
         // Selecionar conta principal se disponível
-        _contaSelecionada = contas.firstWhere(
-          (c) => c.contaPrincipal,
-          orElse: () => contas.isNotEmpty ? contas.first : ContaModel.empty(),
-        );
+        _contaSelecionada = contas.isEmpty
+            ? null
+            : contas.firstWhere(
+                (c) => c.contaPrincipal,
+                orElse: () => contas.first,
+              );
         if (_contaSelecionada != null && _contaSelecionada!.id.isNotEmpty) {
           _contaId = _contaSelecionada!.id;
         }

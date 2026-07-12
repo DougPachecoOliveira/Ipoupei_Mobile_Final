@@ -14,6 +14,7 @@ import '../../categorias/pages/categorias_page.dart';
 import '../../categorias/pages/gestao_categoria_page.dart';
 import '../../categorias/models/categoria_model.dart';
 import '../../categorias/services/categoria_service.dart';
+import '../../../shared/components/ui/raptor_ui.dart';
 
 /// Widget com gráficos de pizza para despesas e receitas por categoria
 class GraficosCategoriaWidget extends StatefulWidget {
@@ -93,14 +94,26 @@ class _GraficosCategoriaWidgetState extends State<GraficosCategoriaWidget> {
       );
     }
 
-    // Se deu erro, não mostra nada
     if (_error != null) {
-      return const SizedBox.shrink();
+      return RaptorEmptyState(
+        icon: Icons.bar_chart_outlined,
+        title: 'Gráfico indisponível',
+        message: 'Não conseguimos atualizar as categorias agora.',
+        actionLabel: 'Tentar novamente',
+        onAction: _carregarDados,
+        compact: true,
+      );
     }
 
-    // Se não tem dados, não mostra
     if (_despesasPorCategoria.isEmpty && _receitasPorCategoria.isEmpty) {
-      return const SizedBox.shrink();
+      return RaptorEmptyState(
+        icon: Icons.donut_small_outlined,
+        title: 'Um gráfico que explica seus gastos',
+        message: 'Quando houver movimentações no período, você verá aqui onde o dinheiro mais pesa.',
+        actionLabel: 'Ver categorias',
+        onAction: () => _navegarParaCategorias(context, 'Categorias'),
+        compact: true,
+      );
     }
 
     return Column(
@@ -136,19 +149,8 @@ class _GraficosCategoriaWidgetState extends State<GraficosCategoriaWidget> {
     required Color cor,
     required List<Map<String, dynamic>> dados,
   }) {
-    return Container(
+    return RaptorSurface(
         padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -204,17 +206,16 @@ class _GraficosCategoriaWidgetState extends State<GraficosCategoriaWidget> {
 
   /// 🎨 Cores fallback se não encontrar categoria
   List<Color> _getCoresGraficoFallback() {
+    final colors = Theme.of(context).colorScheme;
     return [
-      Colors.blue,
-      Colors.green,
-      Colors.orange,
-      Colors.red,
-      Colors.purple,
-      Colors.teal,
-      Colors.pink,
-      Colors.amber,
-      Colors.indigo,
-      Colors.cyan,
+      colors.primary,
+      colors.secondary,
+      colors.tertiary,
+      colors.error,
+      colors.primaryContainer,
+      colors.secondaryContainer,
+      colors.tertiaryContainer,
+      colors.inversePrimary,
     ];
   }
 

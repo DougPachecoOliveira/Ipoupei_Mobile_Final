@@ -578,7 +578,6 @@ class _TransacaoImportCardState extends State<TransacaoImportCard> {
                               ? Color(int.parse(widget.cartao!.cor!.replaceAll('#', '0xFF')))
                               : Colors.grey[600]),
                     ),
-              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(

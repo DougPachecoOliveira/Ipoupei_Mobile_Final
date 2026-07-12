@@ -5,7 +5,6 @@
 // 
 // Baseado em: Material Design + Analytics Dashboard
 
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -70,15 +69,10 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
   // Variáveis para o FAB
   bool _fabExpanded = false;
 
-  // Variáveis para alternância de botões
-  bool _importarPrimeiro = true;
-  Timer? _timerAlternancia;
-
   @override
   void initState() {
     super.initState();
     _carregarResumo();
-    _iniciarAlternanciaBotoes();
   }
 
   /// 🔄 CARREGAR RESUMO BASEADO NO MÊS SELECIONADO
@@ -188,6 +182,7 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
 
   /// 🔝 APPBAR COMPACTO SEGUINDO PADRÃO DO CONTAS PAGE
   PreferredSizeWidget _buildAppBar() {
+    final colors = Theme.of(context).colorScheme;
     final user = Supabase.instance.client.auth.currentUser;
     final nome = user?.userMetadata?['nome'] ??
                  user?.userMetadata?['full_name'] ??
@@ -204,7 +199,8 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
     }
 
     return AppBar(
-      backgroundColor: AppColors.tealPrimary,
+      backgroundColor: colors.surface,
+      foregroundColor: colors.onSurface,
       elevation: 0,
       toolbarHeight: 42, // 56 * 0.75 = 42
       leading: GestureDetector(
@@ -212,16 +208,16 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
         child: Container(
           margin: const EdgeInsets.all(8),
           child: CircleAvatar(
-            backgroundColor: Colors.white,
+            backgroundColor: colors.primaryContainer,
             backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
                 ? NetworkImage(avatarUrl)
                 : null,
             child: avatarUrl == null || avatarUrl.isEmpty
                 ? Text(
                     getInitials(nome),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
-                      color: AppColors.tealPrimary,
+                      color: colors.onPrimaryContainer,
                       fontWeight: FontWeight.bold,
                     ),
                   )
@@ -245,7 +241,6 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
         IconButton(
           icon: Icon(
             Icons.more_vert,
-            color: Colors.white,
           ),
           onPressed: () {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -653,7 +648,6 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
     
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: Colors.grey[50],
       drawer: const Sidebar(),
       appBar: _buildAppBar(),
       body: Stack(
@@ -666,53 +660,6 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
               child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-
-              // 📊 SEÇÃO DE AÇÕES (Overlap Simples - Botões 100%)
-              Container(
-                height: 80, // Altura de um botão
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 500),
-                  child: Stack(
-                    key: ValueKey(_importarPrimeiro),
-                    children: [
-                      // Ambos os botões 100% largura, apenas ordem determina qual fica na frente
-                      if (_importarPrimeiro) ...[
-                        // ForcarSync atrás
-                        Positioned(
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          child: ForcarSyncWidget(onSyncSuccess: _carregarResumo),
-                        ),
-                        // ImportarDados na frente
-                        Positioned(
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          child: ImportarDadosWidget(onImportSuccess: _carregarResumo),
-                        ),
-                      ] else ...[
-                        // ImportarDados atrás
-                        Positioned(
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          child: ImportarDadosWidget(onImportSuccess: _carregarResumo),
-                        ),
-                        // ForcarSync na frente
-                        Positioned(
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          child: ForcarSyncWidget(onSyncSuccess: _carregarResumo),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 12),
 
               // Widget de Resumo Financeiro (do iPoupeiDevice)
               ResumoFinanceiroWidget(
@@ -1171,29 +1118,6 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
     );
   }
 
-  // 🔄 Método para iniciar a alternância automática dos botões
-  void _iniciarAlternanciaBotoes() {
-    _timerAlternancia = Timer.periodic(const Duration(seconds: 4), (timer) {
-      if (mounted) {
-        setState(() {
-          _importarPrimeiro = !_importarPrimeiro;
-        });
-      }
-    });
-  }
-
-  // 🔀 Método para alternar manualmente os botões
-  void _alternarBotoes() {
-    setState(() {
-      _importarPrimeiro = !_importarPrimeiro;
-    });
-  }
-
-  @override
-  void dispose() {
-    _timerAlternancia?.cancel();
-    super.dispose();
-  }
 }
 
 // 🎯 Placeholder pages para relatórios específicos

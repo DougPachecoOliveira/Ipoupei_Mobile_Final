@@ -16,7 +16,7 @@ import '../../contas/models/conta_model.dart';
 import '../../contas/services/conta_service.dart';
 
 // PÁGINA COMENTADA - VER pagamento_fatura_page.dart
-/*
+// Conteúdo histórico desativado pelo comentário externo.
 class PagarFaturaPage extends StatefulWidget {
   final CartaoModel cartao;
   final FaturaModel fatura;

@@ -195,7 +195,10 @@ class _ImportacaoReviewPageState extends State<ImportacaoReviewPage>
     setState(() => _loading = true);
 
     for (final transacao in transacoes) {
-      final validacao = await _importacaoService.validarImportacaoTransacao(transacao);
+      final validacao = await _importacaoService.validarImportacaoTransacao(
+        transacao,
+        'arquivo_importacao',
+      );
       if (validacao['valido'] == false) {
         transacoesBloqueadas.add(transacao);
       } else {

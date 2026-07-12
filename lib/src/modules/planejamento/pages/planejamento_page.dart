@@ -17,6 +17,7 @@ import '../../categorias/models/categoria_model.dart';
 import '../../categorias/services/categoria_service.dart';
 import '../../categorias/data/categoria_icons.dart';
 import '../../transacoes/services/transacao_service.dart';
+import '../../../shared/components/ui/raptor_ui.dart';
 
 // ===============================================
 // 💰 FORMATADOR DE MOEDA
@@ -708,10 +709,11 @@ class _PlanejamentoPageState extends State<PlanejamentoPage> with TickerProvider
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: Colors.white, // Tema claro
       appBar: AppBar(
-        backgroundColor: _headerColor,
+        backgroundColor: colors.surface,
+        foregroundColor: colors.onSurface,
         elevation: 0,
         automaticallyImplyLeading: false,
         title: Row(
@@ -719,7 +721,6 @@ class _PlanejamentoPageState extends State<PlanejamentoPage> with TickerProvider
             const Text(
               'Planejamento',
               style: TextStyle(
-                color: Colors.white,
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
@@ -730,7 +731,7 @@ class _PlanejamentoPageState extends State<PlanejamentoPage> with TickerProvider
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.chevron_left, color: Colors.white, size: 24),
+                  icon: const Icon(Icons.chevron_left, size: 24),
                   onPressed: _periodoAnterior,
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
@@ -740,13 +741,12 @@ class _PlanejamentoPageState extends State<PlanejamentoPage> with TickerProvider
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
+                      color: colors.surfaceContainer,
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Text(
                       _modoAnual ? '${_dataAtual.year}' : _formatarPeriodo(_dataAtual),
                       style: const TextStyle(
-                        color: Colors.white,
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),
@@ -754,14 +754,14 @@ class _PlanejamentoPageState extends State<PlanejamentoPage> with TickerProvider
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.chevron_right, color: Colors.white, size: 24),
+                  icon: const Icon(Icons.chevron_right, size: 24),
                   onPressed: _proximoPeriodo,
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                 ),
                 const SizedBox(width: 8),
                 IconButton(
-                  icon: const Icon(Icons.more_vert, color: Colors.white, size: 24),
+                  icon: const Icon(Icons.more_vert, size: 24),
                   onPressed: _mostrarMenuOpcoes,
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
@@ -775,13 +775,13 @@ class _PlanejamentoPageState extends State<PlanejamentoPage> with TickerProvider
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeInOut,
-            color: _getBackgroundColor(),
+            color: colors.surface,
             child: TabBar(
               controller: _tabController,
-              indicatorColor: Colors.white,
+              indicatorColor: colors.primary,
               indicatorWeight: 3,
-              labelColor: Colors.white,
-              unselectedLabelColor: Colors.white70,
+              labelColor: colors.primary,
+              unselectedLabelColor: colors.onSurfaceVariant,
               labelStyle: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -818,9 +818,10 @@ class _PlanejamentoPageState extends State<PlanejamentoPage> with TickerProvider
       ),
       body: _buildBody(),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: _getFabColor(),
+        backgroundColor: colors.primary,
+        foregroundColor: colors.onPrimary,
         onPressed: _mostrarAcoesRapidas,
-        child: const Icon(Icons.add, color: Colors.white),
+        child: const Icon(Icons.add),
       ),
     );
   }
@@ -998,7 +999,7 @@ class _PlanejamentoPageState extends State<PlanejamentoPage> with TickerProvider
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide.none,
           ),
-          fillColor: Colors.white,
+          fillColor: Theme.of(context).colorScheme.surfaceContainer,
           filled: true,
         ),
       ),
@@ -1007,22 +1008,17 @@ class _PlanejamentoPageState extends State<PlanejamentoPage> with TickerProvider
 
   Widget _buildListaReceitas() {
     if (_receitasFiltradas.isEmpty) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.trending_up, size: 64, color: Colors.grey),
-            SizedBox(height: 16),
-            Text(
-              'Nenhuma receita encontrada',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-              ),
-            ),
-          ],
-        ),
+      return ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          RaptorEmptyState(
+            icon: Icons.trending_up_rounded,
+            title: 'Crie uma meta de receita',
+            message: 'Defina quanto quer receber e acompanhe o progresso sem planilhas.',
+            actionLabel: 'Adicionar meta',
+            onAction: _mostrarAcoesRapidas,
+          ),
+        ],
       );
     }
 
@@ -1041,22 +1037,17 @@ class _PlanejamentoPageState extends State<PlanejamentoPage> with TickerProvider
 
   Widget _buildListaDespesas() {
     if (_despesasFiltradas.isEmpty) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.trending_down, size: 64, color: Colors.grey),
-            SizedBox(height: 16),
-            Text(
-              'Nenhuma despesa encontrada',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-              ),
-            ),
-          ],
-        ),
+      return ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          RaptorEmptyState(
+            icon: Icons.flag_outlined,
+            title: 'Planeje antes de gastar',
+            message: 'Crie limites simples para as categorias que mais importam.',
+            actionLabel: 'Criar limite',
+            onAction: _mostrarAcoesRapidas,
+          ),
+        ],
       );
     }
 
@@ -1078,6 +1069,8 @@ class _PlanejamentoPageState extends State<PlanejamentoPage> with TickerProvider
   // ===========================
 
   Widget _buildPlanejamentoCard(PlanejamentoModel planejamento) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
     final subcategorias = _getSubcategoriasPorCategoria(planejamento.categoriaId);
 
 
@@ -1122,15 +1115,9 @@ class _PlanejamentoPageState extends State<PlanejamentoPage> with TickerProvider
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: colors.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: colors.outlineVariant),
       ),
       child: Column(
         children: [
@@ -1196,10 +1183,10 @@ class _PlanejamentoPageState extends State<PlanejamentoPage> with TickerProvider
                             Expanded(
                               child: Text(
                                 planejamento.categoriaNome ?? 'Sem nome',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
-                                  color: Colors.black87,
+                                  color: colors.onSurface,
                                 ),
                               ),
                             ),
@@ -1208,9 +1195,9 @@ class _PlanejamentoPageState extends State<PlanejamentoPage> with TickerProvider
                               children: [
                                 Text(
                                   '${formatCurrency(valorGastoTotal)} vs ${formatCurrency(valorPlanejadoTotal)}',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 13,
-                                    color: Colors.black54,
+                                    color: colors.onSurfaceVariant,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -1242,7 +1229,7 @@ class _PlanejamentoPageState extends State<PlanejamentoPage> with TickerProvider
                         // Barra de progresso
                         LinearProgressIndicator(
                           value: valorPlanejadoTotal > 0 ? (percentual / 100).clamp(0.0, 1.0) : 0.0,
-                          backgroundColor: Colors.grey[300],
+                          backgroundColor: colors.surfaceContainerHigh,
                           valueColor: AlwaysStoppedAnimation<Color>(_getProgressColor(percentual, isReceita: planejamento.tipo == 'RECEITA')),
                           minHeight: 4,
                         ),
@@ -1252,9 +1239,9 @@ class _PlanejamentoPageState extends State<PlanejamentoPage> with TickerProvider
                         // Percentual
                         Text(
                           '${percentual.toStringAsFixed(0)}%',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
-                            color: Colors.grey,
+                            color: colors.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -1274,7 +1261,7 @@ class _PlanejamentoPageState extends State<PlanejamentoPage> with TickerProvider
                   // Linha divisória
                   Container(
                     height: 0.5,
-                    color: Colors.grey[300],
+                    color: colors.outlineVariant,
                   ),
                   const SizedBox(height: 8),
                   // Lista de subcategorias

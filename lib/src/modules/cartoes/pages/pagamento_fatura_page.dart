@@ -185,16 +185,16 @@ class _PagamentoFaturaPageState extends State<PagamentoFaturaPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundPrimary,
       appBar: _buildAppBar(),
       body: _buildBody(),
     );
   }
 
   PreferredSizeWidget _buildAppBar() {
+    final colors = Theme.of(context).colorScheme;
     return AppBar(
-      backgroundColor: AppColors.roxoHeader,
-      foregroundColor: AppColors.branco,
+      backgroundColor: colors.surface,
+      foregroundColor: colors.onSurface,
       elevation: 0,
       leading: IconButton(
         icon: const Icon(Icons.arrow_back),
@@ -215,8 +215,8 @@ class _PagamentoFaturaPageState extends State<PagamentoFaturaPage> {
             'PAGAR',
             style: TextStyle(
               color: _isProcessando 
-                  ? AppColors.cinzaMedio
-                  : AppColors.branco,
+                  ? colors.onSurfaceVariant
+                  : colors.primary,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -297,17 +297,17 @@ class _PagamentoFaturaPageState extends State<PagamentoFaturaPage> {
           const SizedBox(width: 6),
           Text(
             '$label: ',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
-              color: AppColors.cinzaTexto,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
           Text(
             valor,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: AppColors.cinzaEscuro,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
         ],
@@ -319,12 +319,12 @@ class _PagamentoFaturaPageState extends State<PagamentoFaturaPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'COMO VOCÊ QUER PAGAR?',
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.bold,
-            color: AppColors.cinzaTexto,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
         const SizedBox(height: 12),
@@ -345,9 +345,9 @@ class _PagamentoFaturaPageState extends State<PagamentoFaturaPage> {
         if (_tipoPagamento.isNotEmpty) ...[
           Text(
             _getFraseExplicativa(),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
-              color: AppColors.cinzaTexto,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             textAlign: TextAlign.center,
           ),
@@ -702,9 +702,9 @@ class _PagamentoFaturaPageState extends State<PagamentoFaturaPage> {
           maxChildSize: 0.9,
           builder: (context, scrollController) {
             return Container(
-              decoration: const BoxDecoration(
-                color: AppColors.branco,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerLow,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
               ),
               child: Column(
                 children: [
@@ -726,7 +726,7 @@ class _PagamentoFaturaPageState extends State<PagamentoFaturaPage> {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.cinzaEscuro,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -959,21 +959,16 @@ class _PagamentoFaturaPageState extends State<PagamentoFaturaPage> {
           // ✅ Sistema Universal de Feedback
           await OperationFeedbackHelper.executeWithNavigation(
             context: context,
-            operation: OperationType.update,
+            operation: OperationType.payment,
             entityName: 'pagamento de fatura',
             operationFunction: () async {
               return true; // Operação já foi executada com sucesso
             },
             onRefreshComplete: () async {
-              // Aguardar sync processar e então atualizar saldos
               try {
-                debugPrint('🔄 Aguardando sync processar...');
-                await Future.delayed(const Duration(milliseconds: 1500));
-                
                 await ContaService.instance.fetchContas();
-                debugPrint('✅ Saldos das contas atualizados após pagamento');
               } catch (e) {
-                debugPrint('❌ Erro ao atualizar saldos das contas: $e');
+                debugPrint('⚠️ Não foi possível reler as contas locais: $e');
               }
             },
           );
@@ -1020,9 +1015,9 @@ class _PagamentoFaturaPageState extends State<PagamentoFaturaPage> {
                 bottom: MediaQuery.of(context).viewInsets.bottom + 
                         MediaQuery.of(context).padding.bottom,
               ),
-              decoration: const BoxDecoration(
-                color: AppColors.branco,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerLow,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -1148,32 +1143,33 @@ class _PagamentoFaturaPageState extends State<PagamentoFaturaPage> {
   }
 
   Widget _buildConfirmacaoHeader() {
+    final colors = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: const BoxDecoration(
-        color: AppColors.roxoHeader,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: colors.primaryContainer,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Row(
         children: [
-          const Icon(
+          Icon(
             Icons.payment,
-            color: AppColors.branco,
+            color: colors.onPrimaryContainer,
             size: 24,
           ),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Text(
               'Confirmar Pagamento',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
-                color: AppColors.branco,
+                color: colors.onPrimaryContainer,
               ),
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.close, color: AppColors.branco),
+            icon: Icon(Icons.close, color: colors.onPrimaryContainer),
             onPressed: () => Navigator.pop(context),
           ),
         ],
@@ -1210,6 +1206,7 @@ class _PagamentoFaturaPageState extends State<PagamentoFaturaPage> {
   }
 
   Widget _buildConfirmacaoResumo() {
+    final colors = Theme.of(context).colorScheme;
     final valorString = _tipoPagamento == 'integral' 
         ? CurrencyFormatter.formatForInput(widget.fatura.valorRestante)
         : (_formData['valor'] ?? '0');
@@ -1238,9 +1235,9 @@ class _PagamentoFaturaPageState extends State<PagamentoFaturaPage> {
               const SizedBox(width: 8),
               Text(
                 widget.cartao.nome,
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.w600,
-                  color: AppColors.cinzaEscuro,
+                  color: colors.onSurface,
                   fontSize: 16,
                 ),
               ),
@@ -1253,11 +1250,11 @@ class _PagamentoFaturaPageState extends State<PagamentoFaturaPage> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Valor a pagar',
                     style: TextStyle(
                       fontSize: 14,
-                      color: AppColors.cinzaTexto,
+                      color: colors.onSurfaceVariant,
                     ),
                   ),
                   Text(
@@ -1273,19 +1270,19 @@ class _PagamentoFaturaPageState extends State<PagamentoFaturaPage> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  const Text(
+                  Text(
                     'Vencimento',
                     style: TextStyle(
                       fontSize: 14,
-                      color: AppColors.cinzaTexto,
+                      color: colors.onSurfaceVariant,
                     ),
                   ),
                   Text(
                     DateFormat('dd/MM/yyyy').format(widget.fatura.dataVencimento),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.cinzaEscuro,
+                      color: colors.onSurface,
                     ),
                   ),
                 ],

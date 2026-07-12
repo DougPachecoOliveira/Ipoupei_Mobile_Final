@@ -54,7 +54,6 @@ class _TransferenciaFeedbackExampleState extends State<TransferenciaFeedbackExam
           context: context,
           operation: OperationType.transfer,
           entityName: 'transferência',
-          refreshDelay: Duration(seconds: 4), // Delay customizado
           onRefreshComplete: () {
             _recarregarSaldos();
             _mostrarResumoTransferencia();

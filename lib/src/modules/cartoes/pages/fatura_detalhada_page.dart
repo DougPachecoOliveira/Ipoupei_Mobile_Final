@@ -51,7 +51,7 @@ class _FaturaDetalhadaPageState extends State<FaturaDetalhadaPage> {
   String _filtroCategoria = 'todas';
   
   // Dados da fatura
-  List<TransacaoModel> _transacoes = [];
+  List<Map<String, dynamic>> _transacoes = [];
   Map<String, dynamic> _statusFatura = {};
   List<Map<String, dynamic>> _gastosPorCategoria = [];
   double _valorTotalFatura = 0.0;
@@ -124,10 +124,10 @@ class _FaturaDetalhadaPageState extends State<FaturaDetalhadaPage> {
       double valorPago = 0.0;
       
       for (final transacao in transacoes) {
-        final valor = transacao.valor;
+        final valor = (transacao['valor'] as num?)?.toDouble() ?? 0.0;
         valorTotal += valor;
         
-        if (transacao.efetivado) {
+        if (transacao['efetivado'] == true || transacao['efetivado'] == 1) {
           valorPago += valor;
         }
       }
@@ -742,7 +742,9 @@ class _FaturaDetalhadaPageState extends State<FaturaDetalhadaPage> {
     List<Map<String, dynamic>> transacoesFiltradas = _transacoes;
     if (_filtroCategoria != 'todas') {
       transacoesFiltradas = _transacoes
-          .where((t) => (t['categoria_nome'] ?? '') == _filtroCategoria)
+          .where((t) =>
+              (t['categoria_id']?.toString() ?? '__sem_categoria__') ==
+              _filtroCategoria)
           .toList();
     }
     
@@ -929,7 +931,7 @@ class _FaturaDetalhadaPageState extends State<FaturaDetalhadaPage> {
             PopupMenuButton<String>(
               onSelected: (categoria) => setState(() => _filtroCategoria = categoria),
               itemBuilder: (context) => [
-                PopupMenuItem(
+                PopupMenuItem<String>(
                   value: 'todas',
                   child: Text(
                     'Todas as Categorias',
@@ -938,8 +940,8 @@ class _FaturaDetalhadaPageState extends State<FaturaDetalhadaPage> {
                     ),
                   ),
                 ),
-                ..._gastosPorCategoria.map((gasto) => PopupMenuItem(
-                      value: gasto['categoria_nome'] ?? '',
+                ..._gastosPorCategoria.map((gasto) => PopupMenuItem<String>(
+                      value: gasto['categoria_id']?.toString() ?? '__sem_categoria__',
                       child: Text(
                         gasto['categoria_nome'] ?? 'Sem categoria',
                         style: TextStyle(

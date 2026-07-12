@@ -1072,6 +1072,13 @@ static IconData getIconData(String? iconString) {
   static IconData getIconFromName(String name) {
     // Use switch statement to avoid tree-shaking issues
     switch (name) {
+      case 'remove_circle_outline':
+        return Icons.remove_circle_outline;
+      case 'info_outline':
+        return Icons.info_outline;
+      case 'warning_outlined':
+        return Icons.warning_outlined;
+
       // Finanças
       case 'attach_money':
         return Icons.attach_money_outlined;
